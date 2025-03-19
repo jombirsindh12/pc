@@ -2,6 +2,7 @@ const axios = require('axios');
 
 // Get API key from environment variables
 const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY || '';
+console.log('YouTube API Key status:', YOUTUBE_API_KEY ? 'API key is set' : 'API key is missing or empty');
 
 // YouTube API base URL
 const API_BASE_URL = 'https://www.googleapis.com/youtube/v3';
