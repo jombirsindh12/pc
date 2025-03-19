@@ -28,12 +28,24 @@ module.exports = {
           value: 'Sets the YouTube channel to verify subscriptions against'
         },
         {
+          name: `${prefix}searchchannel [channel name]`,
+          value: 'Search for a YouTube channel by name to get its ID'
+        },
+        {
           name: `${prefix}setrole [roleName]`,
           value: 'Sets the role to assign to verified subscribers'
         },
         {
           name: `${prefix}livesubcount`,
           value: 'Creates a voice channel showing live subscriber count for the YouTube channel'
+        },
+        {
+          name: `${prefix}setvoicechannelname [format]`,
+          value: 'Customizes the subscriber count voice channel name format'
+        },
+        {
+          name: `${prefix}setupdatefrequency [minutes]`,
+          value: 'Sets how often the subscriber count should update'
         },
         {
           name: `${prefix}help`,
@@ -73,6 +85,22 @@ module.exports = {
       configField.value += `• Subscriber Role: ${serverConfig.roleName}\n`;
     } else {
       configField.value += '• Subscriber Role: Not set\n';
+    }
+    
+    if (serverConfig.subCountChannelId) {
+      configField.value += `• Subscriber Count: <#${serverConfig.subCountChannelId}>\n`;
+      
+      // Show update frequency if set
+      if (serverConfig.updateFrequencyMinutes) {
+        configField.value += `• Update Frequency: Every ${serverConfig.updateFrequencyMinutes} minutes\n`;
+      }
+      
+      // Show voice channel format if set
+      if (serverConfig.voiceChannelFormat) {
+        configField.value += `• Voice Channel Format: \`${serverConfig.voiceChannelFormat}\`\n`;
+      }
+    } else {
+      configField.value += '• Subscriber Count: Not set\n';
     }
     
     helpEmbed.fields.push(configField);

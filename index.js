@@ -198,96 +198,81 @@ process.on('unhandledRejection', error => {
   console.error('Unhandled promise rejection:', error);
 });
 
-// Enhanced server to keep the bot running 24/7
-const http = require('http');
-const url = require('url');
+// Enhanced uptime system for 24/7 operation
+const uptimeManager = require('./utils/uptimeManager');
+const channelWatcher = require('./utils/channelWatcher');
 
-// Keep track of the bot's uptime
-const startTime = new Date();
-let pingCount = 0;
+// Set up advanced uptime management
+uptimeManager.setupUptimeManager(client);
 
-// Create a more robust HTTP server
-const server = http.createServer((req, res) => {
-  const route = url.parse(req.url).pathname;
-  pingCount++;
+// Create an enhanced HTTP server for uptime monitoring
+const server = uptimeManager.createUptimeServer();
+
+// Start the server on a port that works with UptimeRobot
+server.listen(8080, '0.0.0.0', () => {
+  console.log('Enhanced uptime monitoring server running on port 8080');
+  console.log('Bot is configured for 24/7 operation with automatic reconnection');
+});
+
+// Add enhanced heartbeat system to keep the bot alive even when idle
+const HEARTBEAT_INTERVAL = 5 * 60 * 1000; // 5 minutes
+const UPTIME_ROBOT_PING_INTERVAL = 14 * 60 * 1000; // 14 minutes (keeping under 20 min UptimeRobot limit)
+
+// Setup regular heartbeat
+setInterval(() => {
+  console.log(`💓 Heartbeat - ${new Date().toISOString()} - Bot is ${client.user ? 'ONLINE' : 'OFFLINE'}`);
   
-  // Basic health endpoint
-  if (route === '/health' || route === '/') {
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    
-    // Calculate uptime
-    const uptime = Math.floor((new Date() - startTime) / 1000);
-    const uptimeStr = formatUptime(uptime);
-    
-    res.end(JSON.stringify({
-      status: 'online',
-      uptime: uptimeStr,
-      botUser: client.user ? client.user.tag : 'Not logged in',
-      pingCount: pingCount,
-      serverCount: client.guilds.cache.size,
-      message: 'Discord Bot is running!'
-    }));
-  // Bot status endpoint
-  } else if (route === '/status') {
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    
-    // Collect some useful stats
-    const guildCount = client.guilds.cache.size;
-    const guildNames = Array.from(client.guilds.cache.values()).map(g => g.name);
-    
-    res.end(JSON.stringify({
-      online: client.user ? true : false,
-      username: client.user ? client.user.username : 'Not logged in',
-      discriminator: client.user ? client.user.discriminator : '0000',
-      guildCount: guildCount,
-      guildNames: guildNames,
-      commandCount: client.commands.size,
-      memoryUsage: process.memoryUsage().heapUsed / 1024 / 1024,
-      uptimeSecs: Math.floor((new Date() - startTime) / 1000)
-    }));
-  // Interface for UptimeRobot or similar services
-  } else if (route === '/ping') {
-    res.writeHead(200, { 'Content-Type': 'text/plain' });
-    res.end('pong');
-  } else {
-    res.writeHead(404, { 'Content-Type': 'text/plain' });
-    res.end('Not found');
+  // Force garbage collection if available (reduces memory leaks)
+  if (global.gc) {
+    console.log('Running garbage collection...');
+    global.gc();
   }
-});
-
-// Helper function to format uptime nicely
-function formatUptime(seconds) {
-  const days = Math.floor(seconds / (3600 * 24));
-  seconds -= days * 3600 * 24;
-  const hours = Math.floor(seconds / 3600);
-  seconds -= hours * 3600;
-  const minutes = Math.floor(seconds / 60);
-  seconds -= minutes * 60;
   
-  return `${days}d ${hours}h ${minutes}m ${seconds}s`;
-}
+  // Check bot connectivity and force reconnect if needed
+  if (!client.user) {
+    console.log('Bot appears to be offline, attempting to reconnect...');
+    client.login(process.env.DISCORD_TOKEN).catch(error => {
+      console.error('Failed to reconnect during heartbeat:', error);
+    });
+  }
+}, HEARTBEAT_INTERVAL);
 
-// Auto-reconnect capability
-client.on('disconnect', (event) => {
-  console.log(`Bot disconnected with code ${event.code}. Reason: ${event.reason}`);
-  console.log('Attempting to reconnect...');
-});
+// Set up self-ping to prevent the bot from sleeping
+// This is a backup mechanism in case UptimeRobot fails
+setInterval(() => {
+  const botUrl = `https://${process.env.REPL_ID}.id.repl.co/uptimerobot`;
+  
+  // Using built-in https module to avoid axios dependency for this critical function
+  const https = require('https');
+  try {
+    https.get(botUrl, (res) => {
+      if (res.statusCode === 200) {
+        console.log(`🔄 Self-ping successful at ${new Date().toISOString()}`);
+      } else {
+        console.log(`⚠️ Self-ping returned status code: ${res.statusCode}`);
+      }
+    }).on('error', (e) => {
+      console.error('⚠️ Self-ping error:', e.message);
+    });
+  } catch (error) {
+    console.error('Error during self-ping:', error);
+  }
+}, UPTIME_ROBOT_PING_INTERVAL);
 
-client.on('reconnecting', () => {
-  console.log('Bot is reconnecting...');
-});
-
-client.on('resume', (replayed) => {
-  console.log(`Bot resumed connection. ${replayed} events replayed.`);
-});
-
-// Handle error events to prevent crashes
-client.on('error', (error) => {
-  console.error('Client error:', error);
-});
-
-// Start the server
-server.listen(8000, '0.0.0.0', () => {
-  console.log('Enhanced HTTP server running on port 8000');
-  console.log('Bot uptime monitoring active. The bot will stay online 24/7.');
+// Start YouTube channel watcher for latest video notifications
+client.once('ready', () => {
+  // Wait a bit before starting to ensure everything is initialized
+  setTimeout(() => {
+    channelWatcher.startWatching(client);
+    console.log('YouTube channel watcher started - monitoring for new videos');
+  }, 10000);
+  
+  // Also set up a presence with helpful info
+  client.user.setPresence({
+    activities: [{ 
+      name: '!help for commands', 
+      type: 3 // WATCHING
+    }],
+    status: 'online'
+  });
 });

@@ -1,8 +1,12 @@
 const config = require('./config');
 const youtubeAPI = require('./youtubeAPI');
+const { MessageEmbed } = require('discord.js');
 
-// Store last check results in memory to avoid duplicates
-const lastCheckResults = {};
+// Map to store last video IDs for channels
+const lastVideoIds = new Map();
+
+// Map to store the timeout IDs for each server
+const watcherTimeouts = new Map();
 
 /**
  * Checks for new videos from the configured YouTube channel
@@ -13,92 +17,106 @@ async function checkForNewVideos(client, serverId) {
   try {
     const serverConfig = config.getServerConfig(serverId);
     
-    // Skip if no YouTube channel or notification channel configured
-    if (!serverConfig.youtubeChannelId || !serverConfig.notificationChannelId) {
-      return null;
+    // Only proceed if we have the necessary configuration
+    if (!serverConfig || !serverConfig.youtubeChannelId || !serverConfig.notificationChannelId) {
+      return;
     }
     
-    console.log(`Checking for new videos for server ${serverId}, channel ${serverConfig.youtubeChannelId}`);
+    const youtubeChannelId = serverConfig.youtubeChannelId;
+    const notificationChannelId = serverConfig.notificationChannelId;
     
-    // Get latest video information
-    const latestVideos = await youtubeAPI.getLatestVideos(serverConfig.youtubeChannelId, 3);
-    if (!latestVideos || !latestVideos.length) {
-      console.log('No videos found or error getting videos');
-      return null;
-    }
-    
-    // Get the guild and notification channel
+    // Get the notification channel from the server
     const guild = client.guilds.cache.get(serverId);
-    if (!guild) {
-      console.log(`Guild ${serverId} not found`);
-      return null;
-    }
+    if (!guild) return;
     
-    const notificationChannel = guild.channels.cache.get(serverConfig.notificationChannelId);
+    const notificationChannel = guild.channels.cache.get(notificationChannelId);
     if (!notificationChannel) {
-      console.log(`Notification channel ${serverConfig.notificationChannelId} not found in guild ${serverId}`);
-      return null;
+      console.log(`Notification channel ${notificationChannelId} not found for server ${serverId}`);
+      return;
     }
     
-    // If we haven't checked this channel before, initialize it
-    if (!lastCheckResults[serverId]) {
-      console.log(`First check for ${serverId}, storing latest video IDs`);
-      lastCheckResults[serverId] = {
-        lastVideoId: latestVideos[0].id,
-        lastCheckTime: Date.now()
+    // Get the latest videos from the YouTube channel
+    const latestVideos = await youtubeAPI.getLatestVideos(youtubeChannelId, 3);
+    if (!latestVideos || latestVideos.length === 0) {
+      console.log(`No videos found for channel ${youtubeChannelId}`);
+      return;
+    }
+    
+    // Get the most recent video
+    const latestVideo = latestVideos[0];
+    
+    // Check if we already notified about this video
+    const lastVideoId = lastVideoIds.get(`${serverId}:${youtubeChannelId}`);
+    
+    // If we have a new video and we have previously seen a different video
+    if (lastVideoId && latestVideo.id !== lastVideoId) {
+      console.log(`New video detected for channel ${youtubeChannelId} in server ${serverId}: ${latestVideo.id}`);
+      
+      // Create a nice embed for the notification
+      const embed = {
+        title: latestVideo.title,
+        description: latestVideo.description.length > 200 
+          ? latestVideo.description.substring(0, 200) + '...' 
+          : latestVideo.description,
+        color: 0xFF0000, // YouTube red
+        url: `https://www.youtube.com/watch?v=${latestVideo.id}`,
+        author: {
+          name: serverConfig.youtubeChannelName || 'YouTube Channel',
+          url: `https://www.youtube.com/channel/${youtubeChannelId}`
+        },
+        thumbnail: {
+          url: latestVideo.thumbnailUrl
+        },
+        timestamp: new Date(latestVideo.publishedAt),
+        footer: {
+          text: '📺 New YouTube video!'
+        }
       };
-      return null;
+      
+      // Send the notification
+      await notificationChannel.send({
+        content: serverConfig.mentionRoleId 
+          ? `<@&${serverConfig.mentionRoleId}> New video from ${serverConfig.youtubeChannelName || 'your subscribed channel'}!` 
+          : `📢 New video from ${serverConfig.youtubeChannelName || 'your subscribed channel'}!`,
+        embeds: [embed]
+      });
     }
     
-    // Check if the newest video is different from what we've seen before
-    const newestVideo = latestVideos[0];
-    if (newestVideo.id !== lastCheckResults[serverId].lastVideoId) {
-      console.log(`New video detected for ${serverId}: ${newestVideo.id}`);
-      
-      // Check if video is truly new (posted after our last check)
-      const videoPublishedTime = new Date(newestVideo.publishedAt).getTime();
-      const lastCheckTime = lastCheckResults[serverId].lastCheckTime;
-      
-      if (videoPublishedTime > lastCheckTime - 600000) { // 10 minute buffer for time discrepancies
-        // Get channel info for better notification
-        const channelInfo = await youtubeAPI.getChannelInfo(serverConfig.youtubeChannelId);
-        const channelName = channelInfo?.title || serverConfig.youtubeChannelName || 'YouTube Channel';
-        
-        // Send notification
-        const mentionRole = serverConfig.roleId ? `<@&${serverConfig.roleId}>` : '';
-        await notificationChannel.send({
-          content: mentionRole ? `${mentionRole} New video from **${channelName}**!` : `New video from **${channelName}**!`,
-          embeds: [{
-            title: newestVideo.title,
-            url: `https://www.youtube.com/watch?v=${newestVideo.id}`,
-            description: newestVideo.description ? newestVideo.description.substring(0, 200) + '...' : 'No description',
-            color: 0xFF0000, // Red color for YouTube
-            fields: [
-              { name: 'Channel', value: channelName, inline: true },
-              { name: 'Published', value: new Date(newestVideo.publishedAt).toLocaleString(), inline: true }
-            ],
-            thumbnail: { url: newestVideo.thumbnailUrl },
-            footer: { text: 'Click the title to watch the video' }
-          }]
-        });
-        
-        console.log(`Notification sent for new video ${newestVideo.id} in server ${serverId}`);
-      } else {
-        console.log('Video is not recent enough, skipping notification');
-      }
-      
-      // Update the last seen video regardless
-      lastCheckResults[serverId].lastVideoId = newestVideo.id;
-    }
+    // Update the last video ID
+    lastVideoIds.set(`${serverId}:${youtubeChannelId}`, latestVideo.id);
     
-    // Update last check time
-    lastCheckResults[serverId].lastCheckTime = Date.now();
-    
-    return true;
   } catch (error) {
     console.error(`Error checking for new videos for server ${serverId}:`, error);
-    return null;
   }
+  
+  // Schedule the next check based on the server's configuration
+  scheduleNextCheck(client, serverId);
+}
+
+/**
+ * Schedules the next video check based on server configuration
+ * @param {object} client Discord client
+ * @param {string} serverId Discord server ID
+ */
+function scheduleNextCheck(client, serverId) {
+  // Clear any existing timeout for this server
+  if (watcherTimeouts.has(serverId)) {
+    clearTimeout(watcherTimeouts.get(serverId));
+  }
+  
+  const serverConfig = config.getServerConfig(serverId);
+  // Default to 60 minutes if not configured
+  const checkFrequency = (serverConfig && serverConfig.videoCheckFrequency) 
+    ? serverConfig.videoCheckFrequency * 60 * 1000 
+    : 60 * 60 * 1000;
+  
+  // Schedule the next check
+  const timeoutId = setTimeout(() => {
+    checkForNewVideos(client, serverId);
+  }, checkFrequency);
+  
+  // Store the timeout ID
+  watcherTimeouts.set(serverId, timeoutId);
 }
 
 /**
@@ -106,20 +124,22 @@ async function checkForNewVideos(client, serverId) {
  * @param {object} client Discord client
  */
 function startWatching(client) {
-  console.log('Starting YouTube channel watcher');
+  // Get all servers
+  const allConfigs = config.loadConfig();
   
-  // Check all servers every 10 minutes
-  setInterval(() => {
-    // Get all server IDs from the client
-    const serverIds = Array.from(client.guilds.cache.keys());
-    
-    // Check each server
-    for (const serverId of serverIds) {
-      checkForNewVideos(client, serverId).catch(error => {
-        console.error(`Error in channel watcher for server ${serverId}:`, error);
-      });
-    }
-  }, 10 * 60 * 1000); // Check every 10 minutes
+  // Start watching for each server
+  for (const serverId in allConfigs) {
+    // Do an initial check
+    checkForNewVideos(client, serverId);
+  }
+  
+  // Also set up checking when the bot joins a new server
+  client.on('guildCreate', (guild) => {
+    console.log(`Joined new server: ${guild.name} (${guild.id})`);
+    checkForNewVideos(client, guild.id);
+  });
+  
+  console.log('YouTube channel watcher started');
 }
 
 module.exports = {

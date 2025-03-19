@@ -124,8 +124,115 @@ async function verifySubscription(userId, channelId) {
   return true;
 }
 
+/**
+ * Get the latest videos from a YouTube channel
+ * @param {string} channelId - YouTube channel ID
+ * @param {number} maxResults - Maximum number of videos to return
+ * @returns {Array} Array of video objects
+ */
+async function getLatestVideos(channelId, maxResults = 5) {
+  if (!YOUTUBE_API_KEY) {
+    console.error('YouTube API key not found in environment variables');
+    return [];
+  }
+  
+  try {
+    // First get the uploads playlist ID for the channel
+    const channelResponse = await axios.get(`${API_BASE_URL}/channels`, {
+      params: {
+        part: 'contentDetails',
+        id: channelId,
+        key: YOUTUBE_API_KEY
+      }
+    });
+    
+    if (!channelResponse.data.items || channelResponse.data.items.length === 0) {
+      console.log(`No channel found with ID: ${channelId}`);
+      return [];
+    }
+    
+    const uploadsPlaylistId = channelResponse.data.items[0].contentDetails.relatedPlaylists.uploads;
+    
+    // Now get the videos from the uploads playlist
+    const videosResponse = await axios.get(`${API_BASE_URL}/playlistItems`, {
+      params: {
+        part: 'snippet',
+        playlistId: uploadsPlaylistId,
+        maxResults: maxResults,
+        key: YOUTUBE_API_KEY
+      }
+    });
+    
+    if (!videosResponse.data.items || videosResponse.data.items.length === 0) {
+      console.log(`No videos found for channel: ${channelId}`);
+      return [];
+    }
+    
+    // Format the video data
+    const videos = videosResponse.data.items.map(item => {
+      return {
+        id: item.snippet.resourceId.videoId,
+        title: item.snippet.title,
+        description: item.snippet.description,
+        publishedAt: item.snippet.publishedAt,
+        thumbnailUrl: item.snippet.thumbnails.medium?.url || item.snippet.thumbnails.default?.url
+      };
+    });
+    
+    return videos;
+  } catch (error) {
+    console.error('Error fetching latest videos:', error.response ? error.response.data : error.message);
+    return [];
+  }
+}
+
+/**
+ * Search for YouTube channels by keyword
+ * @param {string} query - Search query
+ * @returns {Array} Array of channel objects
+ */
+async function searchChannels(query) {
+  if (!YOUTUBE_API_KEY) {
+    console.error('YouTube API key not found in environment variables');
+    return [];
+  }
+  
+  try {
+    const response = await axios.get(`${API_BASE_URL}/search`, {
+      params: {
+        part: 'snippet',
+        type: 'channel',
+        q: query,
+        maxResults: 5,
+        key: YOUTUBE_API_KEY
+      }
+    });
+    
+    if (!response.data.items || response.data.items.length === 0) {
+      return [];
+    }
+    
+    // Format the channel data
+    const channels = response.data.items.map(item => {
+      return {
+        id: item.id.channelId,
+        title: item.snippet.title,
+        description: item.snippet.description,
+        thumbnailUrl: item.snippet.thumbnails.default.url
+      };
+    });
+    
+    return channels;
+  } catch (error) {
+    console.error('Error searching channels:', error.response ? error.response.data : error.message);
+    return [];
+  }
+}
+
 module.exports = {
   validateChannel,
   getChannelInfo,
-  verifySubscription
+  verifySubscription,
+  getLatestVideos,
+  searchChannels
 };

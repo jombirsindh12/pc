@@ -79,6 +79,8 @@ function updateServerConfig(serverId, updates) {
 }
 
 module.exports = {
+  loadConfig,
+  saveConfig,
   getServerConfig,
   updateServerConfig
 };
