@@ -20,10 +20,11 @@
   "1351801466095931445": {
     "prefix": "!",
     "notificationChannelId": "1351801466095931448",
-    "verificationChannelId": null,
+    "verificationChannelId": "1351801466095931448",
     "youtubeChannelId": "UCTqVAZM7HsFoz7xrpRMoADg",
     "youtubeChannelName": "MOHIT BHYIA YT",
-    "roleId": null,
-    "roleName": null
+    "roleId": "1351802122911354940",
+    "roleName": "how r u",
+    "subCountChannelId": "1351804446920802316"
   }
 }

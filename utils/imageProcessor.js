@@ -1,5 +1,5 @@
 const axios = require('axios');
-const { createWorker } = require('tesseract.js');
+const Tesseract = require('tesseract.js');
 const sharp = require('sharp');
 
 // Function to download an image from URL
@@ -61,25 +61,25 @@ async function processImage(imageUrl) {
     const processedBuffer = await preprocessImage(imageBuffer);
     console.log('Image preprocessing complete');
     
-    // Initialize Tesseract OCR worker
-    console.log('Initializing OCR worker...');
-    const worker = await createWorker();
-    await worker.loadLanguage('eng');
-    await worker.initialize('eng');
-    console.log('OCR worker initialized');
+    // Initialize Tesseract OCR with the new API (v6+)
+    console.log('Initializing OCR process...');
     
-    // Perform OCR on the image
+    // Perform OCR on the image using the newer API
     console.log('Performing OCR on image...');
-    const { data } = await worker.recognize(processedBuffer);
-    console.log('OCR completed, text length:', data.text.length);
-    console.log('OCR result text sample:', data.text.substring(0, 100));
+    const result = await Tesseract.recognize(processedBuffer, 'eng', {
+      logger: m => {
+        if (m.status === 'recognizing text') {
+          console.log(`OCR progress: ${Math.floor(m.progress * 100)}%`);
+        }
+      }
+    });
     
-    // Terminate worker
-    await worker.terminate();
-    console.log('OCR worker terminated');
+    console.log('OCR completed, text length:', result.data.text.length);
+    console.log('OCR result text sample:', result.data.text.substring(0, 100));
+    console.log('OCR process completed');
     
     // Look for subscription indicators in the text
-    const text = data.text.toLowerCase();
+    const text = result.data.text.toLowerCase();
     console.log('Looking for subscription indicators...');
     
     // Enhanced check for common phrases that indicate a YouTube subscription
@@ -173,7 +173,7 @@ async function processImage(imageUrl) {
         userId: userId,
         hasSubscriptionIndicators: true,
         foundIndicators: foundIndicators,
-        text: data.text.substring(0, 500) // Limit text length for logging
+        text: result.data.text.substring(0, 500) // Limit text length for logging
       };
     }
     
@@ -182,7 +182,7 @@ async function processImage(imageUrl) {
     return {
       success: false,
       message: 'Could not detect subscription indicators in the image',
-      text: data.text.substring(0, 200) // Limit text length for logging
+      text: result.data.text.substring(0, 200) // Limit text length for logging
     };
     
   } catch (error) {

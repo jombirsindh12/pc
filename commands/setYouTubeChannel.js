@@ -24,9 +24,9 @@ module.exports = {
     console.log(`Processing YouTube channel identifier: ${youtubeChannelId}`);
     
     // Extract ID from URL if a URL was provided
-    if (youtubeChannelId.includes('youtube.com') || youtubeChannelId.includes('youtu.be')) {
+    if (youtubeChannelId.includes('youtube.com') || youtubeChannelId.includes('youtu.be') || youtubeChannelId.includes('@')) {
       try {
-        console.log(`Detected YouTube URL, attempting to extract channel ID`);
+        console.log(`Detected YouTube URL or handle, attempting to extract channel ID`);
         // Try to extract the channel ID from different URL formats
         if (youtubeChannelId.includes('/channel/')) {
           const match = youtubeChannelId.match(/\/channel\/([^\/\?]+)/);
@@ -34,10 +34,43 @@ module.exports = {
             youtubeChannelId = match[1];
             console.log(`Extracted channel ID from URL: ${youtubeChannelId}`);
           }
+        } else if (youtubeChannelId.includes('@')) {
+          // Handle new @username format
+          let handle = youtubeChannelId;
+          
+          // Extract from URL if needed
+          if (handle.includes('youtube.com/')) {
+            const match = handle.match(/@([^\/\?]+)/);
+            if (match && match[1]) {
+              handle = '@' + match[1];
+            }
+          }
+          
+          console.log(`Detected channel handle: ${handle}`);
+          message.reply(`⏳ Detected YouTube channel handle: ${handle}. Attempting to resolve...`);
+          
+          // We'll use this handle directly with the YouTube API
+          // The YouTube API can sometimes work with handles directly
+          youtubeChannelId = handle.replace('@', '');
         } else if (youtubeChannelId.includes('/user/') || youtubeChannelId.includes('/c/')) {
-          console.log(`URL contains /user/ or /c/ which requires additional processing`);
-          message.reply('⚠️ Warning: For username-based URLs, please provide the actual channel ID instead. You can find it in the channel\'s page source or using the YouTube API.');
-          return;
+          // Extract username
+          let username = null;
+          if (youtubeChannelId.includes('/user/')) {
+            const match = youtubeChannelId.match(/\/user\/([^\/\?]+)/);
+            if (match && match[1]) username = match[1];
+          } else if (youtubeChannelId.includes('/c/')) {
+            const match = youtubeChannelId.match(/\/c\/([^\/\?]+)/);
+            if (match && match[1]) username = match[1];
+          }
+          
+          if (username) {
+            console.log(`Extracted username from URL: ${username}`);
+            message.reply(`⏳ Detected custom YouTube URL with username: ${username}. Attempting to resolve...`);
+            youtubeChannelId = username;
+          } else {
+            message.reply('❌ Could not extract username from the provided URL. Please provide the direct channel ID instead.');
+            return;
+          }
         }
       } catch (error) {
         console.error('Error extracting channel ID from URL:', error);
