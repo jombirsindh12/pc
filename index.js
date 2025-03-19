@@ -52,37 +52,61 @@ client.on(Events.MessageCreate, async message => {
         
         // Check if attachment is an image
         if (attachment.contentType && attachment.contentType.startsWith('image/')) {
-          await message.reply('Processing your verification image... Please wait.');
+          await message.reply('📝 Processing your verification image... Please wait.');
+          console.log(`Processing verification image from user ${message.author.tag} (${message.author.id})`);
           
           // Process the image
           const imageUrl = attachment.url;
+          console.log(`Image URL: ${imageUrl}`);
+          
           const result = await imageProcessor.processImage(imageUrl);
+          console.log('Image processing result:', result);
           
           // If image processing succeeded and we have a YouTube channel configured
-          if (result && serverConfig.youtubeChannelId) {
+          if (result && result.success === true && serverConfig.youtubeChannelId) {
+            console.log(`Verification proceeding with channel ID: ${serverConfig.youtubeChannelId}`);
+            
             // Verify subscription with YouTube API
             const isSubscribed = await youtubeAPI.verifySubscription(
               result.userId, 
               serverConfig.youtubeChannelId
             );
             
+            console.log(`Subscription verification result: ${isSubscribed ? 'Subscribed' : 'Not subscribed'}`);
+            
             if (isSubscribed) {
               // Add role to user if role is set
               if (serverConfig.roleId) {
                 try {
+                  console.log(`Attempting to assign role ID ${serverConfig.roleId} to user ${message.author.id}`);
+                  
                   await message.member.roles.add(serverConfig.roleId);
-                  await message.reply('✅ Verification successful! You have been assigned the subscriber role.');
+                  await message.reply(`✅ Verification successful! You have been assigned the ${serverConfig.roleName || 'subscriber'} role.`);
+                  
+                  // Send notification if a notification channel is set
+                  if (serverConfig.notificationChannelId) {
+                    const notificationChannel = message.guild.channels.cache.get(serverConfig.notificationChannelId);
+                    if (notificationChannel) {
+                      notificationChannel.send(`🎉 **${message.author.tag}** has verified their subscription to **${serverConfig.youtubeChannelName || 'the YouTube channel'}**!`);
+                    }
+                  }
                 } catch (error) {
                   console.error('Error assigning role:', error);
                   await message.reply('✅ Verification successful, but I could not assign the role. Please contact an administrator.');
                 }
               } else {
+                console.log('No role ID configured for this server');
                 await message.reply('✅ Verification successful! However, no subscriber role has been set up yet.');
               }
             } else {
-              await message.reply('❌ Verification failed. Could not confirm your subscription to the YouTube channel. Please make sure you are subscribed and try again.');
+              await message.reply(`❌ Verification failed. Could not confirm your subscription to the YouTube channel ${serverConfig.youtubeChannelName ? `**${serverConfig.youtubeChannelName}**` : ''}. Please make sure you are subscribed and try again.`);
             }
           } else {
+            console.log('Image processing failed or no YouTube channel configured');
+            if (!serverConfig.youtubeChannelId) {
+              console.log('No YouTube channel ID is set for this server');
+            }
+            
             await message.reply('❌ Could not process your verification image or no YouTube channel has been set for verification. Please try again or contact an administrator.');
           }
         } else {
