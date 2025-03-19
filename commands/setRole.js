@@ -15,11 +15,32 @@ module.exports = {
       return message.reply('❌ Please provide a role name. Usage: `!setrole [roleName]`');
     }
 
-    const roleName = args.join(' ');
-    const role = message.guild.roles.cache.find(r => r.name.toLowerCase() === roleName.toLowerCase());
+    const roleInput = args.join(' ');
+    console.log(`Role input: "${roleInput}"`);
+    
+    // Check if the input is a role mention or ID
+    let role;
+    const roleMention = roleInput.match(/<@&(\d+)>/);
+    
+    if (roleMention) {
+      // If it's a role mention, extract the ID
+      const roleId = roleMention[1];
+      console.log(`Detected role mention, ID: ${roleId}`);
+      role = message.guild.roles.cache.get(roleId);
+    } else if (/^\d+$/.test(roleInput)) {
+      // If it's a numeric ID
+      console.log(`Attempting to find role by ID: ${roleInput}`);
+      role = message.guild.roles.cache.get(roleInput);
+    } else {
+      // Otherwise try to find by name
+      console.log(`Attempting to find role by name: ${roleInput}`);
+      role = message.guild.roles.cache.find(r => r.name.toLowerCase() === roleInput.toLowerCase());
+    }
+    
+    console.log(`Role found:`, role ? `${role.name} (${role.id})` : 'No role found');
 
     if (!role) {
-      return message.reply(`❌ Could not find role with name "${roleName}". Please check the role name and try again.`);
+      return message.reply(`❌ Could not find role with name "${roleInput}". Please check the role name and try again.`);
     }
 
     const serverId = message.guild.id;
