@@ -198,13 +198,96 @@ process.on('unhandledRejection', error => {
   console.error('Unhandled promise rejection:', error);
 });
 
-// Start the server to keep the bot running 24/7
+// Enhanced server to keep the bot running 24/7
 const http = require('http');
+const url = require('url');
+
+// Keep track of the bot's uptime
+const startTime = new Date();
+let pingCount = 0;
+
+// Create a more robust HTTP server
 const server = http.createServer((req, res) => {
-  res.writeHead(200, { 'Content-Type': 'text/plain' });
-  res.end('Discord Bot is running!\n');
+  const route = url.parse(req.url).pathname;
+  pingCount++;
+  
+  // Basic health endpoint
+  if (route === '/health' || route === '/') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    
+    // Calculate uptime
+    const uptime = Math.floor((new Date() - startTime) / 1000);
+    const uptimeStr = formatUptime(uptime);
+    
+    res.end(JSON.stringify({
+      status: 'online',
+      uptime: uptimeStr,
+      botUser: client.user ? client.user.tag : 'Not logged in',
+      pingCount: pingCount,
+      serverCount: client.guilds.cache.size,
+      message: 'Discord Bot is running!'
+    }));
+  // Bot status endpoint
+  } else if (route === '/status') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    
+    // Collect some useful stats
+    const guildCount = client.guilds.cache.size;
+    const guildNames = Array.from(client.guilds.cache.values()).map(g => g.name);
+    
+    res.end(JSON.stringify({
+      online: client.user ? true : false,
+      username: client.user ? client.user.username : 'Not logged in',
+      discriminator: client.user ? client.user.discriminator : '0000',
+      guildCount: guildCount,
+      guildNames: guildNames,
+      commandCount: client.commands.size,
+      memoryUsage: process.memoryUsage().heapUsed / 1024 / 1024,
+      uptimeSecs: Math.floor((new Date() - startTime) / 1000)
+    }));
+  // Interface for UptimeRobot or similar services
+  } else if (route === '/ping') {
+    res.writeHead(200, { 'Content-Type': 'text/plain' });
+    res.end('pong');
+  } else {
+    res.writeHead(404, { 'Content-Type': 'text/plain' });
+    res.end('Not found');
+  }
 });
 
+// Helper function to format uptime nicely
+function formatUptime(seconds) {
+  const days = Math.floor(seconds / (3600 * 24));
+  seconds -= days * 3600 * 24;
+  const hours = Math.floor(seconds / 3600);
+  seconds -= hours * 3600;
+  const minutes = Math.floor(seconds / 60);
+  seconds -= minutes * 60;
+  
+  return `${days}d ${hours}h ${minutes}m ${seconds}s`;
+}
+
+// Auto-reconnect capability
+client.on('disconnect', (event) => {
+  console.log(`Bot disconnected with code ${event.code}. Reason: ${event.reason}`);
+  console.log('Attempting to reconnect...');
+});
+
+client.on('reconnecting', () => {
+  console.log('Bot is reconnecting...');
+});
+
+client.on('resume', (replayed) => {
+  console.log(`Bot resumed connection. ${replayed} events replayed.`);
+});
+
+// Handle error events to prevent crashes
+client.on('error', (error) => {
+  console.error('Client error:', error);
+});
+
+// Start the server
 server.listen(8000, '0.0.0.0', () => {
-  console.log('HTTP server running on port 8000');
+  console.log('Enhanced HTTP server running on port 8000');
+  console.log('Bot uptime monitoring active. The bot will stay online 24/7.');
 });

@@ -34,8 +34,11 @@ module.exports = {
         return message.reply('❌ Could not retrieve channel information. Please check the YouTube channel ID.');
       }
 
-      // Create or update the subscriber count channel
-      const channelName = `📊 ${channelInfo.title}: ${channelInfo.subscriberCount || '0'} subs`;
+      // Create or update the subscriber count channel using custom format if available
+      const format = serverConfig.voiceChannelFormat || '📊 {channelName}: {subCount} subs';
+      const channelName = format
+        .replace('{channelName}', channelInfo.title)
+        .replace('{subCount}', channelInfo.subscriberCount || '0');
       
       let subCountChannel;
       
@@ -92,7 +95,12 @@ module.exports = {
           const channel = await message.guild.channels.fetch(serverConfig.subCountChannelId);
           if (channel) {
             const freshInfo = await youtubeAPI.getChannelInfo(serverConfig.youtubeChannelId);
-            const newName = `📊 ${freshInfo.title}: ${freshInfo.subscriberCount || '0'} subs`;
+            // Get the format from config
+            const serverConfig = config.getServerConfig(serverId);
+            const format = serverConfig.voiceChannelFormat || '📊 {channelName}: {subCount} subs';
+            const newName = format
+              .replace('{channelName}', freshInfo.title)
+              .replace('{subCount}', freshInfo.subscriberCount || '0');
             await channel.setName(newName);
             console.log(`Updated subscriber count for ${freshInfo.title} to ${freshInfo.subscriberCount}`);
           }
@@ -102,7 +110,7 @@ module.exports = {
           clearInterval(intervalId);
           client.subCountIntervals.delete(serverId);
         }
-      }, 3600000); // Update every hour (3600000 ms)
+      }, (serverConfig.updateFrequencyMinutes || 60) * 60000); // Use configured update frequency or default to 60 minutes
 
       // Store the interval ID
       client.subCountIntervals.set(serverId, intervalId);
