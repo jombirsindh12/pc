@@ -7,5 +7,14 @@
     "youtubeChannelName": null,
     "roleId": null,
     "roleName": null
+  },
+  "1332552503216177366": {
+    "prefix": "!",
+    "notificationChannelId": "1350455356161261730",
+    "verificationChannelId": "1350455331037253655",
+    "youtubeChannelId": null,
+    "youtubeChannelName": null,
+    "roleId": null,
+    "roleName": null
   }
 }

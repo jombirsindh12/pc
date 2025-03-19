@@ -102,14 +102,20 @@ client.on(Events.MessageCreate, async message => {
   const args = message.content.slice(prefix.length).trim().split(/ +/);
   const commandName = args.shift().toLowerCase();
 
-  if (!client.commands.has(commandName)) return;
+  console.log(`Command received: ${commandName}, Arguments: ${args.join(', ')}`);
+
+  if (!client.commands.has(commandName)) {
+    console.log(`Unknown command: ${commandName}`);
+    return;
+  }
 
   const command = client.commands.get(commandName);
+  console.log(`Executing command: ${command.name}`);
 
   try {
     command.execute(message, args, client);
   } catch (error) {
-    console.error(error);
+    console.error(`Error executing command ${commandName}:`, error);
     message.reply('There was an error executing that command.');
   }
 });

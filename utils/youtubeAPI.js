@@ -8,12 +8,17 @@ const API_BASE_URL = 'https://www.googleapis.com/youtube/v3';
 
 // Function to validate if a channel ID exists
 async function validateChannel(channelId) {
+  console.log(`Attempting to validate YouTube channel ID: ${channelId}`);
+  
   if (!YOUTUBE_API_KEY) {
     console.error('YouTube API key not found in environment variables');
     return false;
   }
   
   try {
+    console.log(`Making API request to validate channel: ${channelId}`);
+    console.log(`Using API Key: ${YOUTUBE_API_KEY ? 'API key is set' : 'API key is missing'}`);
+    
     const response = await axios.get(`${API_BASE_URL}/channels`, {
       params: {
         part: 'id',
@@ -22,7 +27,10 @@ async function validateChannel(channelId) {
       }
     });
     
-    return response.data.items && response.data.items.length > 0;
+    const isValid = response.data.items && response.data.items.length > 0;
+    console.log(`Channel validation result: ${isValid ? 'Valid channel' : 'Invalid channel'}`);
+    
+    return isValid;
   } catch (error) {
     console.error('Error validating YouTube channel:', error.response ? error.response.data : error.message);
     return false;
