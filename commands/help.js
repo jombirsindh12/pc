@@ -32,6 +32,10 @@ module.exports = {
           value: 'Sets the role to assign to verified subscribers'
         },
         {
+          name: `${prefix}livesubcount`,
+          value: 'Creates a voice channel showing live subscriber count for the YouTube channel'
+        },
+        {
           name: `${prefix}help`,
           value: 'Shows this help message'
         }

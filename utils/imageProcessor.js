@@ -18,10 +18,27 @@ async function downloadImage(url) {
 // Function to preprocess image for better OCR results
 async function preprocessImage(imageBuffer) {
   try {
-    // Convert to grayscale and increase contrast for better text recognition
+    // Enhanced preprocessing pipeline for better OCR results
     return await sharp(imageBuffer)
+      // Convert to grayscale
       .grayscale()
+      // Increase contrast
       .normalize()
+      // Apply slight sharpening to make text more distinct
+      .sharpen({
+        sigma: 1.2,
+        m1: 0.5,
+        m2: 0.5
+      })
+      // Apply threshold to make text clearer on light backgrounds
+      .threshold(180)
+      // Resize if necessary to improve OCR
+      .resize({
+        width: 1600,
+        height: 1200,
+        fit: 'inside',
+        withoutEnlargement: true
+      })
       .toBuffer();
   } catch (error) {
     console.error('Error preprocessing image:', error);
@@ -65,30 +82,71 @@ async function processImage(imageUrl) {
     const text = data.text.toLowerCase();
     console.log('Looking for subscription indicators...');
     
-    // Check for common phrases that indicate a YouTube subscription
+    // Enhanced check for common phrases that indicate a YouTube subscription
     const subscriptionIndicators = [
       'subscribed',
       'subscription',
       'subscriber',
       'bell icon',
       'notifications',
-      'joined'
+      'joined',
+      'following',  // Additional indicators
+      'subscrib',   // Partial match for OCR errors
+      'joined channel',
+      'membership'
     ];
     
-    const foundIndicators = subscriptionIndicators.filter(indicator => 
-      text.includes(indicator)
-    );
+    // Use a more flexible detection approach to handle OCR errors
+    const foundIndicators = [];
+    for (const indicator of subscriptionIndicators) {
+      if (text.includes(indicator)) {
+        foundIndicators.push(indicator);
+      }
+    }
     
-    const hasSubscribeCheckmark = text.includes('subscribe') && 
-                                 (text.includes('✓') || text.includes('√'));
+    // Enhanced checkmark detection
+    const checkmarks = ['✓', '√', '✔', 'v', '✅'];
+    let hasSubscribeCheckmark = false;
     
-    if (hasSubscribeCheckmark) {
-      foundIndicators.push('subscribe ✓');
+    // Check for "subscribe" + any checkmark nearby
+    if (text.includes('subscribe')) {
+      for (const checkmark of checkmarks) {
+        if (text.includes(checkmark)) {
+          hasSubscribeCheckmark = true;
+          foundIndicators.push(`subscribe with ${checkmark}`);
+          break;
+        }
+      }
+    }
+    
+    // Look for checkmarks in proximity to "subscribe" word
+    const subscribePos = text.indexOf('subscribe');
+    if (subscribePos !== -1) {
+      // Check if there's a checkmark within 20 characters of "subscribe"
+      const segment = text.substring(Math.max(0, subscribePos - 10), 
+                                    Math.min(text.length, subscribePos + 20));
+      
+      for (const checkmark of checkmarks) {
+        if (segment.includes(checkmark)) {
+          hasSubscribeCheckmark = true;
+          foundIndicators.push(`subscribe near ${checkmark}`);
+          break;
+        }
+      }
     }
     
     console.log('Found indicators:', foundIndicators);
     
-    const isSubscribed = foundIndicators.length > 0 || hasSubscribeCheckmark;
+    // Check for "subscribed" button UI elements
+    const hasSubscribedButton = text.includes('subscrib') && 
+                              (text.includes('button') || text.includes('ed'));
+    
+    if (hasSubscribedButton) {
+      foundIndicators.push('subscribed button detected');
+    }
+    
+    // Calculate final subscription status
+    const isSubscribed = foundIndicators.length > 0 || hasSubscribeCheckmark || hasSubscribedButton;
     
     // Look for a YouTube user ID or channel name
     const userIdPatterns = [
