@@ -1,0 +1,11 @@
+{
+  "example_server_id": {
+    "prefix": "!",
+    "notificationChannelId": null,
+    "verificationChannelId": null,
+    "youtubeChannelId": null,
+    "youtubeChannelName": null,
+    "roleId": null,
+    "roleName": null
+  }
+}
