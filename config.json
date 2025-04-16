@@ -37,6 +37,32 @@
       "title": "✅ Server Verification",
       "description": "Please verify yourself to access the server.",
       "color": "5865F2"
-    }
+    },
+    "gamingSessions": {
+      "m9k22f2y4e16dte2r2b": {
+        "id": "m9k22f2y4e16dte2r2b",
+        "game": "ff",
+        "host": {
+          "id": "1155442418309673000",
+          "username": "mohitbhai2007"
+        },
+        "players": [
+          {
+            "id": "1155442418309673000",
+            "username": "mohitbhai2007",
+            "joinedAt": 1744815446746
+          }
+        ],
+        "playerCount": 10,
+        "time": "30 minutes",
+        "description": "hlo",
+        "createdAt": 1744815446746,
+        "status": "open",
+        "messageId": "1362079447704014981"
+      }
+    },
+    "activeVoiceChannelId": "1352325169527652383",
+    "activeVoiceChannelName": "gaming--bots15",
+    "voiceAnnouncements": true
   }
 }
