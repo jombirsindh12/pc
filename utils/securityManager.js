@@ -214,6 +214,107 @@ async function sendSecurityAlert(client, serverId, incidentId, message) {
  * Starts monitoring a Discord guild's audit logs for security issues
  * @param {Object} client - Discord.js client
  */
+/**
+ * Activates the advanced anti-nuke system for a server
+ * @param {Object} client - Discord.js client
+ * @param {string} serverId - Discord server ID
+ * @param {number} threshold - Threshold for various anti-nuke checks
+ */
+function activateAntiNuke(client, serverId, threshold = 3) {
+  console.log(`Activating advanced anti-nuke protection for server ${serverId} with threshold ${threshold}`);
+  
+  // Setup extra audit log watchers
+  client.on('guildAuditLogEntryCreate', async (auditLog, guild) => {
+    // Only process for the target server
+    if (guild.id !== serverId) return;
+    
+    const { action, executorId, targetId } = auditLog;
+    
+    // Check for mass ban actions
+    if (action === 22) { // BAN_ADD
+      recordAction(serverId, executorId, 'ban', { targetId });
+      
+      // Check if this user has triggered too many bans
+      const userActions = getRecentActions(serverId, executorId, 'ban', 60000); // Last minute
+      if (userActions.length >= threshold) {
+        triggerSecurityIncident(serverId, executorId, 'nuke', userActions);
+        
+        // Auto-ban the nuker if configured to do so
+        const serverConfig = config.getServerConfig(serverId);
+        if (serverConfig.antiNukeSettings && serverConfig.antiNukeSettings.punishmentType === 'ban') {
+          try {
+            const executor = await guild.members.fetch(executorId);
+            if (executor && executor.bannable) {
+              await executor.ban({ reason: 'ANTI-NUKE: Mass ban detected' });
+              
+              // Send alert to notification channel
+              if (serverConfig.notificationChannelId) {
+                const notificationChannel = guild.channels.cache.get(serverConfig.notificationChannelId);
+                if (notificationChannel) {
+                  await notificationChannel.send({
+                    content: `🚨 **ANTI-NUKE SYSTEM ACTIVATED**\n\nUser <@${executorId}> has been automatically banned for attempting to mass ban ${userActions.length} members in a short time period.\n\nServer security has been preserved.`,
+                    allowedMentions: { parse: [] } // Don't ping anyone
+                  });
+                }
+              }
+            }
+          } catch (error) {
+            console.error(`Error auto-banning nuker ${executorId}:`, error);
+          }
+        }
+      }
+    }
+    
+    // Check for mass channel deletions
+    else if (action === 12) { // CHANNEL_DELETE
+      recordAction(serverId, executorId, 'channelDelete', { targetId });
+      
+      // Check if this user has triggered too many channel deletions
+      const userActions = getRecentActions(serverId, executorId, 'channelDelete', 60000); // Last minute
+      if (userActions.length >= threshold) {
+        triggerSecurityIncident(serverId, executorId, 'nuke', userActions);
+        
+        // Implement auto-punishment here as needed
+      }
+    }
+    
+    // Check for mass role deletions
+    else if (action === 32) { // ROLE_DELETE
+      recordAction(serverId, executorId, 'roleDelete', { targetId });
+      
+      // Check if this user has triggered too many role deletions
+      const userActions = getRecentActions(serverId, executorId, 'roleDelete', 60000); // Last minute
+      if (userActions.length >= threshold) {
+        triggerSecurityIncident(serverId, executorId, 'nuke', userActions);
+        
+        // Implement auto-punishment here as needed
+      }
+    }
+  });
+}
+
+/**
+ * Get recent actions by a user of a specific type
+ * @param {string} serverId - Discord server ID
+ * @param {string} userId - User performing the actions
+ * @param {string} actionType - Type of action
+ * @param {number} timeWindow - Time window in milliseconds
+ * @returns {Array} List of recent actions
+ */
+function getRecentActions(serverId, userId, actionType, timeWindow) {
+  // Safety check in case the server is not yet in actionLog
+  if (!actionLog[serverId]) {
+    actionLog[serverId] = [];
+  }
+
+  const now = Date.now();
+  return actionLog[serverId].filter(action => 
+    action.userId === userId && 
+    action.actionType === actionType && 
+    (now - action.timestamp) <= timeWindow
+  );
+}
+
 function startSecurityMonitoring(client) {
   console.log(`Starting security monitoring for all servers...`);
   
@@ -370,6 +471,8 @@ module.exports = {
   startSecurityMonitoring,
   recordAction,
   sendSecurityAlert,
+  activateAntiNuke,
   SECURITY_THRESHOLDS,
-  getActiveIncidents: () => Object.fromEntries(activeIncidents)
+  getActiveIncidents: () => Object.fromEntries(activeIncidents),
+  getRecentActions
 };
