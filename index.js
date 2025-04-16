@@ -397,7 +397,7 @@ uptimeManager.setupUptimeManager(client);
 securityManager.startSecurityMonitoring(client);
 
 // Initialize web dashboard
-const dashboardPort = process.env.DASHBOARD_PORT || 3000;
+const dashboardPort = 5000;
 try {
   const dashboard = initDashboard(client);
   console.log(`Web dashboard running on port ${dashboardPort}`);

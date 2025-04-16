@@ -15,6 +15,7 @@ const cookieParser = require('cookie-parser');
 const path = require('path');
 const { Collection } = require('discord.js');
 const config = require('../utils/config');
+const { detectReplitUrl } = require('./detectReplit');
 
 // Load environment variables
 require('dotenv').config();
@@ -22,7 +23,9 @@ require('dotenv').config();
 // Function to initialize the dashboard with the Discord client instance
 function initDashboard(client) {
   const app = express();
-  const PORT = process.env.DASHBOARD_PORT || 3000;
+  const PORT = 5000; // Using a fixed port for Replit
+  const baseUrl = detectReplitUrl();
+  console.log(`Dashboard base URL: ${baseUrl}`);
 
   // Setup middlewares
   app.use(express.json());
@@ -68,7 +71,7 @@ function initDashboard(client) {
   passport.use(new DiscordStrategy({
     clientID: process.env.CLIENT_ID,
     clientSecret: process.env.CLIENT_SECRET,
-    callbackURL: `${process.env.DASHBOARD_URL || 'http://localhost:3000'}/auth/discord/callback`,
+    callbackURL: `${baseUrl}/auth/discord/callback`,
     scope: ['identify', 'guilds']
   }, function(accessToken, refreshToken, profile, done) {
     // Store the user profile in the session
@@ -111,7 +114,8 @@ function initDashboard(client) {
   app.get('/', (req, res) => {
     res.render('index', {
       user: req.user,
-      client: client
+      client: client,
+      dashboardUrl: baseUrl
     });
   });
 

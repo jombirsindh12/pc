@@ -68,7 +68,7 @@ module.exports = {
     helpEmbed.fields.push({
       name: '🌐 Web Dashboard',
       value: `Manage your bot settings easily from our web dashboard!\n`+
-             `Dashboard: [Click here to access](${process.env.DASHBOARD_URL || 'http://localhost:3000'})\n`+
+             `Dashboard: Use \`/dashboard\` command for a link\n`+
              `• Manage verification settings\n`+
              `• Configure security features\n`+
              `• Track verification history\n`+
