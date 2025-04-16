@@ -2,59 +2,69 @@ const config = require('../utils/config');
 
 module.exports = {
   name: 'help',
-  description: 'Shows help information about the bot commands',
-  usage: '!help',
-  execute(message, args, client) {
-    const serverId = message.guild.id;
+  description: 'Shows information about all bot features and commands',
+  usage: '/help',
+  options: [], // No options for slash command
+  execute(message, args, client, interaction = null) {
+    // Use interaction if available (slash command), otherwise use message (legacy)
+    const isSlashCommand = !!interaction;
+    const serverId = isSlashCommand ? interaction.guild.id : message.guild.id;
     const serverConfig = config.getServerConfig(serverId);
     const prefix = serverConfig.prefix || '!';
     
     // Create an embed with command information
     const helpEmbed = {
-      title: '📚 YouTube Verification Bot Help',
-      description: `Use this bot to verify YouTube subscriptions and assign roles to subscribers.\nPrefix: \`${prefix}\``,
-      color: 0xFF0000, // Red color for YouTube
-      fields: [
-        {
-          name: `${prefix}setnotificationchannel`,
-          value: 'Sets the current channel for bot notifications'
-        },
-        {
-          name: `${prefix}setverificationchannel`,
-          value: 'Sets the current channel for subscription verification'
-        },
-        {
-          name: `${prefix}setyoutubechannel [channelId or URL]`,
-          value: 'Sets the YouTube channel to verify subscriptions against'
-        },
-        {
-          name: `${prefix}searchchannel [channel name]`,
-          value: 'Search for a YouTube channel by name to get its ID'
-        },
-        {
-          name: `${prefix}setrole [roleName]`,
-          value: 'Sets the role to assign to verified subscribers'
-        },
-        {
-          name: `${prefix}livesubcount`,
-          value: 'Creates a voice channel showing live subscriber count for the YouTube channel'
-        },
-        {
-          name: `${prefix}setvoicechannelname [format]`,
-          value: 'Customizes the subscriber count voice channel name format'
-        },
-        {
-          name: `${prefix}setupdatefrequency [minutes]`,
-          value: 'Sets how often the subscriber count should update'
-        },
-        {
-          name: `${prefix}help`,
-          value: 'Shows this help message'
-        }
-      ],
-      footer: {
-        text: 'Only administrators can use setup commands'
-      }
+      title: '🛡️ Phantom Guard - All-in-One Discord Bot',
+      description: `Phantom Guard combines YouTube verification, security, and moderation in one powerful package.\nAll commands now support slash (/) format!`,
+      color: 0x7289DA, // Discord blue color
+      fields: []
+    };
+    
+    // YouTube Verification Section
+    helpEmbed.fields.push({
+      name: '📱 YouTube Verification System',
+      value: 'Verify users by their YouTube subscription status and assign roles automatically.'
+    });
+    
+    helpEmbed.fields.push({
+      name: '📋 Verification Commands',
+      value: `\`/setverificationchannel\` - Set a channel for verification\n`+
+             `\`/setyoutubechannel [channelId or URL]\` - Set the YouTube channel\n`+
+             `\`/searchchannel [channel name]\` - Search for a YouTube channel\n`+
+             `\`/setrole [roleName]\` - Set role for verified subscribers\n`+
+             `\`/setnotificationchannel\` - Set where notifications are sent`
+    });
+    
+    // Live Counter Section
+    helpEmbed.fields.push({
+      name: '📊 Live Counters',
+      value: `\`/livesubcount\` - Create a voice channel showing live subscriber count\n`+
+             `\`/setvoicechannelname [format]\` - Customize voice channel format\n`+
+             `\`/setupdatefrequency [minutes]\` - Set update frequency interval`
+    });
+    
+    // Security & Moderation Features
+    helpEmbed.fields.push({
+      name: '🔐 Security Features',
+      value: `Protect your server with our advanced security tools:\n`+
+             `• Duplicate verification detection (prevents reused screenshots)\n`+
+             `• Verified users tracking with \`/listverified\` command\n`+
+             `• Anti-nuke protection against mass bans & channel deletion\n`+
+             `• Raid detection for multiple joins in short time\n`+
+             `• Spam & mention abuse prevention\n`+
+             `• Manage security with \`/security\` command`
+    });
+    
+    // Bot Navigation
+    helpEmbed.fields.push({
+      name: '🧭 Bot Navigation',
+      value: `\`/help\` - Shows this help message\n`+
+             `Use slash commands for all actions - just type / to see all options!`
+    });
+    
+    // Footer with admin info
+    helpEmbed.footer = {
+      text: 'Setup commands require Administrator permissions • Bot developed by Phantom Dev Team'
     };
     
     // Add current configuration info
@@ -113,6 +123,15 @@ module.exports = {
       });
     }
     
-    message.channel.send({ embeds: [helpEmbed] });
+    // Send the message via slash command or regular command
+    if (isSlashCommand) {
+      if (interaction.deferred) {
+        interaction.followUp({ embeds: [helpEmbed] });
+      } else {
+        interaction.reply({ embeds: [helpEmbed] });
+      }
+    } else {
+      message.channel.send({ embeds: [helpEmbed] });
+    }
   },
 };

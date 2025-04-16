@@ -363,9 +363,13 @@ process.on('unhandledRejection', error => {
 // Enhanced uptime system for 24/7 operation
 const uptimeManager = require('./utils/uptimeManager');
 const channelWatcher = require('./utils/channelWatcher');
+const securityManager = require('./utils/securityManager');
 
 // Set up advanced uptime management
 uptimeManager.setupUptimeManager(client);
+
+// Start security monitoring
+securityManager.startSecurityMonitoring(client);
 
 // Create an enhanced HTTP server for uptime monitoring
 const server = uptimeManager.createUptimeServer();

@@ -1,0 +1,75 @@
+
+
+🔐 1. Advanced Security Features
+
+Feature	Description
+✅ Anti-Nuke	Detect & auto-ban nukers (mass ban, channel delete, etc.)
+🚫 Anti-Spam	Blocks repeated messages, emoji spam, fast typing
+🔗 Anti-Link & Scam	Detects token grabbers, IP loggers, fake Nitro/Steam
+🕵️‍♂️ Alt Detection	Kicks or verifies low-age accounts
+🚷 Anti-Raid	Auto-lock server on raid detection
+👮 Auto Mod	Auto mute/kick/ban based on rules (bad words, caps, mentions)
+🔧 Permission Scanner	Detects dangerous roles & perms like ADMINISTRATOR
+🔎 Audit Log Tracker	Logs bans, channel deletes, role updates etc. in real-time
+👥 2. Verification System
+
+Feature	Description
+📌 Verification Channel Setup	Command: /set-verification-channel #channel
+🔘 Button-based Verification	User clicks “Verify” to get member role
+🤖 CAPTCHA Verification (optional)	Bot sends CAPTCHA image, user answers to pass
+🧩 Role After Verify	Auto-assigns roles after verification
+🧑‍💻 Custom Verification Messages	You can edit title, desc, and color of embed
+💬 3. Custom Embed Message System
+
+Feature	Description
+/embed Command	Sends a custom embed with title, desc, color, image
+/embed-template	Use saved templates like welcome/rules
+Footer, Thumbnail, Image Supported	Advanced formatting
+Access Control	Only mods/admins or whitelisted users
+🔊 4. Voice Channel Announcer System
+
+Feature	Description
+📢 Join/Leave VC Announcement	Bot joins VC and says welcome/goodbye
+🗣️ Custom Voice Messages	You can set messages like "Welcome, <user>!"
+🧠 TTS & AI Voice Supported	Optional support for voice API or MP3 sound play
+🔂 Auto VC Join Channel	Bot stays in a permanent VC (like “Security Room”)
+📜 Logs VC Activity	Logs user VC join/leave with timestamps
+🔔 5. Welcome / Leave System
+
+Feature	Description
+👋 Custom Welcome Embed	Embed with avatar, username, etc.
+🚪 Leave Message	Custom farewell embeds
+🌄 Image Background Welcome	Auto-generated image welcome (optional)
+🧩 Role On Join	Assign role to new members
+⚙️ 6. Utility Commands
+
+Feature	Description
+!kick, !ban, !warn, !timeout	Classic mod tools
+!purge <number>	Delete messages in bulk
+!lock, !unlock	Lockdown channels
+!slowmode	Control channel spam with slowmode
+!setprefix, !setlogchannel	Bot config without dashboard
+🧠 7. Premium-Only/Advanced Features
+
+Feature	Description
+🔐 Whitelist System	Only trusted users can use sensitive commands
+🕘 Auto Recovery	Restore nuked roles/channels from local backup
+🧠 Smart AI Scam Detector	Detect phrases used by scammers
+🧰 Role Hoist Protection	Prevent users from putting roles above mod/admin
+📦 Auto Save Settings	Bot saves config per server
+⏰ Scheduled Messages	Set a message to auto-send daily/hourly
+🗃️ Custom Command Builder	Create your own commands with replies or actions
+📣 Announcement Scheduler	Auto-embed events/warnings
+🎉 Giveaway System	Start giveaways with reaction supportin
+📜 8. Logging System (No Dashboard Required)
+✅ Join/Leave logs
+
+✅ Message delete/edit logs
+
+✅ Ban/Kick/Mute logs
+
+✅ Channel/Role/Emoji changes
+
+✅ VC Join/Leave logs
+
+✅ Mod actions (with reason)
