@@ -79,12 +79,30 @@ async function setupVerificationCollector(client, serverId) {
             });
           }
           
-          // Add the verified role
-          await member.roles.add(roleId);
-          
-          // Remove unverified role if it exists and is configured
-          if (unverifiedRoleId && member.roles.cache.has(unverifiedRoleId)) {
-            await member.roles.remove(unverifiedRoleId);
+          // Add the verified role with error handling
+          try {
+            await member.roles.add(roleId);
+            
+            // Remove unverified role if it exists and is configured
+            if (unverifiedRoleId && member.roles.cache.has(unverifiedRoleId)) {
+              await member.roles.remove(unverifiedRoleId);
+            }
+          } catch (roleError) {
+            console.error(`Error handling verification role assignment for ${user.tag}:`, roleError);
+            
+            // Check if it's a permission error
+            if (roleError.code === 50013) {
+              return i.followUp({
+                content: '❌ **Permission Error:** Bot does not have permission to assign roles. Please ask a server admin to:\n\n1. Make sure the bot role is **higher** than the role it\'s trying to give\n2. Give the bot "Manage Roles" permission',
+                ephemeral: true
+              });
+            }
+            
+            // Generic error
+            return i.followUp({
+              content: `❌ Error assigning role: ${roleError.message}. Please contact a server admin.`,
+              ephemeral: true
+            });
           }
           
           console.log(`User ${user.tag} verified in server ${guild.name}`);
@@ -134,8 +152,24 @@ async function setupVerificationCollector(client, serverId) {
         client.on('guildMemberAdd', async member => {
           if (member.guild.id === serverId) {
             try {
-              await member.roles.add(unverifiedRoleId);
-              console.log(`Added unverified role to new member ${member.user.tag} in ${guild.name}`);
+              // Add unverified role with error handling
+              try {
+                await member.roles.add(unverifiedRoleId);
+                console.log(`Added unverified role to new member ${member.user.tag} in ${guild.name}`);
+              } catch (roleError) {
+                console.error(`Error adding unverified role to ${member.user.tag}:`, roleError);
+                
+                // Check if it's a missing permissions error
+                if (roleError.code === 50013) {
+                  // Try to find a notification channel to report the error
+                  if (serverConfig.notificationChannelId) {
+                    const notificationChannel = guild.channels.cache.get(serverConfig.notificationChannelId);
+                    if (notificationChannel) {
+                      notificationChannel.send(`⚠️ **Permission Error:** Could not add unverified role to new member ${member.user.tag}. Please make sure the bot has "Manage Roles" permission and its role is higher than the unverified role.`);
+                    }
+                  }
+                }
+              }
               
               // DM the user with verification instructions
               try {
@@ -151,7 +185,7 @@ async function setupVerificationCollector(client, serverId) {
                 console.error(`Could not DM verification instructions to ${member.user.tag}:`, dmError);
               }
             } catch (error) {
-              console.error(`Error adding unverified role to ${member.user.tag}:`, error);
+              console.error(`Error handling new member ${member.user.tag}:`, error);
             }
           }
         });
@@ -165,7 +199,10 @@ async function setupVerificationCollector(client, serverId) {
   }
 }
 
+// Export the functions so they can be accessed from index.js
 module.exports = {
+  setupAllVerificationCollectors,
+  setupVerificationCollector,
   name: 'security',
   description: 'Manage advanced security features for the server',
   usage: '/security [action]',

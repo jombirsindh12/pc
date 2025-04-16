@@ -127,6 +127,20 @@ client.once(Events.ClientReady, async () => {
     );
     
     console.log('Successfully registered application (/) commands.');
+    
+    // Initialize verification collectors from security.js
+    if (client.commands.has('security')) {
+      const securityCommand = client.commands.get('security');
+      if (typeof securityCommand.setupAllVerificationCollectors === 'function') {
+        securityCommand.setupAllVerificationCollectors(client);
+      } else {
+        console.log('Setting up verification collectors from parent module');
+        const setupVerificationCollectors = require('./commands/security').setupAllVerificationCollectors;
+        if (typeof setupVerificationCollectors === 'function') {
+          setupVerificationCollectors(client);
+        }
+      }
+    }
   } catch (error) {
     console.error('Error registering slash commands:', error);
   }

@@ -197,8 +197,26 @@ module.exports = {
                   });
                 }
                 
-                // Add the role
-                await member.roles.add(serverConfig.roleId);
+                // Add the role with error handling
+                try {
+                  await member.roles.add(serverConfig.roleId);
+                } catch (roleError) {
+                  console.error(`Error assigning role to user ${buttonInteraction.user.tag}:`, roleError);
+                  
+                  // Check if it's a permission error
+                  if (roleError.code === 50013) {
+                    return buttonInteraction.reply({
+                      content: '❌ **Permission Error:** Bot does not have permission to assign roles. Please ask a server admin to:\n\n1. Make sure the bot role is **higher** than the role it\'s trying to give\n2. Give the bot "Manage Roles" permission',
+                      ephemeral: true
+                    });
+                  }
+                  
+                  // Generic error
+                  return buttonInteraction.reply({
+                    content: `❌ Error assigning role: ${roleError.message}. Please contact a server admin.`,
+                    ephemeral: true
+                  });
+                }
                 
                 // Send success message
                 await buttonInteraction.reply({ 

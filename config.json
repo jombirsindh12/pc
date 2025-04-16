@@ -23,13 +23,20 @@
   "1351801466095931445": {
     "prefix": "!",
     "notificationChannelId": "1351801466095931448",
-    "verificationChannelId": "1351801466095931448",
+    "verificationChannelId": "1352325136690319391",
     "youtubeChannelId": "UCTqVAZM7HsFoz7xrpRMoADg",
     "youtubeChannelName": "PHANTOM GAMING ",
-    "roleId": "1351802122911354940",
-    "roleName": "how r u",
+    "roleId": "1352325093782585354",
+    "roleName": "</>Dᴇᴠᴇʟᴏᴘᴇʀ",
     "subCountChannelId": "1351804446920802316",
     "updateFrequencyMinutes": 5,
-    "securityDisabled": false
+    "securityDisabled": false,
+    "verificationChannelName": "gaming",
+    "verificationType": "button",
+    "verificationSettings": {
+      "title": "✅ Server Verification",
+      "description": "Please verify yourself to access the server.",
+      "color": "5865F2"
+    }
   }
 }
