@@ -20,7 +20,8 @@ async function validateChannel(channelId) {
     console.log(`Making API request to validate channel: ${channelId}`);
     console.log(`Using API Key: ${YOUTUBE_API_KEY ? 'API key is set' : 'API key is missing'}`);
     
-    const response = await axios.get(`${API_BASE_URL}/channels`, {
+    // First try with the direct ID
+    let response = await axios.get(`${API_BASE_URL}/channels`, {
       params: {
         part: 'id',
         id: channelId,
@@ -28,10 +29,61 @@ async function validateChannel(channelId) {
       }
     });
     
-    const isValid = response.data.items && response.data.items.length > 0;
-    console.log(`Channel validation result: ${isValid ? 'Valid channel' : 'Invalid channel'}`);
+    let isValid = response.data.items && response.data.items.length > 0;
     
-    return isValid;
+    // If not found, try with forUsername parameter (for legacy usernames)
+    if (!isValid) {
+      console.log(`Channel not found with ID, trying forUsername: ${channelId}`);
+      
+      response = await axios.get(`${API_BASE_URL}/channels`, {
+        params: {
+          part: 'id',
+          forUsername: channelId,
+          key: YOUTUBE_API_KEY
+        }
+      });
+      
+      isValid = response.data.items && response.data.items.length > 0;
+      
+      // If found by username, store the actual channel ID for future use
+      if (isValid) {
+        console.log(`Channel found by username: ${channelId}`);
+        // Return the actual channel ID
+        return response.data.items[0].id;
+      }
+    } else {
+      console.log(`Channel found directly with ID: ${channelId}`);
+    }
+    
+    // If still not found, try with search endpoint as a last resort
+    if (!isValid) {
+      console.log(`Channel not found with ID or username, trying search for: ${channelId}`);
+      
+      // Try to search for the channel
+      response = await axios.get(`${API_BASE_URL}/search`, {
+        params: {
+          part: 'snippet',
+          q: channelId,
+          type: 'channel',
+          maxResults: 1,
+          key: YOUTUBE_API_KEY
+        }
+      });
+      
+      isValid = response.data.items && response.data.items.length > 0;
+      
+      if (isValid) {
+        console.log(`Channel found via search: ${channelId}`);
+        // Return the actual channel ID
+        return response.data.items[0].id.channelId;
+      } else {
+        console.log(`No channel found for: ${channelId}`);
+      }
+    }
+    
+    console.log(`Final channel validation result: ${isValid ? 'Valid channel' : 'Invalid channel'}`);
+    
+    return isValid ? channelId : false;
   } catch (error) {
     console.error('Error validating YouTube channel:', error.response ? error.response.data : error.message);
     return false;
