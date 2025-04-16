@@ -29,6 +29,7 @@
     "roleId": "1351802122911354940",
     "roleName": "how r u",
     "subCountChannelId": "1351804446920802316",
-    "updateFrequencyMinutes": 5
+    "updateFrequencyMinutes": 5,
+    "securityDisabled": false
   }
 }

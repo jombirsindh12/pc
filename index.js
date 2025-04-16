@@ -52,8 +52,8 @@ for (const file of commandFiles) {
           }
         }
         
-        // Defer reply to give us time to process
-        await interaction.deferReply();
+        // DO NOT defer reply here - let the command handle it
+        // Each command will decide if it needs to defer based on its operation
         
         // Create a mock message object for backward compatibility
         const mockMessage = {
@@ -61,14 +61,24 @@ for (const file of commandFiles) {
           member: interaction.member,
           channel: interaction.channel,
           guild: interaction.guild,
-          reply: (content) => interaction.followUp(content)
+          reply: (content) => {
+            // If interaction hasn't been replied to yet, use reply
+            // Otherwise use followUp
+            if (!interaction.replied && !interaction.deferred) {
+              return interaction.reply(content);
+            } else {
+              return interaction.followUp(content);
+            }
+          }
         };
         
         // Extract arguments from options
         const args = [];
         if (interaction.options && interaction.options.data.length > 0) {
           interaction.options.data.forEach(option => {
-            args.push(option.value.toString());
+            if (option.value !== undefined) {
+              args.push(option.value.toString());
+            }
           });
         }
         
