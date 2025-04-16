@@ -55,6 +55,26 @@ module.exports = {
              `• Manage security with \`/security\` command`
     });
     
+    // Voice Channel Features
+    helpEmbed.fields.push({
+      name: '🎙️ Voice Channel Features',
+      value: `\`/voice join\` - Join a voice channel with announcements\n`+
+             `\`/voice leave\` - Leave the voice channel\n`+
+             `\`/voice message\` - Send a voice message\n`+
+             `\`/voice announce\` - Toggle join/leave announcements`
+    });
+
+    // Web Dashboard
+    helpEmbed.fields.push({
+      name: '🌐 Web Dashboard',
+      value: `Manage your bot settings easily from our web dashboard!\n`+
+             `Dashboard: [Click here to access](${process.env.DASHBOARD_URL || 'http://localhost:3000'})\n`+
+             `• Manage verification settings\n`+
+             `• Configure security features\n`+
+             `• Track verification history\n`+
+             `• Monitor server activity`
+    });
+    
     // Bot Navigation
     helpEmbed.fields.push({
       name: '🧭 Bot Navigation',

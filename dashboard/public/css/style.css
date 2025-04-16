@@ -1,0 +1,301 @@
+/* Main Styles for Phantom Guard Dashboard */
+
+body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background-color: #121212;
+    color: #f8f9fa;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #212529;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #495057;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #6c757d;
+}
+
+/* Navbar adjustments */
+.navbar {
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+.navbar-brand {
+    font-weight: 600;
+}
+
+/* Card styling */
+.card {
+    transition: transform 0.2s, box-shadow 0.2s;
+    margin-bottom: 1.5rem;
+}
+
+.card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.card-header {
+    font-weight: 600;
+}
+
+/* Form elements */
+.form-control, .form-select {
+    border-radius: 0.25rem;
+}
+
+.form-control:focus, .form-select:focus {
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+    border-color: #0d6efd;
+}
+
+/* Button adjustments */
+.btn {
+    border-radius: 0.25rem;
+    font-weight: 500;
+}
+
+.btn-primary {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}
+
+.btn-primary:hover {
+    background-color: #0b5ed7;
+    border-color: #0a58ca;
+}
+
+/* Avatar sizing */
+.avatar-sm {
+    width: 32px;
+    height: 32px;
+}
+
+.avatar-md {
+    width: 48px;
+    height: 48px;
+}
+
+.avatar-lg {
+    width: 64px;
+    height: 64px;
+}
+
+/* Tab styling */
+.nav-tabs .nav-link {
+    border: none;
+    padding: 0.75rem 1rem;
+    margin-bottom: -1px;
+    transition: all 0.2s;
+    font-weight: 500;
+}
+
+.nav-tabs .nav-link:not(.active):hover {
+    background-color: rgba(255, 255, 255, 0.05);
+    border-color: transparent;
+}
+
+.nav-tabs .nav-link.active {
+    color: #0d6efd;
+    background-color: #212529;
+    border-bottom: 3px solid #0d6efd;
+}
+
+/* Status indicators */
+.status-dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 5px;
+}
+
+.status-dot.online {
+    background-color: #198754;
+}
+
+.status-dot.offline {
+    background-color: #dc3545;
+}
+
+.status-dot.idle {
+    background-color: #ffc107;
+}
+
+/* Footer */
+footer {
+    margin-top: auto;
+}
+
+/* Server cards */
+.server-card {
+    transition: all 0.2s;
+}
+
+.server-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .container {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+    
+    .navbar-brand {
+        font-size: 1.1rem;
+    }
+}
+
+/* Feature cards on homepage */
+.feature-card {
+    border-radius: 0.5rem;
+    overflow: hidden;
+    height: 100%;
+}
+
+.feature-card .card-body {
+    padding: 2rem 1.5rem;
+}
+
+.feature-icon {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+}
+
+/* Premium badge */
+.premium-badge {
+    background: linear-gradient(135deg, #f6d365 0%, #fda085 100%);
+    color: #000;
+    font-weight: 600;
+}
+
+/* Settings groups */
+.settings-group {
+    margin-bottom: 2rem;
+}
+
+.settings-group h5 {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+/* Toggle switches */
+.form-switch .form-check-input {
+    width: 2.5em;
+    height: 1.25em;
+}
+
+.form-switch .form-check-input:checked {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}
+
+/* Custom tooltips */
+.custom-tooltip {
+    position: relative;
+    display: inline-block;
+}
+
+.custom-tooltip .tooltip-text {
+    visibility: hidden;
+    width: 200px;
+    background-color: #212529;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px 10px;
+    position: absolute;
+    z-index: 1;
+    bottom: 125%;
+    left: 50%;
+    margin-left: -100px;
+    opacity: 0;
+    transition: opacity 0.3s;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.custom-tooltip:hover .tooltip-text {
+    visibility: visible;
+    opacity: 1;
+}
+
+/* Help icon */
+.help-icon {
+    color: #6c757d;
+    font-size: 0.8rem;
+    margin-left: 0.3rem;
+    cursor: help;
+}
+
+/* Dashboard stats */
+.stat-card {
+    text-align: center;
+    padding: 1.5rem;
+    border-radius: 0.5rem;
+    background-color: #212529;
+}
+
+.stat-number {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.stat-label {
+    font-size: 1rem;
+    color: #adb5bd;
+}
+
+/* Loading states */
+.loading {
+    position: relative;
+}
+
+.loading::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 0.25rem;
+}
+
+.loading::before {
+    content: "";
+    width: 30px;
+    height: 30px;
+    border: 3px solid #f8f9fa;
+    border-top-color: transparent;
+    border-radius: 50%;
+    position: absolute;
+    top: calc(50% - 15px);
+    left: calc(50% - 15px);
+    animation: spinner 0.6s linear infinite;
+    z-index: 1;
+}
+
+@keyframes spinner {
+    to {
+        transform: rotate(360deg);
+    }
+}

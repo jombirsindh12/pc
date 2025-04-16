@@ -388,12 +388,22 @@ process.on('unhandledRejection', error => {
 const uptimeManager = require('./utils/uptimeManager');
 const channelWatcher = require('./utils/channelWatcher');
 const securityManager = require('./utils/securityManager');
+const { initDashboard } = require('./dashboard/server');
 
 // Set up advanced uptime management
 uptimeManager.setupUptimeManager(client);
 
 // Start security monitoring
 securityManager.startSecurityMonitoring(client);
+
+// Initialize web dashboard
+const dashboardPort = process.env.DASHBOARD_PORT || 3000;
+try {
+  const dashboard = initDashboard(client);
+  console.log(`Web dashboard running on port ${dashboardPort}`);
+} catch (error) {
+  console.error('Error starting web dashboard:', error);
+}
 
 // Create an enhanced HTTP server for uptime monitoring
 const server = uptimeManager.createUptimeServer();

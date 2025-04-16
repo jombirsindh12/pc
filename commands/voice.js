@@ -1,6 +1,7 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const { EmbedBuilder, PermissionFlagsBits, ChannelType, MessageFlags } = require('discord.js');
 const config = require('../utils/config');
+const audioManager = require('../utils/audioManager');
 
 module.exports = {
   name: 'voice',
@@ -346,11 +347,48 @@ module.exports = {
           
           await textChannel.send({ embeds: [messageEmbed] });
           
-          // Send success message
-          await interaction.followUp({
-            content: `✅ Message sent to voice channel **${voiceChannel.name}**!`,
-            ephemeral: false
-          });
+          // Try to speak the message in the voice channel
+          try {
+            // Determine language based on message content (simple detection)
+            let language = 'en';
+            
+            // Very basic Hindi detection
+            const hindiPattern = /[ँ-॥०-९]/;
+            if (hindiPattern.test(messageContent)) {
+              language = 'hi';
+            } 
+            // Check for Hinglish
+            else if (messageContent.includes('hai') || 
+                    messageContent.includes('kya') || 
+                    messageContent.includes('karo') || 
+                    messageContent.includes('aap')) {
+              language = 'hinglish';
+            }
+            
+            // Send the voice message
+            const voiceResult = await audioManager.sendVoiceMessage(serverId, messageContent, language);
+            
+            // Send success message
+            if (voiceResult) {
+              await interaction.followUp({
+                content: `✅ Message sent to voice channel **${voiceChannel.name}** and spoken out loud!`,
+                ephemeral: false
+              });
+            } else {
+              await interaction.followUp({
+                content: `✅ Message sent to voice channel **${voiceChannel.name}**, but could not speak it out loud.`,
+                ephemeral: false
+              });
+            }
+          } catch (voiceError) {
+            console.error('Error sending voice message:', voiceError);
+            
+            // Send partial success message
+            await interaction.followUp({
+              content: `✅ Message sent to voice channel **${voiceChannel.name}** but could not be spoken due to an error: ${voiceError.message}`,
+              ephemeral: false
+            });
+          }
           
         } catch (error) {
           console.error('Error in voice message command:', error);
@@ -575,6 +613,28 @@ async function handleVoiceJoin(state) {
       content: `🤖 **KITT System**: User **${username}** has entered voice channel **${channelName}**. ${memberCount > 1 ? `There are now **${memberCount}** users in the channel.` : 'They are currently alone in the channel.'}`
     });
     
+    // Make voice announcement in the voice channel
+    try {
+      // Decide language based on server settings (defaulting to English)
+      let language = 'en';
+      if (serverConfig.language === 'hi') {
+        language = 'hi';
+      } else if (serverConfig.language === 'hinglish') {
+        language = 'hinglish';
+      }
+      
+      // Get the voice channel
+      const voiceChannel = state.channel;
+      
+      // Announce the join if the channel exists
+      if (voiceChannel) {
+        await audioManager.announceJoin(member, voiceChannel, language);
+        console.log(`Voice announcement made for ${username} joining ${channelName}`);
+      }
+    } catch (voiceError) {
+      console.error('Error making voice announcement for join:', voiceError);
+    }
+    
   } catch (error) {
     console.error('Error handling voice join:', error);
   }
@@ -675,6 +735,28 @@ async function handleVoiceLeave(state) {
         remainingCount === 1 ? 'One user remains in the channel.' : 
         `${remainingCount} users remain in the channel.`}`
     });
+    
+    // Make voice announcement in the voice channel for the leave event
+    try {
+      // Decide language based on server settings (defaulting to English)
+      let language = 'en';
+      if (serverConfig.language === 'hi') {
+        language = 'hi';
+      } else if (serverConfig.language === 'hinglish') {
+        language = 'hinglish';
+      }
+      
+      // Get the voice channel
+      const voiceChannel = state.channel;
+      
+      // Announce the leave if the channel exists
+      if (voiceChannel) {
+        await audioManager.announceLeave(member, voiceChannel, language);
+        console.log(`Voice announcement made for ${username} leaving ${channelName}`);
+      }
+    } catch (voiceError) {
+      console.error('Error making voice announcement for leave:', voiceError);
+    }
     
     // Clean up session data
     if (serverConfig.voiceSessionData && serverConfig.voiceSessionData[userID]) {
