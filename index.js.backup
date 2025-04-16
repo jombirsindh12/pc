@@ -1,6 +1,6 @@
 require('dotenv').config();
 const fs = require('fs');
-const { Client, GatewayIntentBits, Collection, Events, REST, Routes } = require('discord.js');
+const { Client, GatewayIntentBits, Collection, Events, REST, Routes, SlashCommandBuilder } = require('discord.js');
 const config = require('./utils/config');
 
 // Create a new client instance
@@ -17,11 +17,10 @@ const client = new Client({
 // Load commands
 client.commands = new Collection();
 client.slashCommands = new Collection();
+const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
 
 // Prepare to register slash commands 
 const slashCommands = [];
-
-const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
 
 for (const file of commandFiles) {
   const command = require(`./commands/${file}`);
@@ -97,6 +96,8 @@ for (const file of commandFiles) {
     options: slashCommand.options
   });
 }
+
+// No need to redefine slashCommands or client.slashCommands here, already done above
 
 // Bot ready event
 client.once(Events.ClientReady, async () => {
@@ -287,7 +288,7 @@ client.on(Events.MessageCreate, async message => {
                 }
               } else {
                 console.log('No role ID configured for this server');
-                await statusMsg.edit('✅ **Verification Successful!**\nHowever, no subscriber role has been set up yet. Please ask an administrator to set up a role using `/setrole`.');
+                await statusMsg.edit('✅ **Verification Successful!**\nHowever, no subscriber role has been set up yet. Please ask an administrator to set up a role using `!setrole`.');
               }
             } else {
               const channelName = channelInfo?.title || serverConfig.youtubeChannelName || 'the YouTube channel';
@@ -298,7 +299,7 @@ client.on(Events.MessageCreate, async message => {
             
             if (!serverConfig.youtubeChannelId) {
               console.log('No YouTube channel ID is set for this server');
-              await statusMsg.edit('❌ **Verification Failed**\nNo YouTube channel has been set for verification. Please ask an administrator to set up a YouTube channel using `/setyoutubechannel`.');
+              await statusMsg.edit('❌ **Verification Failed**\nNo YouTube channel has been set for verification. Please ask an administrator to set up a YouTube channel using `!setyoutubechannel`.');
             } else if (result && !result.success) {
               // Provide specific feedback based on image processing failure
               await statusMsg.edit(`❌ **Verification Failed**\nCould not detect subscription indicators in your image.\n\nTips:\n- Make sure your screenshot clearly shows you are subscribed\n- The subscribe button should show "Subscribed"\n- Try a higher quality screenshot`);
@@ -349,7 +350,7 @@ client.on(Events.MessageCreate, async message => {
 });
 
 // Login to Discord
-const token = process.env.DISCORD_TOKEN;
+const token = process.env.DISCORD_TOKEN || 'MTM1MTc5NDc0OTk5MjA3NTMwNQ.GskElp.k5uSc-J8z3eBm9JDja4jLBYH4daJuM5cPuJpN8';
 client.login(token).catch(error => {
   console.error('Failed to log in:', error);
   process.exit(1);
@@ -432,7 +433,7 @@ client.once('ready', () => {
   // Also set up a presence with helpful info
   client.user.setPresence({
     activities: [{ 
-      name: '/help for commands', 
+      name: '!help for commands', 
       type: 3 // WATCHING
     }],
     status: 'online'

@@ -12,7 +12,8 @@ const DEFAULT_SERVER_CONFIG = {
   youtubeChannelId: null,
   youtubeChannelName: null,
   roleId: null,
-  roleName: null
+  roleName: null,
+  verifiedImages: {}  // Store verified images with hash as key and user info as value
 };
 
 // Function to load all configurations

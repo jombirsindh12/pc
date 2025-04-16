@@ -1,6 +1,19 @@
 const axios = require('axios');
 const Tesseract = require('tesseract.js');
 const sharp = require('sharp');
+const crypto = require('crypto');
+
+// Function to generate a hash for an image
+async function generateImageHash(imageBuffer) {
+  try {
+    // Create a hash of the image data for duplicate detection
+    const hash = crypto.createHash('md5').update(imageBuffer).digest('hex');
+    return hash;
+  } catch (error) {
+    console.error('Error generating image hash:', error);
+    return null;
+  }
+}
 
 // Function to download an image from URL
 async function downloadImage(url) {
@@ -56,6 +69,10 @@ async function processImage(imageUrl) {
     console.log('Downloading image...');
     const imageBuffer = await downloadImage(imageUrl);
     console.log(`Downloaded image, size: ${imageBuffer.length} bytes`);
+    
+    // Generate image hash for duplicate detection
+    const imageHash = await generateImageHash(imageBuffer);
+    console.log('Generated image hash:', imageHash);
     
     console.log('Preprocessing image...');
     const processedBuffer = await preprocessImage(imageBuffer);
@@ -173,7 +190,8 @@ async function processImage(imageUrl) {
         userId: userId,
         hasSubscriptionIndicators: true,
         foundIndicators: foundIndicators,
-        text: result.data.text.substring(0, 500) // Limit text length for logging
+        text: result.data.text.substring(0, 500), // Limit text length for logging
+        imageHash: imageHash // Add hash for duplicate detection
       };
     }
     
@@ -182,7 +200,8 @@ async function processImage(imageUrl) {
     return {
       success: false,
       message: 'Could not detect subscription indicators in the image',
-      text: result.data.text.substring(0, 200) // Limit text length for logging
+      text: result.data.text.substring(0, 200), // Limit text length for logging
+      imageHash: imageHash // Add hash even for unsuccessful verifications
     };
     
   } catch (error) {
@@ -196,5 +215,6 @@ async function processImage(imageUrl) {
 }
 
 module.exports = {
-  processImage
+  processImage,
+  generateImageHash
 };
