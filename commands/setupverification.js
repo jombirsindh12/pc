@@ -39,6 +39,12 @@ module.exports = {
       required: true
     },
     {
+      name: 'unverified_role',
+      type: 8, // ROLE type
+      description: 'Role to assign to new members until they verify',
+      required: false
+    },
+    {
       name: 'title',
       type: 3, // STRING type
       description: 'Custom title for verification embed',
@@ -88,8 +94,8 @@ module.exports = {
       return interaction.followUp('❌ The channel must be a text channel.');
     }
     
-    // Update server config
-    config.updateServerConfig(serverId, {
+    // Update server config with unverified role if provided
+    const configUpdate = {
       verificationChannelId: channel.id,
       verificationChannelName: channel.name,
       roleId: role.id,
@@ -100,7 +106,17 @@ module.exports = {
         description: customDescription || 'Please verify yourself to access the server.',
         color: customColor || '5865F2' // Discord Blurple color
       }
-    });
+    };
+    
+    // Get unverified role option if provided
+    const unverifiedRole = interaction.options.getRole('unverified_role');
+    if (unverifiedRole) {
+      configUpdate.unverifiedRoleId = unverifiedRole.id;
+      configUpdate.unverifiedRoleName = unverifiedRole.name;
+      console.log(`Added unverified role: ${unverifiedRole.name} (${unverifiedRole.id})`);
+    }
+    
+    config.updateServerConfig(serverId, configUpdate);
     
     // Create verification embed
     const verificationEmbed = {
@@ -172,6 +188,14 @@ module.exports = {
         ]
       };
       
+      // Add unverified role to embed if provided
+      if (unverifiedRole) {
+        successEmbed.fields.push({
+          name: 'Unverified Role',
+          value: `<@&${unverifiedRole.id}>`
+        });
+      }
+      
       // Reply with success message
       await interaction.followUp({ embeds: [successEmbed] });
       
@@ -200,6 +224,17 @@ module.exports = {
                 // Add the role with error handling
                 try {
                   await member.roles.add(serverConfig.roleId);
+                  
+                  // Check if there's an unverified role to remove
+                  if (serverConfig.unverifiedRoleId && member.roles.cache.has(serverConfig.unverifiedRoleId)) {
+                    try {
+                      await member.roles.remove(serverConfig.unverifiedRoleId);
+                      console.log(`Removed unverified role from user ${buttonInteraction.user.tag}`);
+                    } catch (unverifiedError) {
+                      console.error(`Error removing unverified role from user ${buttonInteraction.user.tag}:`, unverifiedError);
+                      // Continue with verification even if we can't remove the unverified role
+                    }
+                  }
                 } catch (roleError) {
                   console.error(`Error assigning role to user ${buttonInteraction.user.tag}:`, roleError);
                   
