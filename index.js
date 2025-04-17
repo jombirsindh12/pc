@@ -388,7 +388,7 @@ process.on('unhandledRejection', error => {
 const uptimeManager = require('./utils/uptimeManager');
 const channelWatcher = require('./utils/channelWatcher');
 const securityManager = require('./utils/securityManager');
-const { initDashboard } = require('./dashboard/server');
+// Dashboard now runs as in-Discord interface
 
 // Set up advanced uptime management
 uptimeManager.setupUptimeManager(client);
@@ -396,13 +396,8 @@ uptimeManager.setupUptimeManager(client);
 // Start security monitoring
 securityManager.startSecurityMonitoring(client);
 
-// Initialize web dashboard
-try {
-  const dashboard = initDashboard(client);
-  console.log(`Web dashboard running on default Replit port`);
-} catch (error) {
-  console.error('Error starting web dashboard:', error);
-}
+// In-Discord dashboard is available via the /dashboard command
+console.log(`Discord-native dashboard is available via /dashboard command`);
 
 // Create an enhanced HTTP server for uptime monitoring
 const server = uptimeManager.createUptimeServer();
