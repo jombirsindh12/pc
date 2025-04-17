@@ -18,10 +18,18 @@ module.exports = {
     
     const user = isSlashCommand ? interaction.user : message.author;
     const channel = isSlashCommand ? interaction.channel : message.channel;
+    
+    // IMPORTANT: Force treat interaction as in guild, override previous logic
+    // This fixes the issue where commands in servers are detected as DMs
     const guild = isSlashCommand ? interaction.guild : message.guild;
+    console.log(`Dashboard command used by ${user.tag} | In guild: ${!!guild} | Guild name: ${guild?.name || 'Unknown'}`);
+    
+    // ADDITIONAL CHECK: If we're actually in DM (client knows for sure)
+    const isDM = channel.type === 'DM';
+    console.log(`Channel type: ${channel.type} | Is DM: ${isDM}`);
     
     // Skip permission check for DM, just show a simple dashboard
-    if (!guild) {
+    if (isDM) {
       const directMessageEmbed = {
         title: '🛡️ Phantom Guard Dashboard',
         description: `Welcome to the Phantom Guard dashboard! Please use this command in a server where I'm present to access all features.`,
