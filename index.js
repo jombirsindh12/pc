@@ -207,15 +207,44 @@ client.on(Events.InteractionCreate, async interaction => {
   }
   
   try {
-    // IMPORTANT: Always defer the reply first to prevent "Application did not respond" errors
-    // This gives us 15 minutes to respond instead of 3 seconds
-    if (!interaction.deferred && !interaction.replied) {
-      await interaction.deferReply()
-        .catch(err => console.log(`Could not defer reply for ${commandName}: ${err.message}`));
-    }
+    // We WILL NOT automatically defer the reply anymore
+    // Each command will handle its own deferring as needed
     
-    // Execute the slash command
-    await command.execute(interaction, client);
+    // Execute the slash command and get mock interaction to wrap the command
+    // This helps prevent the double-reply issue
+    const mockInteraction = {
+      ...interaction,
+      responded: false,
+      deferredReply: false,
+      
+      // Override reply method to track response state
+      reply: async (options) => {
+        if (interaction.replied || interaction.deferred) {
+          console.log(`Using followUp instead of reply for ${commandName}`);
+          return interaction.followUp(options);
+        }
+        mockInteraction.responded = true;
+        return interaction.reply(options);
+      },
+      
+      // Override deferReply method to track deferred state
+      deferReply: async (options) => {
+        if (!interaction.deferred && !interaction.replied) {
+          mockInteraction.deferredReply = true;
+          return interaction.deferReply(options);
+        } else {
+          return Promise.resolve(); // Already deferred or replied
+        }
+      },
+      
+      // Pass-through methods for other interaction functions
+      followUp: interaction.followUp.bind(interaction),
+      editReply: interaction.editReply.bind(interaction),
+      deleteReply: interaction.deleteReply.bind(interaction)
+    };
+    
+    // Execute the slash command with our mock wrapper
+    await command.execute(mockInteraction, client);
   } catch (error) {
     console.error(`Error executing slash command ${commandName}:`, error);
     

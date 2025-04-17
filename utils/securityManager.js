@@ -72,19 +72,7 @@ function recordAction(serverId, userId, actionType, details = {}) {
   }
   
   // Continue with normal security flow if no exemptions apply
-  const whitelistedRoles = serverConfig?.whitelistedRoles || [];
-  
-  // Skip if user is directly whitelisted
-  if (whitelistedUsers.includes(userId)) {
-    console.log(`Security action skipped: User ${userId} is whitelisted`);
-    return false;
-  }
-  
-  // Skip if user has a whitelisted role (checked in the caller function)
-  if (details.hasWhitelistedRole) {
-    console.log(`Security action skipped: User ${userId} has a whitelisted role`);
-    return false;
-  }
+  // We already checked all exemption conditions above, so no need to check again
   
   // Create server-specific tracking key
   const serverKey = `${serverId}`;

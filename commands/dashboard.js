@@ -4,18 +4,26 @@ const config = require('../utils/config');
 module.exports = {
   name: 'dashboard',
   description: 'Access the in-Discord dashboard for server settings',
-  guildOnly: true, // This command only works in servers
+  guildOnly: false, // Allow the command to be used anywhere for proper error handling
   async execute(message, args, client, interaction = null) {
     // Use interaction if available (slash command), otherwise use message (legacy)
     const isSlashCommand = !!interaction;
+    
+    // Always defer reply for slash commands to prevent timeout
+    if (isSlashCommand && !interaction.deferred && !interaction.replied) {
+      await interaction.deferReply({ ephemeral: false }).catch(err => {
+        console.error(`[Dashboard] Failed to defer reply: ${err}`);
+      });
+    }
+    
     const user = isSlashCommand ? interaction.user : message.author;
     const channel = isSlashCommand ? interaction.channel : message.channel;
     const guild = isSlashCommand ? interaction.guild : message.guild;
     
     if (!guild) {
-      const errorResponse = 'Dashboard can only be used in a server!';
+      const errorResponse = '❌ Dashboard can only be used in a server! Please run this command in a server where Phantom Guard is added.';
       if (isSlashCommand) {
-        return interaction.reply({ content: errorResponse, ephemeral: true });
+        return interaction.followUp({ content: errorResponse, ephemeral: true });
       } else {
         return message.reply(errorResponse);
       }
@@ -23,10 +31,10 @@ module.exports = {
     
     // Check if user has admin permissions (Manage Server)
     const member = guild.members.cache.get(user.id);
-    if (!member.permissions.has('ManageGuild')) {
-      const errorResponse = 'You need the "Manage Server" permission to access the dashboard!';
+    if (!member || !member.permissions.has('ManageGuild')) {
+      const errorResponse = '❌ You need the "Manage Server" permission to access the dashboard!';
       if (isSlashCommand) {
-        return interaction.reply({ content: errorResponse, ephemeral: true });
+        return interaction.followUp({ content: errorResponse, ephemeral: true });
       } else {
         return message.reply(errorResponse);
       }
@@ -109,12 +117,7 @@ module.exports = {
     let dashboardMessage;
     if (isSlashCommand) {
       try {
-        // First defer the reply to prevent interaction timeout
-        if (!interaction.deferred && !interaction.replied) {
-          await interaction.deferReply();
-        }
-        
-        // Then follow up with the dashboard
+        // Use the already deferred reply
         const response = await interaction.editReply({ 
           embeds: [dashboardEmbed], 
           components: [dashboardRow]
@@ -124,6 +127,10 @@ module.exports = {
         dashboardMessage = response;
       } catch (error) {
         console.error('Error sending dashboard:', error);
+        await interaction.followUp({ 
+          content: '❌ An error occurred while loading the dashboard. Please try again.', 
+          ephemeral: true 
+        });
         return;
       }
     } else {

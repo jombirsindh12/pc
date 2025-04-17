@@ -15,6 +15,12 @@ module.exports = {
   ],
   async execute(message, args, client, interaction = null) {
     const isSlashCommand = !!interaction;
+    
+    // Always defer the reply for slash commands to prevent timeout
+    if (isSlashCommand && !interaction.deferred && !interaction.replied) {
+      await interaction.deferReply({ ephemeral: false });
+    }
+    
     const commandName = isSlashCommand 
       ? interaction.options.getString('command')
       : args && args[0] ? args[0].toLowerCase() : null;
@@ -284,7 +290,7 @@ module.exports = {
           
         // Send the command information
         if (isSlashCommand) {
-          await interaction.reply({ embeds: [embed] });
+          await interaction.editReply({ embeds: [embed] });
         } else {
           await message.channel.send({ embeds: [embed] });
         }

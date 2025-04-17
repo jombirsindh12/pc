@@ -85,6 +85,13 @@ module.exports = {
     // Use interaction if available (slash command), otherwise use message (legacy)
     const isSlashCommand = !!interaction;
     
+    // Always defer reply for slash commands to prevent timeout
+    if (isSlashCommand && !interaction.deferred && !interaction.replied) {
+      await interaction.deferReply({ ephemeral: true }).catch(err => {
+        console.error(`[Premium] Failed to defer reply: ${err}`);
+      });
+    }
+    
     // Get the user
     const user = isSlashCommand ? interaction.user : message.author;
     

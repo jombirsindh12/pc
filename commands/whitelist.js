@@ -4,7 +4,7 @@ const config = require('../utils/config');
 module.exports = {
   name: 'whitelist',
   description: 'Whitelist users or roles from security checks',
-  guildOnly: true,
+  guildOnly: false, // Allow usage anywhere with proper error handling
   requiresAdmin: true,
   options: [
     {
@@ -87,18 +87,23 @@ module.exports = {
   ],
   
   async execute(message, args, client, interaction = null) {
+    // Use interaction if available (slash command), otherwise use message (legacy)
+    const isSlashCommand = !!interaction;
+    
+    // Always defer reply for slash commands to prevent timeout
+    if (isSlashCommand && !interaction.deferred && !interaction.replied) {
+      await interaction.deferReply({ ephemeral: true }).catch(err => {
+        console.error(`[Whitelist] Failed to defer reply: ${err}`);
+      });
+    }
+    
     // Get the guild ID from message or interaction
     const serverId = interaction?.guild?.id || message?.guild?.id;
     
-    // We no longer block the command - we'll handle it gracefully
+    // Handle command used outside a server gracefully
     if (!serverId) {
       console.log('Whitelist command used outside a server - providing helpful response');
-      if (interaction) {
-        // Make sure to defer reply first
-        if (!interaction.deferred && !interaction.replied) {
-          await interaction.deferReply({ ephemeral: true });
-        }
-        
+      if (isSlashCommand) {
         return interaction.followUp({ 
           content: '👋 This command is designed for server security, so it needs to be used in a server where you want to whitelist users or roles. Please try again in your Discord server!', 
           ephemeral: true 
@@ -118,8 +123,10 @@ module.exports = {
     
     // For slash commands
     if (interaction) {
-      // Defer the reply for potentially longer operations
-      await interaction.deferReply();
+      // We've already deferred the reply above, no need to defer again
+      if (!interaction.deferred && !interaction.replied) {
+        await interaction.deferReply();
+      }
       
       const subcommand = interaction.options.getSubcommand();
       

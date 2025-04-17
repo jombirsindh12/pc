@@ -45,14 +45,34 @@ module.exports = {
       required: false
     }
   ],
-  guildOnly: true, // This command can only be used in servers
+  guildOnly: false, // Changed to allow for better error handling
   
   async execute(message, args, client, interaction = null) {
     // Use interaction if available (slash command), otherwise use message (legacy)
     const isSlashCommand = !!interaction;
     
-    // Get guild ID
+    // Always defer reply for slash commands to prevent timeout
+    if (isSlashCommand && !interaction.deferred && !interaction.replied) {
+      await interaction.deferReply({ ephemeral: true }).catch(err => {
+        console.error(`[Voice] Failed to defer reply: ${err}`);
+      });
+    }
+    
+    // Check if in a guild/server
     const guild = isSlashCommand ? interaction.guild : message.guild;
+    
+    // If not in a guild, send an error message
+    if (!guild) {
+      const response = '❌ This command must be used in a server to manage voice channels.';
+      
+      if (isSlashCommand) {
+        return interaction.followUp({ content: response, ephemeral: true });
+      } else {
+        return message.reply(response);
+      }
+    }
+    
+    // Now that we know we're in a guild, we can safely get the server ID and config
     const serverId = guild.id;
     const serverConfig = config.getServerConfig(serverId);
     
