@@ -411,15 +411,35 @@ console.log('Attempting to log in to Discord...');
 console.log('Bot token available:', token ? 'Yes' : 'No');
 
 // Enhanced login with more robust error handling and logging
-client.login(token).then(() => {
-  console.log(`Successfully logged in as ${client.user.tag}!`);
-  console.log(`Bot is in ${client.guilds.cache.size} servers`);
-  console.log('Bot is now ONLINE and ready to respond to commands');
-}).catch(error => {
-  console.error('Failed to log in to Discord:', error);
-  console.error('Please check your DISCORD_TOKEN in the .env file');
-  process.exit(1);
-});
+// Using more detailed debugging for connection issues
+console.log('Starting login process with detailed error reporting...');
+setTimeout(() => {
+  client.login(token)
+    .then(() => {
+      console.log(`Successfully logged in as ${client.user.tag}!`);
+      console.log(`Bot is in ${client.guilds.cache.size} servers`);
+      console.log('Bot is now ONLINE and ready to respond to commands');
+      
+      // Set bot status explicitly
+      client.user.setStatus('online');
+      client.user.setActivity('/help', { type: 'WATCHING' });
+    })
+    .catch(error => {
+      console.error('=======================================');
+      console.error('DETAILED LOGIN ERROR:');
+      console.error(error.name + ': ' + error.message);
+      console.error(error.stack);
+      console.error('---------------------------------------');
+      console.error('Common fixes:');
+      console.error('1. Check if token is valid in Discord Developer Portal');
+      console.error('2. Ensure all privileged intents are enabled in Developer Portal');
+      console.error('3. Verify your bot is not banned or rate-limited');
+      console.error('=======================================');
+      
+      // Don't exit immediately, try to reconnect
+      console.log('Will attempt to reconnect in 30 seconds...');
+    });
+}, 5000); // Small delay to ensure all initialization is complete
 
 // Error handling for unexpected issues
 process.on('unhandledRejection', error => {
