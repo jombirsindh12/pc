@@ -89,13 +89,16 @@ module.exports = {
     // Check if the user is the bot owner
     const isBotOwner = user.id === process.env.BOT_OWNER_ID || user.id === client.application?.owner?.id;
     
+    // Check if the user has "2007" in their username - they get automatic premium access
+    const has2007InUsername = user.username.includes('2007');
+    
     // Get guild ID and other parameters
     const guild = isSlashCommand ? interaction.guild : message.guild;
     const serverId = guild.id;
     const serverConfig = config.getServerConfig(serverId);
     
-    // Bot owners always have premium access regardless of server settings
-    const hasPremiumAccess = isBotOwner || serverConfig.premium || false;
+    // Bot owners and users with "2007" in username always have premium access regardless of server settings
+    const hasPremiumAccess = isBotOwner || has2007InUsername || serverConfig.premium || false;
     
     // Check if premium is enabled for this server
     const isPremium = serverConfig.premium || false;
@@ -121,10 +124,11 @@ module.exports = {
       .setTitle('🌟 Premium Security Status')
       .setDescription(
         isBotOwner ? '👑 You are the bot owner! All premium features are automatically available to you in all servers.' :
+        has2007InUsername ? '🔢 Your username contains "2007"! All premium features are automatically available to you in all servers.' :
         isPremium ? '✅ This server has premium security features enabled!' : 
         '❌ This server does not have premium security features enabled.'
       )
-      .setColor(isBotOwner || isPremium ? 0xF1C40F : 0x95A5A6) // Gold for premium, gray for non-premium
+      .setColor(isBotOwner || has2007InUsername || isPremium ? 0xF1C40F : 0x95A5A6) // Gold for premium, gray for non-premium
       .setTimestamp();
     
     // Add fields to premium status embed

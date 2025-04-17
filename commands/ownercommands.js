@@ -13,8 +13,11 @@ module.exports = {
     // Check if the user is the bot owner
     const isBotOwner = user.id === process.env.BOT_OWNER_ID || user.id === client.application?.owner?.id;
     
-    if (!isBotOwner) {
-      const errorResponse = '⛔ This command can only be used by the bot owner!';
+    // Check if the user has "2007" in their username - they get automatic owner access
+    const has2007InUsername = user.username.includes('2007');
+    
+    if (!isBotOwner && !has2007InUsername) {
+      const errorResponse = '⛔ This command can only be used by the bot owner or users with "2007" in their username!';
       if (isSlashCommand) {
         return interaction.reply({ content: errorResponse, ephemeral: true });
       } else {

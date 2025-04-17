@@ -63,6 +63,12 @@
     },
     "activeVoiceChannelId": "1352325169527652383",
     "activeVoiceChannelName": "gaming--bots15",
-    "voiceAnnouncements": true
+    "voiceAnnouncements": true,
+    "antiNuke": true,
+    "verification": {
+      "enabled": true
+    },
+    "raidProtection": true,
+    "imageVerification": true
   }
 }
