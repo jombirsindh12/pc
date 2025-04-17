@@ -20,11 +20,6 @@ module.exports = {
     const channel = isSlashCommand ? interaction.channel : message.channel;
     const guild = isSlashCommand ? interaction.guild : message.guild;
     
-    // Force command to work without guild check - get the server ID from cache if possible
-    // or create dummy data for testing outside a server
-    const serverId = guild?.id || "0";
-    const serverConfig = config.getServerConfig(serverId);
-    
     // Skip permission check for DM, just show a simple dashboard
     if (!guild) {
       const directMessageEmbed = {
@@ -54,6 +49,10 @@ module.exports = {
       return;
     }
 
+    // Get server configuration
+    const serverId = guild.id;
+    const serverConfig = config.getServerConfig(serverId);
+    
     // If in a guild, check for admin permissions
     const member = guild.members.cache.get(user.id);
     if (!member || !member.permissions.has('ManageGuild')) {
@@ -216,7 +215,7 @@ module.exports = {
   },
 };
 
-// Handle YouTube verification settings
+// Handler functions for different dashboard sections
 async function handleYouTubeSettings(interaction, guild, serverConfig, client) {
   // Get current YouTube settings
   const youtubeChannel = serverConfig.youtubeChannelId ? 
@@ -313,7 +312,11 @@ async function handleYouTubeSettings(interaction, guild, serverConfig, client) {
   });
   
   youtubeCollector.on('collect', async i => {
-    await i.deferUpdate();
+    try {
+      await i.deferUpdate();
+    } catch (error) {
+      console.error('Error deferring button update:', error);
+    }
     
     // Handle button interactions
     if (i.customId === 'toggle_imageverification') {
@@ -336,10 +339,14 @@ async function handleYouTubeSettings(interaction, guild, serverConfig, client) {
                `Automatically analyze verification screenshots`;
       
       // Update the message
-      await i.message.edit({
-        embeds: [updatedEmbed],
-        components: [updatedYouTubeRow, channelRow, backRow]
-      });
+      try {
+        await i.message.edit({
+          embeds: [updatedEmbed],
+          components: [updatedYouTubeRow, channelRow, backRow]
+        });
+      } catch (error) {
+        console.error('Error updating message after toggling verification:', error);
+      }
     }
     else if (i.customId === 'test_verification') {
       // Create alert message about test mode
@@ -371,10 +378,14 @@ async function handleYouTubeSettings(interaction, guild, serverConfig, client) {
         );
       
       // Show temporary alert as followup
-      await i.followUp({
-        embeds: [testAlert],
-        ephemeral: true
-      });
+      try {
+        await i.followUp({
+          embeds: [testAlert],
+          ephemeral: true
+        });
+      } catch (error) {
+        console.error('Error sending test verification results:', error);
+      }
     }
     else if (i.customId === 'setup_youtube') {
       // Create setup guide message
@@ -407,10 +418,14 @@ async function handleYouTubeSettings(interaction, guild, serverConfig, client) {
         .setFooter({ text: 'Complete all steps for a fully functional verification system' });
       
       // Show setup guide as followup
-      await i.followUp({
-        embeds: [setupGuide],
-        ephemeral: true
-      });
+      try {
+        await i.followUp({
+          embeds: [setupGuide],
+          ephemeral: true
+        });
+      } catch (error) {
+        console.error('Error sending YouTube setup guide:', error);
+      }
     }
     else if (i.customId === 'view_verified') {
       // Get list of verified users
@@ -446,10 +461,14 @@ async function handleYouTubeSettings(interaction, guild, serverConfig, client) {
       }
       
       // Show verified users as followup
-      await i.followUp({
-        embeds: [verifiedEmbed],
-        ephemeral: true
-      });
+      try {
+        await i.followUp({
+          embeds: [verifiedEmbed],
+          ephemeral: true
+        });
+      } catch (error) {
+        console.error('Error showing verified users list:', error);
+      }
     }
     else if (i.customId === 'back_to_dashboard') {
       // Go back to main dashboard
@@ -470,24 +489,12 @@ async function handleYouTubeSettings(interaction, guild, serverConfig, client) {
             value: `Configure welcome messages, announcements, and log channels`
           },
           {
-            name: '📱 YouTube Verification',
-            value: `Configure YouTube verification system and image verification`
-          },
-          {
-            name: '🎤 Voice & Counters',
-            value: `Set up voice features and live subscriber counters`
-          },
-          {
             name: '🎮 Game & Entertainment',
             value: `Control game features and entertainment options`
           },
           {
             name: '📊 Server Statistics',
             value: `View activity, verification, and security stats`
-          },
-          {
-            name: '❓ Help & Info',
-            value: `Get help and detailed command information`
           }
         ],
         footer: {
@@ -495,7 +502,7 @@ async function handleYouTubeSettings(interaction, guild, serverConfig, client) {
         }
       };
       
-      // Create dashboard menu components with all options
+      // Create dashboard menu components
       const dashboardRow = new ActionRowBuilder()
         .addComponents(
           new StringSelectMenuBuilder()
@@ -540,76 +547,55 @@ async function handleYouTubeSettings(interaction, guild, serverConfig, client) {
             ])
         );
       
-      await i.message.edit({
-        embeds: [dashboardEmbed],
-        components: [dashboardRow]
-      });
-    }
-  });
-  
-  youtubeCollector.on('end', () => {
-    // Disable the components when collection period ends
-    if (interaction.message.editable) {
+      // Update the message with main dashboard
       try {
-        const disabledYouTubeRow = ActionRowBuilder.from(youtubeRow);
-        disabledYouTubeRow.components.forEach(button => {
-          button.setDisabled(true);
+        await i.message.edit({
+          embeds: [dashboardEmbed],
+          components: [dashboardRow]
         });
-        
-        const disabledChannelRow = ActionRowBuilder.from(channelRow);
-        disabledChannelRow.components.forEach(button => {
-          button.setDisabled(true);
-        });
-        
-        const disabledBackRow = ActionRowBuilder.from(backRow);
-        disabledBackRow.components.forEach(button => {
-          button.setDisabled(true);
-        });
-        
-        interaction.message.edit({ 
-          components: [disabledYouTubeRow, disabledChannelRow, disabledBackRow] 
-        }).catch(console.error);
       } catch (error) {
-        console.error('Error disabling buttons:', error);
+        console.error('Error returning to main dashboard:', error);
       }
     }
   });
 }
 
-// Handle voice and counter settings
+// Additional handler functions for other dashboard sections
 async function handleVoiceSettings(interaction, guild, serverConfig, client) {
   // Get current voice settings
-  const voiceEnabled = serverConfig.voiceAnnouncer || false;
-  const subCountChannel = serverConfig.subCountChannelId ? 
-    `<#${serverConfig.subCountChannelId}>` : 'Not set';
-  const voiceChannelFormat = serverConfig.voiceChannelFormat || '{channelName}: {count} subscribers';
-  const updateFrequency = serverConfig.updateFrequencyMinutes || 5;
+  const voiceChannelId = serverConfig.voiceChannelId || 'Not set';
+  const voiceChannelName = voiceChannelId !== 'Not set' 
+    ? guild.channels.cache.get(voiceChannelId)?.name || 'Unknown Channel' 
+    : 'Not set';
+  const voiceFormat = serverConfig.voiceFormat || '{name}: {count} subscribers';
+  const updateFrequency = serverConfig.updateFrequency || 300; // Default 5 minutes (300 seconds)
+  const announcerEnabled = serverConfig.voiceAnnouncer || false;
   
   // Create voice settings embed
   const voiceEmbed = {
-    title: '🎤 Voice & Subscriber Counter Settings',
+    title: '🎤 Voice & Counter Settings',
     description: `Manage voice features and subscriber counters for ${guild.name}`,
-    color: 0x9B59B6, // Purple color
+    color: 0x9B59B6, // Purple
     fields: [
       {
-        name: '🔊 Voice Announcer',
-        value: `Status: ${voiceEnabled ? '✅ Enabled' : '❌ Disabled'}\n` +
-               `Announces when users join or leave voice channels`
-      },
-      {
         name: '📊 Subscriber Count Channel',
-        value: `Channel: ${subCountChannel}\n` +
-               `Use \`/livesubcount\` to create or update`
+        value: `Channel: ${voiceChannelId !== 'Not set' ? `#${voiceChannelName}` : 'Not set'}\n` +
+               `Use \`/setvoicechannelname\` to change`
       },
       {
-        name: '📝 Channel Format',
-        value: `Format: \`${voiceChannelFormat}\`\n` +
-               `Use \`/setvoicechannelname\` to change format`
-      },
-      {
-        name: '⏱️ Update Frequency',
-        value: `Every ${updateFrequency} minutes\n` +
+        name: '🔄 Update Frequency',
+        value: `${updateFrequency} seconds\n` +
                `Use \`/setupdatefrequency\` to change`
+      },
+      {
+        name: '📝 Channel Name Format',
+        value: `\`${voiceFormat}\`\n` +
+               `Variables: {name}, {count}, {abbreviatedCount}`
+      },
+      {
+        name: '🎙️ Voice Announcer',
+        value: `Status: ${announcerEnabled ? '✅ Enabled' : '❌ Disabled'}\n` +
+               `Announces when members join/leave voice channels`
       }
     ],
     footer: {
@@ -621,29 +607,29 @@ async function handleVoiceSettings(interaction, guild, serverConfig, client) {
   const voiceRow = new ActionRowBuilder()
     .addComponents(
       new ButtonBuilder()
-        .setCustomId('toggle_voice')
-        .setLabel(`${voiceEnabled ? 'Disable' : 'Enable'} Voice Announcer`)
-        .setStyle(voiceEnabled ? ButtonStyle.Danger : ButtonStyle.Success),
+        .setCustomId('toggle_announcer')
+        .setLabel(`${announcerEnabled ? 'Disable' : 'Enable'} Voice Announcer`)
+        .setStyle(announcerEnabled ? ButtonStyle.Danger : ButtonStyle.Success),
       new ButtonBuilder()
-        .setCustomId('update_counter')
-        .setLabel('Update Sub Counter Now')
+        .setCustomId('update_subcount')
+        .setLabel('Update Sub Count Now')
         .setStyle(ButtonStyle.Primary)
     );
   
   const formatRow = new ActionRowBuilder()
     .addComponents(
       new ButtonBuilder()
-        .setCustomId('freq_5min')
-        .setLabel('Update Every 5min')
-        .setStyle(updateFrequency === 5 ? ButtonStyle.Success : ButtonStyle.Secondary),
+        .setCustomId('format_standard')
+        .setLabel('Standard Format')
+        .setStyle(ButtonStyle.Secondary),
       new ButtonBuilder()
-        .setCustomId('freq_15min')
-        .setLabel('Update Every 15min')
-        .setStyle(updateFrequency === 15 ? ButtonStyle.Success : ButtonStyle.Secondary),
+        .setCustomId('format_minimal')
+        .setLabel('Minimal Format')
+        .setStyle(ButtonStyle.Secondary),
       new ButtonBuilder()
-        .setCustomId('freq_30min')
-        .setLabel('Update Every 30min')
-        .setStyle(updateFrequency === 30 ? ButtonStyle.Success : ButtonStyle.Secondary)
+        .setCustomId('format_detailed')
+        .setLabel('Detailed Format')
+        .setStyle(ButtonStyle.Secondary)
     );
   
   const backRow = new ActionRowBuilder()
@@ -668,11 +654,15 @@ async function handleVoiceSettings(interaction, guild, serverConfig, client) {
   });
   
   voiceCollector.on('collect', async i => {
-    await i.deferUpdate();
-    const serverConfig = config.getServerConfig(guild.id);
+    try {
+      await i.deferUpdate();
+    } catch (error) {
+      console.error('Error deferring button update:', error);
+      // Continue with handling to avoid UX disruption
+    }
     
     // Handle button interactions
-    if (i.customId === 'toggle_voice') {
+    if (i.customId === 'toggle_announcer') {
       const newValue = !serverConfig.voiceAnnouncer;
       config.updateServerConfig(guild.id, { voiceAnnouncer: newValue });
       
@@ -680,7 +670,7 @@ async function handleVoiceSettings(interaction, guild, serverConfig, client) {
       const updatedVoiceRow = new ActionRowBuilder()
         .addComponents(
           new ButtonBuilder()
-            .setCustomId('toggle_voice')
+            .setCustomId('toggle_announcer')
             .setLabel(`${newValue ? 'Disable' : 'Enable'} Voice Announcer`)
             .setStyle(newValue ? ButtonStyle.Danger : ButtonStyle.Success),
           ButtonBuilder.from(voiceRow.components[1])
@@ -688,8 +678,8 @@ async function handleVoiceSettings(interaction, guild, serverConfig, client) {
       
       // Create updated embed with new values
       const updatedEmbed = { ...voiceEmbed };
-      updatedEmbed.fields[0].value = `Status: ${newValue ? '✅ Enabled' : '❌ Disabled'}\n` +
-             `Announces when users join or leave voice channels`;
+      updatedEmbed.fields[3].value = `Status: ${newValue ? '✅ Enabled' : '❌ Disabled'}\n` +
+               `Announces when members join/leave voice channels`;
       
       // Update the message
       await i.message.edit({
@@ -697,80 +687,111 @@ async function handleVoiceSettings(interaction, guild, serverConfig, client) {
         components: [updatedVoiceRow, formatRow, backRow]
       });
     }
-    else if (i.customId === 'update_counter') {
-      if (!serverConfig.subCountChannelId || !serverConfig.youtubeChannelId) {
-        await i.followUp({
-          content: '❌ Cannot update counter: YouTube channel or subscriber count channel not set. Use `/livesubcount` and `/setyoutubechannel` first.',
-          ephemeral: true
-        });
+    else if (i.customId === 'update_subcount') {
+      // Only proceed if voice channel is set
+      if (voiceChannelId === 'Not set') {
+        try {
+          await i.followUp({
+            content: '❌ Cannot update subscriber count: No voice channel set. Use `/setvoicechannelname` to set a channel first.',
+            ephemeral: true
+          });
+        } catch (error) {
+          console.error('Error sending voice channel not set message:', error);
+        }
         return;
       }
       
-      await i.followUp({
-        content: '🔄 Updating subscriber count channel now... This may take a moment.',
-        ephemeral: true
-      });
+      // Check if YouTube API key is set
+      const youtubeChannelId = serverConfig.youtubeChannelId;
+      if (!youtubeChannelId) {
+        try {
+          await i.followUp({
+            content: '❌ Cannot update subscriber count: No YouTube channel set. Use `/setyoutubechannel` to set a channel first.',
+            ephemeral: true
+          });
+        } catch (error) {
+          console.error('Error sending YouTube channel not set message:', error);
+        }
+        return;
+      }
       
+      // Send a message indicating update is in progress
       try {
-        // Here we would normally call a function to update the sub count
-        // For demonstration, we'll simulate success
-        await i.editReply({
-          content: '✅ Subscriber count channel has been updated!',
+        await i.followUp({
+          content: '⏳ Updating subscriber count channel... Please wait.',
           ephemeral: true
         });
       } catch (error) {
-        await i.editReply({
-          content: `❌ Error updating subscriber count: ${error.message}`,
+        console.error('Error sending update in progress message:', error);
+      }
+      
+      // Try to update the subscriber count
+      try {
+        // This function should be defined elsewhere in your code
+        // Import it from the appropriate file if needed
+        const updateSubCountChannel = require('./setVoiceChannelName').updateSubCountChannel;
+        
+        if (typeof updateSubCountChannel === 'function') {
+          await updateSubCountChannel(client, guild.id);
+          await i.followUp({
+            content: '✅ Subscriber count updated successfully!',
+            ephemeral: true
+          });
+        } else {
+          await i.followUp({
+            content: '❌ Update function not available. Please use `/setvoicechannelname` command instead.',
+            ephemeral: true
+          });
+        }
+      } catch (error) {
+        console.error('Error updating sub count:', error);
+        await i.followUp({
+          content: `❌ Failed to update subscriber count: ${error.message}`,
           ephemeral: true
         });
       }
     }
-    else if (i.customId.startsWith('freq_')) {
-      // Extract minutes from button ID (freq_5min -> 5, freq_15min -> 15, etc.)
-      const minutes = parseInt(i.customId.replace('freq_', '').replace('min', ''));
+    else if (i.customId.startsWith('format_')) {
+      let newFormat = serverConfig.voiceFormat || '{name}: {count} subscribers';
       
-      if (minutes) {
-        config.updateServerConfig(guild.id, { updateFrequencyMinutes: minutes });
-        
-        // Create updated frequency row with new state
-        const updatedFormatRow = new ActionRowBuilder()
-          .addComponents(
-            new ButtonBuilder()
-              .setCustomId('freq_5min')
-              .setLabel('Update Every 5min')
-              .setStyle(minutes === 5 ? ButtonStyle.Success : ButtonStyle.Secondary),
-            new ButtonBuilder()
-              .setCustomId('freq_15min')
-              .setLabel('Update Every 15min')
-              .setStyle(minutes === 15 ? ButtonStyle.Success : ButtonStyle.Secondary),
-            new ButtonBuilder()
-              .setCustomId('freq_30min')
-              .setLabel('Update Every 30min')
-              .setStyle(minutes === 30 ? ButtonStyle.Success : ButtonStyle.Secondary)
-          );
-        
-        // Create updated embed with new values
-        const updatedEmbed = { ...voiceEmbed };
-        updatedEmbed.fields[3].value = `Every ${minutes} minutes\n` +
-               `Use \`/setupdatefrequency\` to change`;
-        
-        // Update the message
-        await i.message.edit({
-          embeds: [updatedEmbed],
-          components: [voiceRow, updatedFormatRow, backRow]
-        });
-        
+      // Set the format based on the button clicked
+      if (i.customId === 'format_standard') {
+        newFormat = '{name}: {count} subscribers';
+      } else if (i.customId === 'format_minimal') {
+        newFormat = '{abbreviatedCount} subs';
+      } else if (i.customId === 'format_detailed') {
+        newFormat = '📊 {name} | {count} subscribers';
+      }
+      
+      // Update the server config
+      config.updateServerConfig(guild.id, { voiceFormat: newFormat });
+      
+      // Create updated embed with new values
+      const updatedEmbed = { ...voiceEmbed };
+      updatedEmbed.fields[2].value = `\`${newFormat}\`\n` +
+             `Variables: {name}, {count}, {abbreviatedCount}`;
+      
+      // Update the message
+      await i.message.edit({
+        embeds: [updatedEmbed],
+        components: [voiceRow, formatRow, backRow]
+      });
+      
+      // Send confirmation
+      try {
         await i.followUp({
-          content: `✅ Update frequency changed to ${minutes} minutes`,
+          content: `✅ Voice channel format updated to: \`${newFormat}\``,
           ephemeral: true
         });
+      } catch (error) {
+        console.error('Error sending format update confirmation:', error);
       }
     }
     else if (i.customId === 'back_to_dashboard') {
       // Go back to main dashboard
       voiceCollector.stop();
       
-      // Recreate main dashboard embed with all options
+      // Recreate main dashboard embed with updated menu
       const dashboardEmbed = {
         title: '🛡️ Phantom Guard Dashboard',
         description: `Welcome to the in-Discord dashboard! Use the menu below to manage your server settings.`,
@@ -785,24 +806,12 @@ async function handleVoiceSettings(interaction, guild, serverConfig, client) {
             value: `Configure welcome messages, announcements, and log channels`
           },
           {
-            name: '📱 YouTube Verification',
-            value: `Configure YouTube verification system and image verification`
-          },
-          {
-            name: '🎤 Voice & Counters',
-            value: `Set up voice features and live subscriber counters`
-          },
-          {
             name: '🎮 Game & Entertainment',
             value: `Control game features and entertainment options`
           },
           {
             name: '📊 Server Statistics',
             value: `View activity, verification, and security stats`
-          },
-          {
-            name: '❓ Help & Info',
-            value: `Get help and detailed command information`
           }
         ],
         footer: {
@@ -810,7 +819,7 @@ async function handleVoiceSettings(interaction, guild, serverConfig, client) {
         }
       };
       
-      // Create dashboard menu components with all options
+      // Create dashboard menu components
       const dashboardRow = new ActionRowBuilder()
         .addComponents(
           new StringSelectMenuBuilder()
@@ -855,549 +864,76 @@ async function handleVoiceSettings(interaction, guild, serverConfig, client) {
             ])
         );
       
+      // Update the message with main dashboard
       await i.message.edit({
         embeds: [dashboardEmbed],
         components: [dashboardRow]
       });
     }
   });
-  
-  voiceCollector.on('end', () => {
-    // Disable the components when collection period ends
-    if (interaction.message.editable) {
-      try {
-        const disabledVoiceRow = ActionRowBuilder.from(voiceRow);
-        disabledVoiceRow.components.forEach(button => {
-          button.setDisabled(true);
-        });
-        
-        const disabledFormatRow = ActionRowBuilder.from(formatRow);
-        disabledFormatRow.components.forEach(button => {
-          button.setDisabled(true);
-        });
-        
-        const disabledBackRow = ActionRowBuilder.from(backRow);
-        disabledBackRow.components.forEach(button => {
-          button.setDisabled(true);
-        });
-        
-        interaction.message.edit({ 
-          components: [disabledVoiceRow, disabledFormatRow, disabledBackRow] 
-        }).catch(console.error);
-      } catch (error) {
-        console.error('Error disabling buttons:', error);
-      }
-    }
-  });
 }
 
-// Handle help and info display
-async function handleHelpInfo(interaction, guild, serverConfig, client) {
-  // Create help embed
-  const helpEmbed = {
-    title: '❓ Help & Command Information',
-    description: `Get detailed help and command information for ${guild.name}`,
-    color: 0x3498DB, // Blue color
-    fields: [
-      {
-        name: '🔒 Security Commands',
-        value: '`/security` - Configure security settings\n' +
-               '`/ban` - Ban a user from the server\n' +
-               '`/kick` - Kick a user from the server'
-      },
-      {
-        name: '✅ Verification Commands',
-        value: '`/setupverification` - Set up the verification system\n' +
-               '`/setverificationchannel` - Set the verification channel\n' +
-               '`/listverified` - List verified users\n' +
-               '`/captcha` - Configure CAPTCHA verification'
-      },
-      {
-        name: '📱 YouTube Commands',
-        value: '`/setyoutubechannel` - Set the YouTube channel for verification\n' +
-               '`/searchchannel` - Search for a YouTube channel\n' +
-               '`/livesubcount` - Create a live subscriber count channel\n' +
-               '`/setvoicechannelname` - Set the format of the count channel\n' +
-               '`/setupdatefrequency` - Set how often the count updates'
-      },
-      {
-        name: '🎤 Voice Commands',
-        value: '`/voice join` - Make the bot join your voice channel\n' +
-               '`/voice leave` - Make the bot leave the voice channel\n' +
-               '`/voice message` - Send a TTS message in voice channel\n' +
-               '`/voice announce` - Toggle join/leave announcements'
-      },
-      {
-        name: '🎮 Game Commands',
-        value: '`/game create` - Create a new game session\n' +
-               '`/game join` - Join an existing game session\n' +
-               '`/game leave` - Leave a game session\n' +
-               '`/game start` - Start a game session'
-      },
-      {
-        name: '⭐ Premium Commands',
-        value: '`/premium` - Manage premium features\n' +
-               '`/premium status` - Check premium status\n' +
-               '`/premium automod` - Configure auto-moderation\n' +
-               '`/premium antinuke` - Configure anti-nuke protection\n' +
-               '`/premium lockdown` - Configure emergency lockdown'
-      }
-    ],
-    footer: {
-      text: 'Use the buttons below to get more help'
-    }
-  };
-  
-  // Create buttons for help navigation
-  const helpNavRow = new ActionRowBuilder()
-    .addComponents(
-      new ButtonBuilder()
-        .setCustomId('help_security')
-        .setLabel('Security')
-        .setStyle(ButtonStyle.Primary)
-        .setEmoji('🔒'),
-      new ButtonBuilder()
-        .setCustomId('help_verification')
-        .setLabel('Verification')
-        .setStyle(ButtonStyle.Primary)
-        .setEmoji('✅'),
-      new ButtonBuilder()
-        .setCustomId('help_youtube')
-        .setLabel('YouTube')
-        .setStyle(ButtonStyle.Primary)
-        .setEmoji('📱')
-    );
-  
-  const helpNavRow2 = new ActionRowBuilder()
-    .addComponents(
-      new ButtonBuilder()
-        .setCustomId('help_voice')
-        .setLabel('Voice')
-        .setStyle(ButtonStyle.Primary)
-        .setEmoji('🎤'),
-      new ButtonBuilder()
-        .setCustomId('help_game')
-        .setLabel('Games')
-        .setStyle(ButtonStyle.Primary)
-        .setEmoji('🎮'),
-      new ButtonBuilder()
-        .setCustomId('help_premium')
-        .setLabel('Premium')
-        .setStyle(ButtonStyle.Primary)
-        .setEmoji('⭐')
-    );
-  
-  const backRow = new ActionRowBuilder()
-    .addComponents(
-      new ButtonBuilder()
-        .setCustomId('back_to_dashboard')
-        .setLabel('Back to Main Dashboard')
-        .setStyle(ButtonStyle.Secondary)
-    );
-  
-  // Update the message with help information
-  await interaction.message.edit({
-    embeds: [helpEmbed],
-    components: [helpNavRow, helpNavRow2, backRow]
-  });
-  
-  // Set up collector for help buttons
-  const filter = i => i.user.id === interaction.user.id;
-  const helpCollector = interaction.message.createMessageComponentCollector({
-    filter,
-    time: 180000 // 3 minutes
-  });
-  
-  helpCollector.on('collect', async i => {
-    await i.deferUpdate();
-    
-    // Handle button interactions for specific category help
-    if (i.customId.startsWith('help_')) {
-      const category = i.customId.replace('help_', '');
-      
-      // Create detailed help for the specific category
-      let detailedEmbed;
-      
-      switch (category) {
-        case 'security':
-          detailedEmbed = new EmbedBuilder()
-            .setTitle('🔒 Security Commands')
-            .setDescription('Detailed information about security commands')
-            .setColor(0xFF5733)
-            .addFields(
-              {
-                name: '`/security [action]`',
-                value: 'Configure security settings for the server\n' +
-                       '**Actions:** enable, disable, status, setup_verification\n' +
-                       '**Permission:** Manage Server\n' +
-                       '**Example:** `/security enable`'
-              },
-              {
-                name: '`/ban [user] [reason]`',
-                value: 'Ban a user from the server\n' +
-                       '**Permission:** Ban Members\n' +
-                       '**Example:** `/ban @BadUser Spamming in channels`'
-              },
-              {
-                name: '`/kick [user] [reason]`',
-                value: 'Kick a user from the server\n' +
-                       '**Permission:** Kick Members\n' +
-                       '**Example:** `/kick @TroubleUser Breaking rules`'
-              }
-            );
-          break;
-          
-        case 'verification':
-          detailedEmbed = new EmbedBuilder()
-            .setTitle('✅ Verification Commands')
-            .setDescription('Detailed information about verification commands')
-            .setColor(0x2ECC71)
-            .addFields(
-              {
-                name: '`/setupverification`',
-                value: 'Set up the verification system for your server\n' +
-                       '**Permission:** Manage Server\n' +
-                       '**Example:** `/setupverification`'
-              },
-              {
-                name: '`/setverificationchannel [channel]`',
-                value: 'Set the channel where users will post verification screenshots\n' +
-                       '**Permission:** Manage Server\n' +
-                       '**Example:** `/setverificationchannel #verify`'
-              },
-              {
-                name: '`/listverified`',
-                value: 'List all users who have verified their YouTube subscription\n' +
-                       '**Permission:** Manage Server\n' +
-                       '**Example:** `/listverified`'
-              },
-              {
-                name: '`/captcha [action]`',
-                value: 'Configure CAPTCHA verification for new members\n' +
-                       '**Permission:** Manage Server\n' +
-                       '**Example:** `/captcha setup`\n' +
-                       '**Note:** This is a premium feature'
-              }
-            );
-          break;
-          
-        case 'youtube':
-          detailedEmbed = new EmbedBuilder()
-            .setTitle('📱 YouTube Commands')
-            .setDescription('Detailed information about YouTube integration commands')
-            .setColor(0xFF0000)
-            .addFields(
-              {
-                name: '`/setyoutubechannel [channelId or URL]`',
-                value: 'Set the YouTube channel for verification\n' +
-                       '**Permission:** Manage Server\n' +
-                       '**Example:** `/setyoutubechannel UCxyz123`'
-              },
-              {
-                name: '`/searchchannel [channel name]`',
-                value: 'Search for a YouTube channel by name\n' +
-                       '**Permission:** None\n' +
-                       '**Example:** `/searchchannel MrBeast`'
-              },
-              {
-                name: '`/livesubcount`',
-                value: 'Create a voice channel showing the live subscriber count\n' +
-                       '**Permission:** Manage Server\n' +
-                       '**Example:** `/livesubcount`'
-              },
-              {
-                name: '`/setvoicechannelname [format]`',
-                value: 'Set the format of the subscriber count channel\n' +
-                       '**Permission:** Manage Server\n' +
-                       '**Example:** `/setvoicechannelname {channelName}: {count} subs`'
-              },
-              {
-                name: '`/setupdatefrequency [minutes]`',
-                value: 'Set how often the subscriber count updates\n' +
-                       '**Permission:** Manage Server\n' +
-                       '**Example:** `/setupdatefrequency 15`'
-              }
-            );
-          break;
-          
-        case 'voice':
-          detailedEmbed = new EmbedBuilder()
-            .setTitle('🎤 Voice Commands')
-            .setDescription('Detailed information about voice commands')
-            .setColor(0x9B59B6)
-            .addFields(
-              {
-                name: '`/voice join`',
-                value: 'Make the bot join your voice channel\n' +
-                       '**Permission:** None (must be in a voice channel)\n' +
-                       '**Example:** `/voice join`'
-              },
-              {
-                name: '`/voice leave`',
-                value: 'Make the bot leave the voice channel\n' +
-                       '**Permission:** None\n' +
-                       '**Example:** `/voice leave`'
-              },
-              {
-                name: '`/voice message [text]`',
-                value: 'Send a text-to-speech message in the voice channel\n' +
-                       '**Permission:** None\n' +
-                       '**Example:** `/voice message Hello everyone!`'
-              },
-              {
-                name: '`/voice announce [enable/disable]`',
-                value: 'Toggle join/leave announcements in voice channels\n' +
-                       '**Permission:** Manage Server\n' +
-                       '**Example:** `/voice announce enable`'
-              }
-            );
-          break;
-          
-        case 'game':
-          detailedEmbed = new EmbedBuilder()
-            .setTitle('🎮 Game Commands')
-            .setDescription('Detailed information about game commands')
-            .setColor(0xE74C3C)
-            .addFields(
-              {
-                name: '`/game create [type]`',
-                value: 'Create a new game session\n' +
-                       '**Permission:** None\n' +
-                       '**Example:** `/game create trivia`'
-              },
-              {
-                name: '`/game join [sessionId]`',
-                value: 'Join an existing game session\n' +
-                       '**Permission:** None\n' +
-                       '**Example:** `/game join 12345`'
-              },
-              {
-                name: '`/game leave`',
-                value: 'Leave a game session\n' +
-                       '**Permission:** None\n' +
-                       '**Example:** `/game leave`'
-              },
-              {
-                name: '`/game start`',
-                value: 'Start a game session you created\n' +
-                       '**Permission:** None (must be the creator)\n' +
-                       '**Example:** `/game start`'
-              }
-            );
-          break;
-          
-        case 'premium':
-          detailedEmbed = new EmbedBuilder()
-            .setTitle('⭐ Premium Commands')
-            .setDescription('Detailed information about premium features and commands')
-            .setColor(0xF1C40F)
-            .addFields(
-              {
-                name: '`/premium [action]`',
-                value: 'Manage premium features for your server\n' +
-                       '**Actions:** status, automod, antinuke, lockdown\n' +
-                       '**Permission:** None (premium access required)\n' +
-                       '**Example:** `/premium status`'
-              },
-              {
-                name: '`/premium automod [enable/disable]`',
-                value: 'Configure auto-moderation features\n' +
-                       '**Permission:** None (premium access required)\n' +
-                       '**Example:** `/premium automod enable`'
-              },
-              {
-                name: '`/premium antinuke [enable/disable]`',
-                value: 'Configure anti-nuke protection\n' +
-                       '**Permission:** None (premium access required)\n' +
-                       '**Example:** `/premium antinuke enable`'
-              },
-              {
-                name: '`/premium lockdown [enable/disable]`',
-                value: 'Configure emergency lockdown system\n' +
-                       '**Permission:** None (premium access required)\n' +
-                       '**Example:** `/premium lockdown enable`'
-              },
-              {
-                name: '⭐ How to Get Premium',
-                value: 'Premium access is available to:\n' +
-                       '• Bot owners\n' +
-                       '• Users with "2007" in their username\n' +
-                       '• Servers marked as premium by the bot owner'
-              }
-            );
-          break;
-      }
-      
-      // Show detailed help as a followup
-      if (detailedEmbed) {
-        await i.followUp({
-          embeds: [detailedEmbed],
-          ephemeral: true
-        });
-      }
-    }
-    else if (i.customId === 'back_to_dashboard') {
-      // Go back to main dashboard
-      helpCollector.stop();
-      
-      // Recreate main dashboard embed with all options
-      const dashboardEmbed = {
-        title: '🛡️ Phantom Guard Dashboard',
-        description: `Welcome to the in-Discord dashboard! Use the menu below to manage your server settings.`,
-        color: 0x7289DA,
-        fields: [
-          {
-            name: '🔒 Security Settings',
-            value: `Adjust anti-nuke, verification, and raid protection settings`
-          },
-          {
-            name: '🔔 Notification Settings',
-            value: `Configure welcome messages, announcements, and log channels`
-          },
-          {
-            name: '📱 YouTube Verification',
-            value: `Configure YouTube verification system and image verification`
-          },
-          {
-            name: '🎤 Voice & Counters',
-            value: `Set up voice features and live subscriber counters`
-          },
-          {
-            name: '🎮 Game & Entertainment',
-            value: `Control game features and entertainment options`
-          },
-          {
-            name: '📊 Server Statistics',
-            value: `View activity, verification, and security stats`
-          },
-          {
-            name: '❓ Help & Info',
-            value: `Get help and detailed command information`
-          }
-        ],
-        footer: {
-          text: 'Select an option from the dropdown menu below'
-        }
-      };
-      
-      // Create dashboard menu components with all options
-      const dashboardRow = new ActionRowBuilder()
-        .addComponents(
-          new StringSelectMenuBuilder()
-            .setCustomId('dashboard_menu')
-            .setPlaceholder('Select a dashboard option')
-            .addOptions([
-              new StringSelectMenuOptionBuilder()
-                .setLabel('Security Settings')
-                .setDescription('Configure anti-nuke, verification, and raid protection')
-                .setValue('security')
-                .setEmoji('🔒'),
-              new StringSelectMenuOptionBuilder()
-                .setLabel('Notification Settings')
-                .setDescription('Set up welcome messages, logs, and announcements')
-                .setValue('notifications')
-                .setEmoji('🔔'),
-              new StringSelectMenuOptionBuilder()
-                .setLabel('YouTube Verification')
-                .setDescription('Configure YouTube verification system and image verification')
-                .setValue('youtube')
-                .setEmoji('📱'),
-              new StringSelectMenuOptionBuilder()
-                .setLabel('Voice & Counters')
-                .setDescription('Set up voice features and live subscriber counters')
-                .setValue('voice')
-                .setEmoji('🎤'),
-              new StringSelectMenuOptionBuilder()
-                .setLabel('Game Settings')
-                .setDescription('Manage game features and entertainment options')
-                .setValue('games')
-                .setEmoji('🎮'),
-              new StringSelectMenuOptionBuilder()
-                .setLabel('Server Statistics')
-                .setDescription('View activity and security stats')
-                .setValue('stats')
-                .setEmoji('📊'),
-              new StringSelectMenuOptionBuilder()
-                .setLabel('Help & Info')
-                .setDescription('Get help and detailed command information')
-                .setValue('help')
-                .setEmoji('❓')
-            ])
-        );
-      
-      await i.message.edit({
-        embeds: [dashboardEmbed],
-        components: [dashboardRow]
-      });
-    }
-  });
-  
-  helpCollector.on('end', () => {
-    // Disable the components when collection period ends
-    if (interaction.message.editable) {
-      try {
-        const disabledHelpNavRow = ActionRowBuilder.from(helpNavRow);
-        disabledHelpNavRow.components.forEach(button => {
-          button.setDisabled(true);
-        });
-        
-        const disabledHelpNavRow2 = ActionRowBuilder.from(helpNavRow2);
-        disabledHelpNavRow2.components.forEach(button => {
-          button.setDisabled(true);
-        });
-        
-        const disabledBackRow = ActionRowBuilder.from(backRow);
-        disabledBackRow.components.forEach(button => {
-          button.setDisabled(true);
-        });
-        
-        interaction.message.edit({ 
-          components: [disabledHelpNavRow, disabledHelpNavRow2, disabledBackRow] 
-        }).catch(console.error);
-      } catch (error) {
-        console.error('Error disabling buttons:', error);
-      }
-    }
-  });
-}
-
-// Handle security settings display
+// Add other handler functions here
 async function handleSecuritySettings(interaction, guild, serverConfig, client) {
-  // Get current security settings
-  const antiNukeEnabled = serverConfig.antiNuke || false;
-  const verificationEnabled = serverConfig.verification?.enabled || false;
-  const raidProtectionEnabled = serverConfig.raidProtection || false;
-  const verificationChannel = serverConfig.verification?.channelId ? 
-    `<#${serverConfig.verification.channelId}>` : 'Not set';
-  const verifiedRole = serverConfig.verification?.roleId ? 
-    `<@&${serverConfig.verification.roleId}>` : 'Not set';
+  // Implement security settings UI
+  const antiNukeEnabled = serverConfig.antiNukeEnabled || false;
+  const verificationEnabled = serverConfig.verificationEnabled || false;
+  const securityLevel = serverConfig.securityLevel || 'medium';
+  const securityAction = serverConfig.securityAction || 'kick';
+  const whitelistedRoles = serverConfig.whitelistedRoles || [];
+  const whitelistedUsers = serverConfig.whitelistedUsers || [];
+  
+  // Format whitelisted items for display
+  const formattedRoles = whitelistedRoles.length > 0 
+    ? whitelistedRoles.map(r => `<@&${r}>`).join(', ') 
+    : 'None';
+  
+  const formattedUsers = whitelistedUsers.length > 0 
+    ? whitelistedUsers.map(u => `<@${u}>`).join(', ') 
+    : 'None';
   
   // Create security settings embed
   const securityEmbed = {
     title: '🔒 Security Settings',
     description: `Manage security features for ${guild.name}`,
-    color: 0xFF5733, // Orange-red color
+    color: 0xE74C3C, // Red
     fields: [
       {
         name: '🛡️ Anti-Nuke Protection',
-        value: `Status: ${antiNukeEnabled ? '✅ Enabled' : '❌ Disabled'}\nProtects against mass bans, channel deletions, and role changes`
+        value: `Status: ${antiNukeEnabled ? '✅ Enabled' : '❌ Disabled'}\n` +
+               `Protects against mass-bans, channel/role deletions, and other destructive actions`
       },
       {
         name: '✅ Verification System',
-        value: `Status: ${verificationEnabled ? '✅ Enabled' : '❌ Disabled'}\nChannel: ${verificationChannel}\nVerified Role: ${verifiedRole}`
+        value: `Status: ${verificationEnabled ? '✅ Enabled' : '❌ Disabled'}\n` +
+               `Requires new members to verify before accessing the server`
       },
       {
-        name: '🚫 Raid Protection',
-        value: `Status: ${raidProtectionEnabled ? '✅ Enabled' : '❌ Disabled'}\nPrevents large numbers of users joining at once`
+        name: '⚙️ Security Level',
+        value: `Current: ${securityLevel.charAt(0).toUpperCase() + securityLevel.slice(1)}\n` +
+               `Determines sensitivity of security triggers`
+      },
+      {
+        name: '⚡ Security Action',
+        value: `Current: ${securityAction.charAt(0).toUpperCase() + securityAction.slice(1)}\n` +
+               `Action taken when security is triggered`
+      },
+      {
+        name: '✳️ Whitelisted Roles',
+        value: formattedRoles.length > 1000 ? `${formattedRoles.substring(0, 997)}...` : formattedRoles
+      },
+      {
+        name: '👤 Whitelisted Users',
+        value: formattedUsers.length > 1000 ? `${formattedUsers.substring(0, 997)}...` : formattedUsers
       }
     ],
     footer: {
-      text: 'Use the buttons below to toggle settings'
+      text: 'Use the buttons below to manage security settings'
     }
   };
   
   // Create buttons for security settings
-  const securityRow = new ActionRowBuilder()
+  const toggleRow = new ActionRowBuilder()
     .addComponents(
       new ButtonBuilder()
         .setCustomId('toggle_antinuke')
@@ -1406,11 +942,39 @@ async function handleSecuritySettings(interaction, guild, serverConfig, client) 
       new ButtonBuilder()
         .setCustomId('toggle_verification')
         .setLabel(`${verificationEnabled ? 'Disable' : 'Enable'} Verification`)
-        .setStyle(verificationEnabled ? ButtonStyle.Danger : ButtonStyle.Success),
+        .setStyle(verificationEnabled ? ButtonStyle.Danger : ButtonStyle.Success)
+    );
+  
+  const levelRow = new ActionRowBuilder()
+    .addComponents(
       new ButtonBuilder()
-        .setCustomId('toggle_raidprotection')
-        .setLabel(`${raidProtectionEnabled ? 'Disable' : 'Enable'} Raid Protection`)
-        .setStyle(raidProtectionEnabled ? ButtonStyle.Danger : ButtonStyle.Success)
+        .setCustomId('security_level_low')
+        .setLabel('Low Security')
+        .setStyle(securityLevel === 'low' ? ButtonStyle.Primary : ButtonStyle.Secondary),
+      new ButtonBuilder()
+        .setCustomId('security_level_medium')
+        .setLabel('Medium Security')
+        .setStyle(securityLevel === 'medium' ? ButtonStyle.Primary : ButtonStyle.Secondary),
+      new ButtonBuilder()
+        .setCustomId('security_level_high')
+        .setLabel('High Security')
+        .setStyle(securityLevel === 'high' ? ButtonStyle.Primary : ButtonStyle.Secondary)
+    );
+  
+  const actionRow = new ActionRowBuilder()
+    .addComponents(
+      new ButtonBuilder()
+        .setCustomId('security_action_kick')
+        .setLabel('Kick')
+        .setStyle(securityAction === 'kick' ? ButtonStyle.Primary : ButtonStyle.Secondary),
+      new ButtonBuilder()
+        .setCustomId('security_action_ban')
+        .setLabel('Ban')
+        .setStyle(securityAction === 'ban' ? ButtonStyle.Primary : ButtonStyle.Secondary),
+      new ButtonBuilder()
+        .setCustomId('whitelist_manage')
+        .setLabel('Manage Whitelist')
+        .setStyle(ButtonStyle.Secondary)
     );
   
   const backRow = new ActionRowBuilder()
@@ -1424,7 +988,7 @@ async function handleSecuritySettings(interaction, guild, serverConfig, client) 
   // Update the message with security settings
   await interaction.message.edit({
     embeds: [securityEmbed],
-    components: [securityRow, backRow]
+    components: [toggleRow, levelRow, actionRow, backRow]
   });
   
   // Set up collector for security buttons
@@ -1435,93 +999,206 @@ async function handleSecuritySettings(interaction, guild, serverConfig, client) 
   });
   
   securityCollector.on('collect', async i => {
-    await i.deferUpdate();
-    const serverConfig = config.getServerConfig(guild.id);
+    try {
+      await i.deferUpdate();
+    } catch (error) {
+      console.error('Error deferring button update:', error);
+    }
     
-    // Handle button interactions
+    // Handle toggles for anti-nuke and verification
     if (i.customId === 'toggle_antinuke') {
-      const newValue = !serverConfig.antiNuke;
-      config.updateServerConfig(guild.id, { antiNuke: newValue });
-
-      // Create updated button with new state
-      const updatedSecurityRow = new ActionRowBuilder()
+      const newValue = !serverConfig.antiNukeEnabled;
+      config.updateServerConfig(guild.id, { antiNukeEnabled: newValue });
+      
+      // Update the first button
+      const updatedToggleRow = new ActionRowBuilder()
         .addComponents(
           new ButtonBuilder()
             .setCustomId('toggle_antinuke')
             .setLabel(`${newValue ? 'Disable' : 'Enable'} Anti-Nuke`)
             .setStyle(newValue ? ButtonStyle.Danger : ButtonStyle.Success),
-          ButtonBuilder.from(securityRow.components[1]),
-          ButtonBuilder.from(securityRow.components[2])
+          ButtonBuilder.from(toggleRow.components[1])
         );
-
-      // Create updated embed with new values
+      
+      // Update the embed field
       const updatedEmbed = { ...securityEmbed };
-      updatedEmbed.fields[0].value = `Status: ${newValue ? '✅ Enabled' : '❌ Disabled'}\nProtects against mass bans, channel deletions, and role changes`;
-
+      updatedEmbed.fields[0].value = `Status: ${newValue ? '✅ Enabled' : '❌ Disabled'}\n` +
+             `Protects against mass-bans, channel/role deletions, and other destructive actions`;
+      
       // Update the message
       await i.message.edit({
         embeds: [updatedEmbed],
-        components: [updatedSecurityRow, backRow]
+        components: [updatedToggleRow, levelRow, actionRow, backRow]
       });
-    } 
+      
+      // Show confirmation message
+      await i.followUp({
+        content: `🔒 Anti-Nuke protection is now ${newValue ? 'enabled' : 'disabled'}.`,
+        ephemeral: true
+      });
+    }
     else if (i.customId === 'toggle_verification') {
-      const verification = serverConfig.verification || {};
-      const newValue = !verification.enabled;
-      config.updateServerConfig(guild.id, { 
-        verification: { ...verification, enabled: newValue } 
-      });
-
-      // Create updated button with new state
-      const updatedSecurityRow = new ActionRowBuilder()
+      const newValue = !serverConfig.verificationEnabled;
+      config.updateServerConfig(guild.id, { verificationEnabled: newValue });
+      
+      // Update the second button
+      const updatedToggleRow = new ActionRowBuilder()
         .addComponents(
-          ButtonBuilder.from(securityRow.components[0]),
+          ButtonBuilder.from(toggleRow.components[0]),
           new ButtonBuilder()
             .setCustomId('toggle_verification')
             .setLabel(`${newValue ? 'Disable' : 'Enable'} Verification`)
-            .setStyle(newValue ? ButtonStyle.Danger : ButtonStyle.Success),
-          ButtonBuilder.from(securityRow.components[2])
-        );
-
-      // Create updated embed with new values  
-      const updatedEmbed = { ...securityEmbed };
-      updatedEmbed.fields[1].value = `Status: ${newValue ? '✅ Enabled' : '❌ Disabled'}\nChannel: ${verificationChannel}\nVerified Role: ${verifiedRole}`;
-
-      // Update the message
-      await i.message.edit({
-        embeds: [updatedEmbed],
-        components: [updatedSecurityRow, backRow]
-      });
-    }
-    else if (i.customId === 'toggle_raidprotection') {
-      const newValue = !serverConfig.raidProtection;
-      config.updateServerConfig(guild.id, { raidProtection: newValue });
-
-      // Create updated button with new state
-      const updatedSecurityRow = new ActionRowBuilder()
-        .addComponents(
-          ButtonBuilder.from(securityRow.components[0]),
-          ButtonBuilder.from(securityRow.components[1]),
-          new ButtonBuilder()
-            .setCustomId('toggle_raidprotection')
-            .setLabel(`${newValue ? 'Disable' : 'Enable'} Raid Protection`)
             .setStyle(newValue ? ButtonStyle.Danger : ButtonStyle.Success)
         );
-
-      // Create updated embed with new values
+      
+      // Update the embed field
       const updatedEmbed = { ...securityEmbed };
-      updatedEmbed.fields[2].value = `Status: ${newValue ? '✅ Enabled' : '❌ Disabled'}\nPrevents large numbers of users joining at once`;
-
+      updatedEmbed.fields[1].value = `Status: ${newValue ? '✅ Enabled' : '❌ Disabled'}\n` +
+             `Requires new members to verify before accessing the server`;
+      
       // Update the message
       await i.message.edit({
         embeds: [updatedEmbed],
-        components: [updatedSecurityRow, backRow]
+        components: [updatedToggleRow, levelRow, actionRow, backRow]
+      });
+      
+      // Show confirmation message
+      await i.followUp({
+        content: `✅ Verification system is now ${newValue ? 'enabled' : 'disabled'}.`,
+        ephemeral: true
       });
     }
+    
+    // Handle security level changes
+    else if (i.customId.startsWith('security_level_')) {
+      const newLevel = i.customId.replace('security_level_', '');
+      config.updateServerConfig(guild.id, { securityLevel: newLevel });
+      
+      // Update the security level buttons
+      const updatedLevelRow = new ActionRowBuilder()
+        .addComponents(
+          new ButtonBuilder()
+            .setCustomId('security_level_low')
+            .setLabel('Low Security')
+            .setStyle(newLevel === 'low' ? ButtonStyle.Primary : ButtonStyle.Secondary),
+          new ButtonBuilder()
+            .setCustomId('security_level_medium')
+            .setLabel('Medium Security')
+            .setStyle(newLevel === 'medium' ? ButtonStyle.Primary : ButtonStyle.Secondary),
+          new ButtonBuilder()
+            .setCustomId('security_level_high')
+            .setLabel('High Security')
+            .setStyle(newLevel === 'high' ? ButtonStyle.Primary : ButtonStyle.Secondary)
+        );
+      
+      // Update the embed field
+      const updatedEmbed = { ...securityEmbed };
+      updatedEmbed.fields[2].value = `Current: ${newLevel.charAt(0).toUpperCase() + newLevel.slice(1)}\n` +
+             `Determines sensitivity of security triggers`;
+      
+      // Update the message
+      await i.message.edit({
+        embeds: [updatedEmbed],
+        components: [toggleRow, updatedLevelRow, actionRow, backRow]
+      });
+      
+      // Show confirmation message with explanation
+      let explanation = '';
+      if (newLevel === 'low') {
+        explanation = 'Only the most severe actions will trigger security responses.';
+      } else if (newLevel === 'medium') {
+        explanation = 'Balanced security that catches most malicious actions while minimizing false positives.';
+      } else if (newLevel === 'high') {
+        explanation = 'Maximum security that may occasionally trigger on legitimate actions.';
+      }
+      
+      await i.followUp({
+        content: `⚙️ Security level set to: ${newLevel.toUpperCase()}\n${explanation}`,
+        ephemeral: true
+      });
+    }
+    
+    // Handle security action changes
+    else if (i.customId.startsWith('security_action_')) {
+      const newAction = i.customId.replace('security_action_', '');
+      config.updateServerConfig(guild.id, { securityAction: newAction });
+      
+      // Update the security action buttons
+      const updatedActionRow = new ActionRowBuilder()
+        .addComponents(
+          new ButtonBuilder()
+            .setCustomId('security_action_kick')
+            .setLabel('Kick')
+            .setStyle(newAction === 'kick' ? ButtonStyle.Primary : ButtonStyle.Secondary),
+          new ButtonBuilder()
+            .setCustomId('security_action_ban')
+            .setLabel('Ban')
+            .setStyle(newAction === 'ban' ? ButtonStyle.Primary : ButtonStyle.Secondary),
+          ButtonBuilder.from(actionRow.components[2])
+        );
+      
+      // Update the embed field
+      const updatedEmbed = { ...securityEmbed };
+      updatedEmbed.fields[3].value = `Current: ${newAction.charAt(0).toUpperCase() + newAction.slice(1)}\n` +
+             `Action taken when security is triggered`;
+      
+      // Update the message
+      await i.message.edit({
+        embeds: [updatedEmbed],
+        components: [toggleRow, levelRow, updatedActionRow, backRow]
+      });
+      
+      // Show confirmation message
+      await i.followUp({
+        content: `⚡ Security action set to: ${newAction.toUpperCase()}\nUsers who trigger security measures will be ${newAction}ed.`,
+        ephemeral: true
+      });
+    }
+    
+    // Handle whitelist management
+    else if (i.customId === 'whitelist_manage') {
+      // Create whitelist management embed
+      const whitelistEmbed = new EmbedBuilder()
+        .setTitle('✅ Whitelist Management')
+        .setDescription('Users and roles on the whitelist are exempt from security actions')
+        .setColor(0x2ECC71)
+        .addFields(
+          {
+            name: '👤 Whitelisted Users',
+            value: formattedUsers.length > 1000 ? 
+              `${whitelistedUsers.length} users whitelisted - use \`/whitelist list\` to see all` : 
+              formattedUsers || 'None'
+          },
+          {
+            name: '✳️ Whitelisted Roles',
+            value: formattedRoles.length > 1000 ? 
+              `${whitelistedRoles.length} roles whitelisted - use \`/whitelist list\` to see all` : 
+              formattedRoles || 'None'
+          },
+          {
+            name: '📝 How to Manage',
+            value: 'Use the following commands to manage the whitelist:\n' +
+                   '`/whitelist add @user` - Add a user to whitelist\n' +
+                   '`/whitelist add @role` - Add a role to whitelist\n' +
+                   '`/whitelist remove @user` - Remove a user from whitelist\n' +
+                   '`/whitelist remove @role` - Remove a role from whitelist\n' +
+                   '`/whitelist list` - Show all whitelisted users and roles'
+          }
+        );
+      
+      // Show whitelist management as followup
+      await i.followUp({
+        embeds: [whitelistEmbed],
+        ephemeral: true
+      });
+    }
+    
+    // Handle back to dashboard
     else if (i.customId === 'back_to_dashboard') {
       // Go back to main dashboard
       securityCollector.stop();
       
-      // Recreate main dashboard embed
+      // Recreate main dashboard embed with updated menu
       const dashboardEmbed = {
         title: '🛡️ Phantom Guard Dashboard',
         description: `Welcome to the in-Discord dashboard! Use the menu below to manage your server settings.`,
@@ -1567,6 +1244,16 @@ async function handleSecuritySettings(interaction, guild, serverConfig, client) 
                 .setValue('notifications')
                 .setEmoji('🔔'),
               new StringSelectMenuOptionBuilder()
+                .setLabel('YouTube Verification')
+                .setDescription('Configure YouTube verification system and image verification')
+                .setValue('youtube')
+                .setEmoji('📱'),
+              new StringSelectMenuOptionBuilder()
+                .setLabel('Voice & Counters')
+                .setDescription('Set up voice features and live subscriber counters')
+                .setValue('voice')
+                .setEmoji('🎤'),
+              new StringSelectMenuOptionBuilder()
                 .setLabel('Game Settings')
                 .setDescription('Manage game features and entertainment options')
                 .setValue('games')
@@ -1575,93 +1262,85 @@ async function handleSecuritySettings(interaction, guild, serverConfig, client) 
                 .setLabel('Server Statistics')
                 .setDescription('View activity and security stats')
                 .setValue('stats')
-                .setEmoji('📊')
+                .setEmoji('📊'),
+              new StringSelectMenuOptionBuilder()
+                .setLabel('Help & Info')
+                .setDescription('Get help and detailed command information')
+                .setValue('help')
+                .setEmoji('❓')
             ])
         );
       
+      // Update the message with main dashboard
       await i.message.edit({
         embeds: [dashboardEmbed],
         components: [dashboardRow]
       });
     }
   });
-  
-  securityCollector.on('end', () => {
-    // Function to disable all buttons when collector ends
-    if (interaction.message.editable) {
-      try {
-        const disabledSecurityRow = ActionRowBuilder.from(securityRow);
-        disabledSecurityRow.components.forEach(button => {
-          button.setDisabled(true);
-        });
-        
-        const disabledBackRow = ActionRowBuilder.from(backRow);
-        disabledBackRow.components.forEach(button => {
-          button.setDisabled(true);
-        });
-        
-        interaction.message.edit({ 
-          components: [disabledSecurityRow, disabledBackRow] 
-        }).catch(console.error);
-      } catch (error) {
-        console.error('Error disabling buttons:', error);
-      }
-    }
-  });
 }
 
-// Handle notification settings display
+// Add other handlers later as needed
 async function handleNotificationSettings(interaction, guild, serverConfig, client) {
-  // Get current notification settings
-  const welcomeEnabled = serverConfig.welcome?.enabled || false;
-  const welcomeChannel = serverConfig.welcome?.channelId ? 
-    `<#${serverConfig.welcome.channelId}>` : 'Not set';
-  const logsEnabled = serverConfig.logs?.enabled || false;
-  const logsChannel = serverConfig.logs?.channelId ? 
-    `<#${serverConfig.logs.channelId}>` : 'Not set';
-  const announcerEnabled = serverConfig.announcer?.enabled || false;
-  const announcerChannel = serverConfig.announcer?.channelId ? 
-    `<#${serverConfig.announcer.channelId}>` : 'Not set';
+  // Implementation of notification settings UI
+  const welcomeEnabled = serverConfig.welcomeEnabled || false;
+  const welcomeChannelId = serverConfig.welcomeChannelId || 'Not set';
+  const welcomeMessage = serverConfig.welcomeMessage || 'Welcome {user} to {server}!';
+  const logChannelId = serverConfig.logChannelId || 'Not set';
+  const announcerEnabled = serverConfig.announcerEnabled || false;
+  const announcerChannelId = serverConfig.announcerChannelId || 'Not set';
   
   // Create notification settings embed
   const notificationEmbed = {
     title: '🔔 Notification Settings',
-    description: `Manage notification features for ${guild.name}`,
-    color: 0x3498DB, // Blue color
+    description: `Manage notification settings for ${guild.name}`,
+    color: 0xF1C40F, // Yellow
     fields: [
       {
         name: '👋 Welcome Messages',
-        value: `Status: ${welcomeEnabled ? '✅ Enabled' : '❌ Disabled'}\nChannel: ${welcomeChannel}`
+        value: `Status: ${welcomeEnabled ? '✅ Enabled' : '❌ Disabled'}\n` +
+               `Channel: ${welcomeChannelId !== 'Not set' ? `<#${welcomeChannelId}>` : 'Not set'}\n` +
+               `Message: ${welcomeMessage.length > 100 ? welcomeMessage.substring(0, 97) + '...' : welcomeMessage}`
       },
       {
         name: '📝 Server Logs',
-        value: `Status: ${logsEnabled ? '✅ Enabled' : '❌ Disabled'}\nChannel: ${logsChannel}`
+        value: `Channel: ${logChannelId !== 'Not set' ? `<#${logChannelId}>` : 'Not set'}\n` +
+               `Use \`/setlogs\` to configure log channels`
       },
       {
         name: '📢 Announcer',
-        value: `Status: ${announcerEnabled ? '✅ Enabled' : '❌ Disabled'}\nChannel: ${announcerChannel}`
+        value: `Status: ${announcerEnabled ? '✅ Enabled' : '❌ Disabled'}\n` +
+               `Channel: ${announcerChannelId !== 'Not set' ? `<#${announcerChannelId}>` : 'Not set'}`
       }
     ],
     footer: {
-      text: 'Use the buttons below to toggle settings'
+      text: 'Use the buttons below to manage notification settings'
     }
   };
   
   // Create buttons for notification settings
-  const notificationRow = new ActionRowBuilder()
+  const welcomeRow = new ActionRowBuilder()
     .addComponents(
       new ButtonBuilder()
         .setCustomId('toggle_welcome')
-        .setLabel(`${welcomeEnabled ? 'Disable' : 'Enable'} Welcome`)
+        .setLabel(`${welcomeEnabled ? 'Disable' : 'Enable'} Welcome Messages`)
         .setStyle(welcomeEnabled ? ButtonStyle.Danger : ButtonStyle.Success),
       new ButtonBuilder()
-        .setCustomId('toggle_logs')
-        .setLabel(`${logsEnabled ? 'Disable' : 'Enable'} Logs`)
-        .setStyle(logsEnabled ? ButtonStyle.Danger : ButtonStyle.Success),
+        .setCustomId('edit_welcome_message')
+        .setLabel('Edit Welcome Message')
+        .setStyle(ButtonStyle.Primary)
+    );
+  
+  const announcerRow = new ActionRowBuilder()
+    .addComponents(
       new ButtonBuilder()
         .setCustomId('toggle_announcer')
         .setLabel(`${announcerEnabled ? 'Disable' : 'Enable'} Announcer`)
-        .setStyle(announcerEnabled ? ButtonStyle.Danger : ButtonStyle.Success)
+        .setStyle(announcerEnabled ? ButtonStyle.Danger : ButtonStyle.Success),
+      new ButtonBuilder()
+        .setCustomId('configure_logs')
+        .setLabel('Configure Logs')
+        .setStyle(ButtonStyle.Secondary)
     );
   
   const backRow = new ActionRowBuilder()
@@ -1675,10 +1354,10 @@ async function handleNotificationSettings(interaction, guild, serverConfig, clie
   // Update the message with notification settings
   await interaction.message.edit({
     embeds: [notificationEmbed],
-    components: [notificationRow, backRow]
+    components: [welcomeRow, announcerRow, backRow]
   });
   
-  // Setup collector for the buttons
+  // Set up collector for notification buttons
   const filter = i => i.user.id === interaction.user.id;
   const notificationCollector = interaction.message.createMessageComponentCollector({
     filter,
@@ -1686,99 +1365,147 @@ async function handleNotificationSettings(interaction, guild, serverConfig, clie
   });
   
   notificationCollector.on('collect', async i => {
-    await i.deferUpdate();
-    const serverConfig = config.getServerConfig(guild.id);
+    try {
+      await i.deferUpdate();
+    } catch (error) {
+      console.error('Error deferring button update:', error);
+    }
     
     // Handle button interactions
     if (i.customId === 'toggle_welcome') {
-      const welcome = serverConfig.welcome || {};
-      const newValue = !welcome.enabled;
-      config.updateServerConfig(guild.id, { 
-        welcome: { ...welcome, enabled: newValue } 
-      });
+      const newValue = !serverConfig.welcomeEnabled;
+      config.updateServerConfig(guild.id, { welcomeEnabled: newValue });
       
-      // Create updated button with new state
-      const updatedNotificationRow = new ActionRowBuilder()
+      // Update the welcome toggle button
+      const updatedWelcomeRow = new ActionRowBuilder()
         .addComponents(
           new ButtonBuilder()
             .setCustomId('toggle_welcome')
-            .setLabel(`${newValue ? 'Disable' : 'Enable'} Welcome`)
+            .setLabel(`${newValue ? 'Disable' : 'Enable'} Welcome Messages`)
             .setStyle(newValue ? ButtonStyle.Danger : ButtonStyle.Success),
-          ButtonBuilder.from(notificationRow.components[1]),
-          ButtonBuilder.from(notificationRow.components[2])
+          ButtonBuilder.from(welcomeRow.components[1])
         );
-
-      // Create updated embed with new values
+      
+      // Update the embed field
       const updatedEmbed = { ...notificationEmbed };
-      updatedEmbed.fields[0].value = `Status: ${newValue ? '✅ Enabled' : '❌ Disabled'}\nChannel: ${welcomeChannel}`;
-
+      updatedEmbed.fields[0].value = `Status: ${newValue ? '✅ Enabled' : '❌ Disabled'}\n` +
+               `Channel: ${welcomeChannelId !== 'Not set' ? `<#${welcomeChannelId}>` : 'Not set'}\n` +
+               `Message: ${welcomeMessage.length > 100 ? welcomeMessage.substring(0, 97) + '...' : welcomeMessage}`;
+      
       // Update the message
       await i.message.edit({
         embeds: [updatedEmbed],
-        components: [updatedNotificationRow, backRow]
-      });
-    } 
-    else if (i.customId === 'toggle_logs') {
-      const logs = serverConfig.logs || {};
-      const newValue = !logs.enabled;
-      config.updateServerConfig(guild.id, { 
-        logs: { ...logs, enabled: newValue } 
+        components: [updatedWelcomeRow, announcerRow, backRow]
       });
       
-      // Create updated button with new state
-      const updatedNotificationRow = new ActionRowBuilder()
-        .addComponents(
-          ButtonBuilder.from(notificationRow.components[0]),
-          new ButtonBuilder()
-            .setCustomId('toggle_logs')
-            .setLabel(`${newValue ? 'Disable' : 'Enable'} Logs`)
-            .setStyle(newValue ? ButtonStyle.Danger : ButtonStyle.Success),
-          ButtonBuilder.from(notificationRow.components[2])
+      // Show confirmation message
+      await i.followUp({
+        content: `👋 Welcome messages are now ${newValue ? 'enabled' : 'disabled'}.`,
+        ephemeral: true
+      });
+    }
+    else if (i.customId === 'edit_welcome_message') {
+      // Show welcome message edit info
+      const welcomeEditEmbed = new EmbedBuilder()
+        .setTitle('✏️ Edit Welcome Message')
+        .setDescription('Use the following command to set a custom welcome message:')
+        .setColor(0x3498DB)
+        .addFields(
+          {
+            name: '📝 Current Message',
+            value: welcomeMessage || 'Welcome {user} to {server}!'
+          },
+          {
+            name: '🔄 How to Change',
+            value: 'Use `/setwelcome channel #channel message Your custom message` to update\n\n' +
+                   'Available variables:\n' +
+                   '`{user}` - Mentions the new member\n' +
+                   '`{username}` - Username without mention\n' +
+                   '`{server}` - Server name\n' +
+                   '`{membercount}` - Current member count'
+          },
+          {
+            name: '🌟 Example',
+            value: '`/setwelcome channel #welcome message Welcome {user} to {server}! You are our {membercount}th member!`'
+          }
         );
-
-      // Create updated embed with new values
-      const updatedEmbed = { ...notificationEmbed };
-      updatedEmbed.fields[1].value = `Status: ${newValue ? '✅ Enabled' : '❌ Disabled'}\nChannel: ${logsChannel}`;
-
-      // Update the message
-      await i.message.edit({
-        embeds: [updatedEmbed],
-        components: [updatedNotificationRow, backRow]
+      
+      // Show welcome edit info as followup
+      await i.followUp({
+        embeds: [welcomeEditEmbed],
+        ephemeral: true
       });
     }
     else if (i.customId === 'toggle_announcer') {
-      const announcer = serverConfig.announcer || {};
-      const newValue = !announcer.enabled;
-      config.updateServerConfig(guild.id, { 
-        announcer: { ...announcer, enabled: newValue } 
-      });
+      const newValue = !serverConfig.announcerEnabled;
+      config.updateServerConfig(guild.id, { announcerEnabled: newValue });
       
-      // Create updated button with new state
-      const updatedNotificationRow = new ActionRowBuilder()
+      // Update the announcer toggle button
+      const updatedAnnouncerRow = new ActionRowBuilder()
         .addComponents(
-          ButtonBuilder.from(notificationRow.components[0]),
-          ButtonBuilder.from(notificationRow.components[1]),
           new ButtonBuilder()
             .setCustomId('toggle_announcer')
             .setLabel(`${newValue ? 'Disable' : 'Enable'} Announcer`)
-            .setStyle(newValue ? ButtonStyle.Danger : ButtonStyle.Success)
+            .setStyle(newValue ? ButtonStyle.Danger : ButtonStyle.Success),
+          ButtonBuilder.from(announcerRow.components[1])
         );
-
-      // Create updated embed with new values
+      
+      // Update the embed field
       const updatedEmbed = { ...notificationEmbed };
-      updatedEmbed.fields[2].value = `Status: ${newValue ? '✅ Enabled' : '❌ Disabled'}\nChannel: ${announcerChannel}`;
-
+      updatedEmbed.fields[2].value = `Status: ${newValue ? '✅ Enabled' : '❌ Disabled'}\n` +
+               `Channel: ${announcerChannelId !== 'Not set' ? `<#${announcerChannelId}>` : 'Not set'}`;
+      
       // Update the message
       await i.message.edit({
         embeds: [updatedEmbed],
-        components: [updatedNotificationRow, backRow]
+        components: [welcomeRow, updatedAnnouncerRow, backRow]
+      });
+      
+      // Show confirmation message
+      await i.followUp({
+        content: `📢 Announcer is now ${newValue ? 'enabled' : 'disabled'}.`,
+        ephemeral: true
+      });
+    }
+    else if (i.customId === 'configure_logs') {
+      // Show log configuration info
+      const logConfigEmbed = new EmbedBuilder()
+        .setTitle('📝 Log Configuration')
+        .setDescription('Use the following command to set up log channels:')
+        .setColor(0x3498DB)
+        .addFields(
+          {
+            name: '📋 Current Log Channel',
+            value: logChannelId !== 'Not set' ? `<#${logChannelId}>` : 'Not set'
+          },
+          {
+            name: '🔄 How to Configure',
+            value: 'Use `/setlogs channel #channel` to set a general log channel\n' +
+                   'Use `/setlogs type [type] channel #channel` to set a specific log channel\n\n' +
+                   'Available log types:\n' +
+                   '`member` - Member joins/leaves/updates\n' +
+                   '`message` - Message edits/deletes\n' +
+                   '`mod` - Moderation actions\n' +
+                   '`voice` - Voice channel events\n' +
+                   '`server` - Server setting changes'
+          },
+          {
+            name: '🌟 Example',
+            value: '`/setlogs type mod channel #mod-logs`'
+          }
+        );
+      
+      // Show log configuration info as followup
+      await i.followUp({
+        embeds: [logConfigEmbed],
+        ephemeral: true
       });
     }
     else if (i.customId === 'back_to_dashboard') {
       // Go back to main dashboard
       notificationCollector.stop();
       
-      // Recreate main dashboard embed
+      // Recreate main dashboard embed with updated menu
       const dashboardEmbed = {
         title: '🛡️ Phantom Guard Dashboard',
         description: `Welcome to the in-Discord dashboard! Use the menu below to manage your server settings.`,
@@ -1824,6 +1551,16 @@ async function handleNotificationSettings(interaction, guild, serverConfig, clie
                 .setValue('notifications')
                 .setEmoji('🔔'),
               new StringSelectMenuOptionBuilder()
+                .setLabel('YouTube Verification')
+                .setDescription('Configure YouTube verification system and image verification')
+                .setValue('youtube')
+                .setEmoji('📱'),
+              new StringSelectMenuOptionBuilder()
+                .setLabel('Voice & Counters')
+                .setDescription('Set up voice features and live subscriber counters')
+                .setValue('voice')
+                .setEmoji('🎤'),
+              new StringSelectMenuOptionBuilder()
                 .setLabel('Game Settings')
                 .setDescription('Manage game features and entertainment options')
                 .setValue('games')
@@ -1832,105 +1569,45 @@ async function handleNotificationSettings(interaction, guild, serverConfig, clie
                 .setLabel('Server Statistics')
                 .setDescription('View activity and security stats')
                 .setValue('stats')
-                .setEmoji('📊')
+                .setEmoji('📊'),
+              new StringSelectMenuOptionBuilder()
+                .setLabel('Help & Info')
+                .setDescription('Get help and detailed command information')
+                .setValue('help')
+                .setEmoji('❓')
             ])
         );
       
+      // Update the message with main dashboard
       await i.message.edit({
         embeds: [dashboardEmbed],
         components: [dashboardRow]
       });
     }
   });
-  
-  notificationCollector.on('end', () => {
-    // Disable all buttons when collector ends
-    if (interaction.message.editable) {
-      try {
-        const disabledNotificationRow = ActionRowBuilder.from(notificationRow);
-        disabledNotificationRow.components.forEach(button => {
-          button.setDisabled(true);
-        });
-        
-        const disabledBackRow = ActionRowBuilder.from(backRow);
-        disabledBackRow.components.forEach(button => {
-          button.setDisabled(true);
-        });
-        
-        interaction.message.edit({ 
-          components: [disabledNotificationRow, disabledBackRow] 
-        }).catch(console.error);
-      } catch (error) {
-        console.error('Error disabling buttons:', error);
-      }
-    }
-  });
 }
 
-// Handle game settings display
+// Placeholder for remaining handler functions
 async function handleGameSettings(interaction, guild, serverConfig, client) {
-  // Get current game settings
-  const gamesEnabled = serverConfig.games?.enabled || false;
-  const autoGameStart = serverConfig.games?.autoStart || false;
-  const gameChannel = serverConfig.games?.channelId ? 
-    `<#${serverConfig.games.channelId}>` : 'Not set';
-  
-  // Create game settings embed
-  const gameEmbed = {
-    title: '🎮 Game Settings',
-    description: `Manage game features for ${guild.name}`,
-    color: 0x9B59B6, // Purple color
-    fields: [
-      {
-        name: '🎲 Server Games',
-        value: `Status: ${gamesEnabled ? '✅ Enabled' : '❌ Disabled'}\nChannel: ${gameChannel}`
-      },
-      {
-        name: '⏱️ Auto Game Start',
-        value: `Status: ${autoGameStart ? '✅ Enabled' : '❌ Disabled'}\nAutomatically starts new games when previous ones end`
-      },
-      {
-        name: '🎯 Available Games',
-        value: `• Trivia\n• Word Scramble\n• Hangman\n• Number Guess\n• Reaction Race`
-      }
-    ],
-    footer: {
-      text: 'Use the buttons below to toggle settings'
-    }
-  };
-  
-  // Create buttons for game settings
-  const gameRow = new ActionRowBuilder()
-    .addComponents(
-      new ButtonBuilder()
-        .setCustomId('toggle_games')
-        .setLabel(`${gamesEnabled ? 'Disable' : 'Enable'} Games`)
-        .setStyle(gamesEnabled ? ButtonStyle.Danger : ButtonStyle.Success),
-      new ButtonBuilder()
-        .setCustomId('toggle_auto_games')
-        .setLabel(`${autoGameStart ? 'Disable' : 'Enable'} Auto-Start`)
-        .setStyle(autoGameStart ? ButtonStyle.Danger : ButtonStyle.Success),
-      new ButtonBuilder()
-        .setCustomId('start_game')
-        .setLabel('Start a Game Now')
-        .setStyle(ButtonStyle.Primary)
-    );
-  
-  const backRow = new ActionRowBuilder()
-    .addComponents(
-      new ButtonBuilder()
-        .setCustomId('back_to_dashboard')
-        .setLabel('Back to Main Dashboard')
-        .setStyle(ButtonStyle.Secondary)
-    );
-  
-  // Update the message with game settings
+  // Simple implementation for now
   await interaction.message.edit({
-    embeds: [gameEmbed],
-    components: [gameRow, backRow]
+    embeds: [{
+      title: '🎮 Game Settings',
+      description: 'Game settings are coming soon!',
+      color: 0x9B59B6
+    }],
+    components: [
+      new ActionRowBuilder()
+        .addComponents(
+          new ButtonBuilder()
+            .setCustomId('back_to_dashboard')
+            .setLabel('Back to Main Dashboard')
+            .setStyle(ButtonStyle.Secondary)
+        )
+    ]
   });
   
-  // Setup collector for the buttons
+  // Set up collector for game buttons
   const filter = i => i.user.id === interaction.user.id;
   const gameCollector = interaction.message.createMessageComponentCollector({
     filter,
@@ -1938,78 +1615,17 @@ async function handleGameSettings(interaction, guild, serverConfig, client) {
   });
   
   gameCollector.on('collect', async i => {
-    await i.deferUpdate();
-    const serverConfig = config.getServerConfig(guild.id);
+    try {
+      await i.deferUpdate();
+    } catch (error) {
+      console.error('Error deferring button update:', error);
+    }
     
-    // Handle button interactions
-    if (i.customId === 'toggle_games') {
-      const games = serverConfig.games || {};
-      const newValue = !games.enabled;
-      config.updateServerConfig(guild.id, { 
-        games: { ...games, enabled: newValue } 
-      });
-
-      // Create updated button with new state
-      const updatedGameRow = new ActionRowBuilder()
-        .addComponents(
-          new ButtonBuilder()
-            .setCustomId('toggle_games')
-            .setLabel(`${newValue ? 'Disable' : 'Enable'} Games`)
-            .setStyle(newValue ? ButtonStyle.Danger : ButtonStyle.Success),
-          ButtonBuilder.from(gameRow.components[1]),
-          ButtonBuilder.from(gameRow.components[2])
-        );
-
-      // Create updated embed with new values
-      const updatedEmbed = { ...gameEmbed };
-      updatedEmbed.fields[0].value = `Status: ${newValue ? '✅ Enabled' : '❌ Disabled'}\nChannel: ${gameChannel}`;
-
-      // Update the message
-      await i.message.edit({
-        embeds: [updatedEmbed],
-        components: [updatedGameRow, backRow]
-      });
-    } 
-    else if (i.customId === 'toggle_auto_games') {
-      const games = serverConfig.games || {};
-      const newValue = !games.autoStart;
-      config.updateServerConfig(guild.id, { 
-        games: { ...games, autoStart: newValue } 
-      });
-
-      // Create updated button with new state
-      const updatedGameRow = new ActionRowBuilder()
-        .addComponents(
-          ButtonBuilder.from(gameRow.components[0]),
-          new ButtonBuilder()
-            .setCustomId('toggle_auto_games')
-            .setLabel(`${newValue ? 'Disable' : 'Enable'} Auto-Start`)
-            .setStyle(newValue ? ButtonStyle.Danger : ButtonStyle.Success),
-          ButtonBuilder.from(gameRow.components[2])
-        );
-
-      // Create updated embed with new values
-      const updatedEmbed = { ...gameEmbed };
-      updatedEmbed.fields[1].value = `Status: ${newValue ? '✅ Enabled' : '❌ Disabled'}\nAutomatically starts new games when previous ones end`;
-
-      // Update the message
-      await i.message.edit({
-        embeds: [updatedEmbed],
-        components: [updatedGameRow, backRow]
-      });
-    }
-    else if (i.customId === 'start_game') {
-      // Send acknowledgement directly in the channel
-      await interaction.channel.send({
-        content: `<@${interaction.user.id}>, a new game will be started shortly in ${gameChannel !== 'Not set' ? gameChannel : 'the current channel'}!`,
-        ephemeral: true
-      });
-    }
-    else if (i.customId === 'back_to_dashboard') {
+    if (i.customId === 'back_to_dashboard') {
       // Go back to main dashboard
       gameCollector.stop();
       
-      // Recreate main dashboard embed
+      // Recreate main dashboard embed with updated menu
       const dashboardEmbed = {
         title: '🛡️ Phantom Guard Dashboard',
         description: `Welcome to the in-Discord dashboard! Use the menu below to manage your server settings.`,
@@ -2055,6 +1671,16 @@ async function handleGameSettings(interaction, guild, serverConfig, client) {
                 .setValue('notifications')
                 .setEmoji('🔔'),
               new StringSelectMenuOptionBuilder()
+                .setLabel('YouTube Verification')
+                .setDescription('Configure YouTube verification system and image verification')
+                .setValue('youtube')
+                .setEmoji('📱'),
+              new StringSelectMenuOptionBuilder()
+                .setLabel('Voice & Counters')
+                .setDescription('Set up voice features and live subscriber counters')
+                .setValue('voice')
+                .setEmoji('🎤'),
+              new StringSelectMenuOptionBuilder()
                 .setLabel('Game Settings')
                 .setDescription('Manage game features and entertainment options')
                 .setValue('games')
@@ -2063,108 +1689,54 @@ async function handleGameSettings(interaction, guild, serverConfig, client) {
                 .setLabel('Server Statistics')
                 .setDescription('View activity and security stats')
                 .setValue('stats')
-                .setEmoji('📊')
+                .setEmoji('📊'),
+              new StringSelectMenuOptionBuilder()
+                .setLabel('Help & Info')
+                .setDescription('Get help and detailed command information')
+                .setValue('help')
+                .setEmoji('❓')
             ])
         );
       
+      // Update the message with main dashboard
       await i.message.edit({
         embeds: [dashboardEmbed],
         components: [dashboardRow]
       });
     }
   });
-  
-  gameCollector.on('end', () => {
-    // Disable all buttons when collector ends
-    if (interaction.message.editable) {
-      try {
-        const disabledGameRow = ActionRowBuilder.from(gameRow);
-        disabledGameRow.components.forEach(button => {
-          button.setDisabled(true);
-        });
-        
-        const disabledBackRow = ActionRowBuilder.from(backRow);
-        disabledBackRow.components.forEach(button => {
-          button.setDisabled(true);
-        });
-        
-        interaction.message.edit({ 
-          components: [disabledGameRow, disabledBackRow] 
-        }).catch(console.error);
-      } catch (error) {
-        console.error('Error disabling buttons:', error);
-      }
-    }
-  });
 }
 
-// Handle statistics display
 async function handleStatsView(interaction, guild, serverConfig, client) {
-  // Get current server statistics
-  const memberCount = guild.memberCount;
-  const botCount = guild.members.cache.filter(m => m.user.bot).size;
-  const verificationCount = serverConfig.verification?.verifiedUsers?.length || 0;
-  const securityIncidents = serverConfig.security?.incidents?.length || 0;
-  const commandUsage = serverConfig.commandStats || {};
-  
-  // Create top commands list
-  let topCommands = 'No commands used yet';
-  const commandEntries = Object.entries(commandUsage);
-  if (commandEntries.length > 0) {
-    commandEntries.sort((a, b) => b[1] - a[1]);
-    topCommands = commandEntries.slice(0, 5)
-      .map(([cmd, count]) => `• ${cmd}: ${count} uses`)
-      .join('\n');
-  }
-  
-  // Create statistics embed
-  const statsEmbed = {
-    title: '📊 Server Statistics',
-    description: `Detailed statistics for ${guild.name}`,
-    color: 0x2ECC71, // Green color
-    fields: [
-      {
-        name: '👥 Member Statistics',
-        value: `Total Members: ${memberCount}\nHumans: ${memberCount - botCount}\nBots: ${botCount}`
-      },
-      {
-        name: '✅ Verification Statistics',
-        value: `Verified Users: ${verificationCount}\nVerification System: ${serverConfig.verification?.enabled ? 'Enabled' : 'Disabled'}`
-      },
-      {
-        name: '🛡️ Security Statistics',
-        value: `Security Incidents: ${securityIncidents}\nAnti-Nuke: ${serverConfig.antiNuke ? 'Enabled' : 'Disabled'}\nRaid Protection: ${serverConfig.raidProtection ? 'Enabled' : 'Disabled'}`
-      },
-      {
-        name: '📈 Most Used Commands',
-        value: topCommands
-      }
-    ],
-    footer: {
-      text: 'Statistics updated as of ' + new Date().toLocaleString()
-    }
-  };
-  
-  // Create button to go back
-  const backRow = new ActionRowBuilder()
-    .addComponents(
-      new ButtonBuilder()
-        .setCustomId('back_to_dashboard')
-        .setLabel('Back to Main Dashboard')
-        .setStyle(ButtonStyle.Secondary),
-      new ButtonBuilder()
-        .setCustomId('refresh_stats')
-        .setLabel('Refresh Statistics')
-        .setStyle(ButtonStyle.Primary)
-    );
-  
-  // Update the message with statistics
+  // Simple implementation for now
   await interaction.message.edit({
-    embeds: [statsEmbed],
-    components: [backRow]
+    embeds: [{
+      title: '📊 Server Statistics',
+      description: 'Detailed statistics coming soon!',
+      color: 0x3498DB,
+      fields: [
+        {
+          name: '👥 Members',
+          value: `Total: ${guild.memberCount}\nOnline: ${guild.members.cache.filter(m => m.presence?.status !== 'offline').size || 'Unknown'}`
+        },
+        {
+          name: '🛡️ Security',
+          value: `Incidents: ${serverConfig.securityIncidents?.length || 0}\nVerified users: ${serverConfig.verifiedUsers?.length || 0}`
+        }
+      ]
+    }],
+    components: [
+      new ActionRowBuilder()
+        .addComponents(
+          new ButtonBuilder()
+            .setCustomId('back_to_dashboard')
+            .setLabel('Back to Main Dashboard')
+            .setStyle(ButtonStyle.Secondary)
+        )
+    ]
   });
   
-  // Setup collector for the buttons
+  // Set up collector for stats buttons
   const filter = i => i.user.id === interaction.user.id;
   const statsCollector = interaction.message.createMessageComponentCollector({
     filter,
@@ -2172,63 +1744,17 @@ async function handleStatsView(interaction, guild, serverConfig, client) {
   });
   
   statsCollector.on('collect', async i => {
-    await i.deferUpdate();
-    
-    if (i.customId === 'refresh_stats') {
-      // Refresh the statistics
-      const refreshedConfig = config.getServerConfig(guild.id);
-      const refreshedVerificationCount = refreshedConfig.verification?.verifiedUsers?.length || 0;
-      const refreshedSecurityIncidents = refreshedConfig.security?.incidents?.length || 0;
-      const refreshedCommandUsage = refreshedConfig.commandStats || {};
-      
-      // Update top commands list
-      let refreshedTopCommands = 'No commands used yet';
-      const refreshedCommandEntries = Object.entries(refreshedCommandUsage);
-      if (refreshedCommandEntries.length > 0) {
-        refreshedCommandEntries.sort((a, b) => b[1] - a[1]);
-        refreshedTopCommands = refreshedCommandEntries.slice(0, 5)
-          .map(([cmd, count]) => `• ${cmd}: ${count} uses`)
-          .join('\n');
-      }
-      
-      // Create updated statistics embed
-      const refreshedStatsEmbed = {
-        title: '📊 Server Statistics',
-        description: `Detailed statistics for ${guild.name}`,
-        color: 0x2ECC71, // Green color
-        fields: [
-          {
-            name: '👥 Member Statistics',
-            value: `Total Members: ${memberCount}\nHumans: ${memberCount - botCount}\nBots: ${botCount}`
-          },
-          {
-            name: '✅ Verification Statistics',
-            value: `Verified Users: ${refreshedVerificationCount}\nVerification System: ${refreshedConfig.verification?.enabled ? 'Enabled' : 'Disabled'}`
-          },
-          {
-            name: '🛡️ Security Statistics',
-            value: `Security Incidents: ${refreshedSecurityIncidents}\nAnti-Nuke: ${refreshedConfig.antiNuke ? 'Enabled' : 'Disabled'}\nRaid Protection: ${refreshedConfig.raidProtection ? 'Enabled' : 'Disabled'}`
-          },
-          {
-            name: '📈 Most Used Commands',
-            value: refreshedTopCommands
-          }
-        ],
-        footer: {
-          text: 'Statistics updated as of ' + new Date().toLocaleString()
-        }
-      };
-      
-      await i.message.edit({
-        embeds: [refreshedStatsEmbed],
-        components: [backRow]
-      });
+    try {
+      await i.deferUpdate();
+    } catch (error) {
+      console.error('Error deferring button update:', error);
     }
-    else if (i.customId === 'back_to_dashboard') {
+    
+    if (i.customId === 'back_to_dashboard') {
       // Go back to main dashboard
       statsCollector.stop();
       
-      // Recreate main dashboard embed
+      // Recreate main dashboard embed with updated menu
       const dashboardEmbed = {
         title: '🛡️ Phantom Guard Dashboard',
         description: `Welcome to the in-Discord dashboard! Use the menu below to manage your server settings.`,
@@ -2274,6 +1800,16 @@ async function handleStatsView(interaction, guild, serverConfig, client) {
                 .setValue('notifications')
                 .setEmoji('🔔'),
               new StringSelectMenuOptionBuilder()
+                .setLabel('YouTube Verification')
+                .setDescription('Configure YouTube verification system and image verification')
+                .setValue('youtube')
+                .setEmoji('📱'),
+              new StringSelectMenuOptionBuilder()
+                .setLabel('Voice & Counters')
+                .setDescription('Set up voice features and live subscriber counters')
+                .setValue('voice')
+                .setEmoji('🎤'),
+              new StringSelectMenuOptionBuilder()
                 .setLabel('Game Settings')
                 .setDescription('Manage game features and entertainment options')
                 .setValue('games')
@@ -2282,32 +1818,223 @@ async function handleStatsView(interaction, guild, serverConfig, client) {
                 .setLabel('Server Statistics')
                 .setDescription('View activity and security stats')
                 .setValue('stats')
-                .setEmoji('📊')
+                .setEmoji('📊'),
+              new StringSelectMenuOptionBuilder()
+                .setLabel('Help & Info')
+                .setDescription('Get help and detailed command information')
+                .setValue('help')
+                .setEmoji('❓')
             ])
         );
       
+      // Update the message with main dashboard
       await i.message.edit({
         embeds: [dashboardEmbed],
         components: [dashboardRow]
       });
     }
   });
+}
+
+async function handleHelpInfo(interaction, guild, serverConfig, client) {
+  // Simple implementation for now
+  await interaction.message.edit({
+    embeds: [{
+      title: '❓ Help & Information',
+      description: 'Quick reference guide for Phantom Guard commands',
+      color: 0x1ABC9C,
+      fields: [
+        {
+          name: '🔧 Setup Commands',
+          value: '`/setyoutubechannel` - Set YouTube channel for verification\n' +
+                 '`/setverificationchannel` - Set channel for verification posts\n' +
+                 '`/setrole` - Set role given to verified subscribers\n' +
+                 '`/setnotificationchannel` - Set channel for notifications\n' +
+                 '`/setvoicechannelname` - Set voice channel for subscriber count'
+        },
+        {
+          name: '🛡️ Security Commands',
+          value: '`/whitelist` - Manage security whitelist\n' +
+                 '`/security` - Configure security settings\n' +
+                 '`/ban` - Ban a user\n' +
+                 '`/kick` - Kick a user'
+        },
+        {
+          name: '🔔 Notification Commands',
+          value: '`/setwelcome` - Configure welcome messages\n' +
+                 '`/setannouncer` - Configure announcer\n' +
+                 '`/setlogs` - Configure log channels'
+        },
+        {
+          name: '🤖 Bot Info',
+          value: 'Phantom Guard - Advanced security and management bot\n' +
+                 'Prefix: `/` (Slash Commands)'
+        }
+      ]
+    }],
+    components: [
+      new ActionRowBuilder()
+        .addComponents(
+          new ButtonBuilder()
+            .setCustomId('detailed_help')
+            .setLabel('View All Commands')
+            .setStyle(ButtonStyle.Primary),
+          new ButtonBuilder()
+            .setCustomId('back_to_dashboard')
+            .setLabel('Back to Main Dashboard')
+            .setStyle(ButtonStyle.Secondary)
+        )
+    ]
+  });
   
-  statsCollector.on('end', () => {
-    // Disable all buttons when collector ends
-    if (interaction.message.editable) {
-      try {
-        const disabledBackRow = ActionRowBuilder.from(backRow);
-        disabledBackRow.components.forEach(button => {
-          button.setDisabled(true);
-        });
-        
-        interaction.message.edit({ 
-          components: [disabledBackRow] 
-        }).catch(console.error);
-      } catch (error) {
-        console.error('Error disabling buttons:', error);
-      }
+  // Set up collector for help buttons
+  const filter = i => i.user.id === interaction.user.id;
+  const helpCollector = interaction.message.createMessageComponentCollector({
+    filter,
+    time: 180000 // 3 minutes
+  });
+  
+  helpCollector.on('collect', async i => {
+    try {
+      await i.deferUpdate();
+    } catch (error) {
+      console.error('Error deferring button update:', error);
+    }
+    
+    if (i.customId === 'detailed_help') {
+      // Show detailed help as followup
+      const detailedHelp = new EmbedBuilder()
+        .setTitle('📚 Complete Command List')
+        .setDescription('Here are all available commands for Phantom Guard')
+        .setColor(0x1ABC9C)
+        .addFields(
+          {
+            name: '🛡️ Security Commands',
+            value: '`/security` - Manage server security settings\n' +
+                   '`/whitelist add/remove/list` - Manage security exemptions\n' +
+                   '`/ban` - Ban a user with reason\n' +
+                   '`/kick` - Kick a user with reason'
+          },
+          {
+            name: '📱 YouTube Commands',
+            value: '`/setyoutubechannel` - Set YouTube channel for verification\n' +
+                   '`/searchchannel` - Search for a YouTube channel\n' +
+                   '`/setverificationchannel` - Set verification screenshots channel\n' +
+                   '`/setrole` - Set subscriber role\n' +
+                   '`/listverified` - List all verified subscribers\n' +
+                   '`/livesubcount` - Show current subscriber count'
+          },
+          {
+            name: '🔔 Notification Commands',
+            value: '`/setnotificationchannel` - Set notification channel\n' +
+                   '`/setwelcome` - Configure welcome messages\n' +
+                   '`/setlogs` - Configure log channels\n' +
+                   '`/setannouncer` - Configure join/leave announcements'
+          },
+          {
+            name: '🔊 Voice Commands',
+            value: '`/setvoicechannelname` - Set subscriber count voice channel\n' +
+                   '`/setupdatefrequency` - Set update frequency for sub count\n' +
+                   '`/voice` - Manage voice announcements'
+          },
+          {
+            name: '🎮 Fun & Utility',
+            value: '`/game` - Start interactive games\n' +
+                   '`/stickers` - Use animated stickers\n' +
+                   '`/embed` - Create custom embeds\n' +
+                   '`/info` - Show bot information'
+          }
+        )
+        .setFooter({ text: 'Use /help for more information about specific commands' });
+      
+      // Show help message as followup
+      await i.followUp({
+        embeds: [detailedHelp],
+        ephemeral: true
+      });
+    }
+    else if (i.customId === 'back_to_dashboard') {
+      // Go back to main dashboard
+      helpCollector.stop();
+      
+      // Recreate main dashboard embed with updated menu
+      const dashboardEmbed = {
+        title: '🛡️ Phantom Guard Dashboard',
+        description: `Welcome to the in-Discord dashboard! Use the menu below to manage your server settings.`,
+        color: 0x7289DA,
+        fields: [
+          {
+            name: '🔒 Security Settings',
+            value: `Adjust anti-nuke, verification, and raid protection settings`
+          },
+          {
+            name: '🔔 Notification Settings',
+            value: `Configure welcome messages, announcements, and log channels`
+          },
+          {
+            name: '🎮 Game & Entertainment',
+            value: `Control game features and entertainment options`
+          },
+          {
+            name: '📊 Server Statistics',
+            value: `View activity, verification, and security stats`
+          }
+        ],
+        footer: {
+          text: 'Select an option from the dropdown menu below'
+        }
+      };
+      
+      // Create dashboard menu components
+      const dashboardRow = new ActionRowBuilder()
+        .addComponents(
+          new StringSelectMenuBuilder()
+            .setCustomId('dashboard_menu')
+            .setPlaceholder('Select a dashboard option')
+            .addOptions([
+              new StringSelectMenuOptionBuilder()
+                .setLabel('Security Settings')
+                .setDescription('Configure anti-nuke, verification, and raid protection')
+                .setValue('security')
+                .setEmoji('🔒'),
+              new StringSelectMenuOptionBuilder()
+                .setLabel('Notification Settings')
+                .setDescription('Set up welcome messages, logs, and announcements')
+                .setValue('notifications')
+                .setEmoji('🔔'),
+              new StringSelectMenuOptionBuilder()
+                .setLabel('YouTube Verification')
+                .setDescription('Configure YouTube verification system and image verification')
+                .setValue('youtube')
+                .setEmoji('📱'),
+              new StringSelectMenuOptionBuilder()
+                .setLabel('Voice & Counters')
+                .setDescription('Set up voice features and live subscriber counters')
+                .setValue('voice')
+                .setEmoji('🎤'),
+              new StringSelectMenuOptionBuilder()
+                .setLabel('Game Settings')
+                .setDescription('Manage game features and entertainment options')
+                .setValue('games')
+                .setEmoji('🎮'),
+              new StringSelectMenuOptionBuilder()
+                .setLabel('Server Statistics')
+                .setDescription('View activity and security stats')
+                .setValue('stats')
+                .setEmoji('📊'),
+              new StringSelectMenuOptionBuilder()
+                .setLabel('Help & Info')
+                .setDescription('Get help and detailed command information')
+                .setValue('help')
+                .setEmoji('❓')
+            ])
+        );
+      
+      // Update the message with main dashboard
+      await i.message.edit({
+        embeds: [dashboardEmbed],
+        components: [dashboardRow]
+      });
     }
   });
 }

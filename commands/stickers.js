@@ -171,7 +171,11 @@ module.exports = {
     const category = interaction.options.getString('category');
     
     // Defer reply for most actions as they might take time
-    await interaction.deferReply();
+    if (!interaction.deferred && !interaction.replied) {
+      await interaction.deferReply().catch(err => {
+        console.error(`[Stickers] Failed to defer reply: ${err}`);
+      });
+    }
     
     switch (action) {
       case 'browse':
