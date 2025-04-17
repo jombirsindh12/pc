@@ -4,6 +4,7 @@ module.exports = {
   name: 'setnotificationchannel',
   description: 'Sets the channel where notifications will be sent',
   usage: '!setnotificationchannel',
+  guildOnly: true, // This command can only be used in servers
   execute(message, args, client) {
     // Check if user has admin permissions
     if (!message.member.permissions.has('ADMINISTRATOR')) {

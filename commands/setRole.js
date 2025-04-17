@@ -4,6 +4,7 @@ module.exports = {
   name: 'setrole',
   description: 'Sets the role to be assigned to verified subscribers',
   usage: '!setrole [roleName]',
+  guildOnly: true, // This command can only be used in servers
   execute(message, args, client) {
     // Check if user has admin permissions
     if (!message.member.permissions.has('ADMINISTRATOR')) {

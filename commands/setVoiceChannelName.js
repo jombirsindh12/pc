@@ -6,6 +6,7 @@ module.exports = {
   name: 'setvoicechannelname',
   description: 'Customizes the format of the subscriber count voice channel name',
   usage: '!setvoicechannelname [format]',
+  guildOnly: true, // This command can only be used in servers
   execute(message, args, client) {
     // Check if user has admin permissions
     if (!message.member.permissions.has(PermissionFlagsBits.Administrator)) {

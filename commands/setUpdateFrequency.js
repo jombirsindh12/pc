@@ -5,6 +5,7 @@ module.exports = {
   name: 'setupdatefrequency',
   description: 'Sets how often (in minutes) the subscriber count updates',
   usage: '!setupdatefrequency [minutes]',
+  guildOnly: true, // This command can only be used in servers
   execute(message, args, client) {
     // Check if user has admin permissions
     if (!message.member.permissions.has(PermissionFlagsBits.Administrator)) {
