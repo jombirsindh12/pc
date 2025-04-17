@@ -259,9 +259,83 @@ module.exports = {
                 .setEmoji('⚙️')
             );
             
-          await interaction.followUp({ 
+          const response = await interaction.followUp({ 
             embeds: [automodStatusEmbed],
-            components: [automodRow]
+            components: [automodRow],
+            fetchReply: true
+          });
+          
+          // Set up collector for button interactions
+          const filter = i => i.user.id === interaction.user.id;
+          const collector = response.createMessageComponentCollector({ 
+            filter, 
+            time: 60000 // 1 minute timeout
+          });
+          
+          collector.on('collect', async i => {
+            try {
+              // Defer the update to prevent "interaction failed" errors
+              await i.deferUpdate();
+              
+              if (i.customId === 'automod_enable') {
+                // Enable automod
+                config.updateServerConfig(serverId, { autoModEnabled: true });
+                
+                const updatedEmbed = EmbedBuilder.from(automodStatusEmbed)
+                  .setDescription('Auto-moderation is currently enabled ✅')
+                  .setColor(0x2ECC71);
+                
+                await i.editReply({ 
+                  embeds: [updatedEmbed],
+                  components: [automodRow]
+                });
+                
+                await i.followUp({
+                  content: '✅ Auto-moderation has been enabled!',
+                  ephemeral: true
+                });
+              } 
+              else if (i.customId === 'automod_disable') {
+                // Disable automod
+                config.updateServerConfig(serverId, { autoModEnabled: false });
+                
+                const updatedEmbed = EmbedBuilder.from(automodStatusEmbed)
+                  .setDescription('Auto-moderation is currently disabled ❌')
+                  .setColor(0xE74C3C);
+                
+                await i.editReply({ 
+                  embeds: [updatedEmbed],
+                  components: [automodRow]
+                });
+                
+                await i.followUp({
+                  content: '❌ Auto-moderation has been disabled.',
+                  ephemeral: true
+                });
+              }
+              else if (i.customId === 'automod_config') {
+                await i.followUp({
+                  content: '⚙️ Auto-moderation configuration will be available soon! For now, you can use `/automod` command for basic settings.',
+                  ephemeral: true
+                });
+              }
+            } catch (error) {
+              console.error('Error handling automod button:', error);
+            }
+          });
+          
+          collector.on('end', () => {
+            // Disable buttons when collector expires
+            const disabledRow = ActionRowBuilder.from(automodRow);
+            
+            for (const button of disabledRow.components) {
+              button.setDisabled(true);
+            }
+            
+            interaction.editReply({
+              embeds: [automodStatusEmbed],
+              components: [disabledRow]
+            }).catch(console.error);
           });
         }
         break;
@@ -555,9 +629,98 @@ module.exports = {
                 .setEmoji('⚙️')
             );
             
-          await interaction.followUp({ 
+          const antiNukeResponse = await interaction.followUp({ 
             embeds: [antiNukeStatusEmbed],
-            components: [antiNukeRow]
+            components: [antiNukeRow],
+            fetchReply: true
+          });
+          
+          // Set up collector for anti-nuke button interactions
+          const antiNukeFilter = i => i.user.id === interaction.user.id;
+          const antiNukeCollector = antiNukeResponse.createMessageComponentCollector({ 
+            filter: antiNukeFilter, 
+            time: 60000 // 1 minute timeout
+          });
+          
+          antiNukeCollector.on('collect', async i => {
+            try {
+              // Defer the update to prevent "interaction failed" errors
+              await i.deferUpdate();
+              
+              if (i.customId === 'antinuke_enable') {
+                // Enable anti-nuke
+                config.updateServerConfig(serverId, { 
+                  antiNukeEnabled: true,
+                  antiNukeSettings: {
+                    maxBansPerMinute: antiNukeSettings.maxBansPerMinute || 3,
+                    maxChannelDeletionsPerMinute: antiNukeSettings.maxChannelDeletionsPerMinute || 2,
+                    maxRoleDeletionsPerMinute: antiNukeSettings.maxRoleDeletionsPerMinute || 2,
+                    punishmentType: antiNukeSettings.punishmentType || 'ban'
+                  }
+                });
+                
+                // Activate the anti-nuke system
+                securityManager.activateAntiNuke(client, serverId, antiNukeSettings.maxBansPerMinute || 3);
+                
+                const updatedEmbed = EmbedBuilder.from(antiNukeStatusEmbed)
+                  .setDescription('Anti-nuke protection is currently enabled ✅')
+                  .setColor(0x2ECC71);
+                
+                await i.editReply({ 
+                  embeds: [updatedEmbed],
+                  components: [antiNukeRow]
+                });
+                
+                await i.followUp({
+                  content: '✅ Advanced Anti-Nuke Protection has been enabled!',
+                  ephemeral: true
+                });
+              } 
+              else if (i.customId === 'antinuke_disable') {
+                // Disable anti-nuke
+                config.updateServerConfig(serverId, { antiNukeEnabled: false });
+                
+                const updatedEmbed = EmbedBuilder.from(antiNukeStatusEmbed)
+                  .setDescription('Anti-nuke protection is currently disabled ❌')
+                  .setColor(0xE74C3C);
+                
+                await i.editReply({ 
+                  embeds: [updatedEmbed],
+                  components: [antiNukeRow]
+                });
+                
+                await i.followUp({
+                  content: '❌ Advanced Anti-Nuke Protection has been disabled.',
+                  ephemeral: true
+                });
+              }
+              else if (i.customId === 'antinuke_config') {
+                await i.followUp({
+                  content: '⚙️ Anti-Nuke configuration options will be available soon! For now, you can use `/premium antinuke enable [threshold]` to set the threshold value.',
+                  ephemeral: true
+                });
+              }
+            } catch (error) {
+              console.error('Error handling anti-nuke button:', error);
+              await i.followUp({
+                content: '❌ An error occurred while processing your request.',
+                ephemeral: true
+              }).catch(console.error);
+            }
+          });
+          
+          antiNukeCollector.on('end', () => {
+            // Disable buttons when collector expires
+            const disabledRow = ActionRowBuilder.from(antiNukeRow);
+            
+            for (const button of disabledRow.components) {
+              button.setDisabled(true);
+            }
+            
+            interaction.editReply({
+              embeds: [antiNukeStatusEmbed],
+              components: [disabledRow]
+            }).catch(console.error);
           });
         }
         break;
@@ -646,9 +809,95 @@ module.exports = {
                 .setEmoji('⚙️')
             );
             
-          await interaction.followUp({ 
+          const captchaResponse = await interaction.followUp({ 
             embeds: [captchaStatusEmbed],
-            components: [captchaRow]
+            components: [captchaRow],
+            fetchReply: true
+          });
+          
+          // Set up collector for captcha button interactions
+          const captchaFilter = i => i.user.id === interaction.user.id;
+          const captchaCollector = captchaResponse.createMessageComponentCollector({ 
+            filter: captchaFilter, 
+            time: 60000 // 1 minute timeout
+          });
+          
+          captchaCollector.on('collect', async i => {
+            try {
+              // Defer the update to prevent "interaction failed" errors
+              await i.deferUpdate();
+              
+              if (i.customId === 'captcha_enable') {
+                // Enable captcha
+                config.updateServerConfig(serverId, { 
+                  captchaEnabled: true,
+                  captchaSettings: {
+                    channelId: captchaSettings.channelId || null,
+                    autoKick: captchaSettings.autoKick !== false,
+                    timeLimit: captchaSettings.timeLimit || 5,
+                    type: captchaSettings.type || 'image'
+                  }
+                });
+                
+                const updatedEmbed = EmbedBuilder.from(captchaStatusEmbed)
+                  .setDescription('CAPTCHA verification is currently enabled ✅')
+                  .setColor(0x2ECC71);
+                
+                await i.editReply({ 
+                  embeds: [updatedEmbed],
+                  components: [captchaRow]
+                });
+                
+                await i.followUp({
+                  content: '✅ CAPTCHA Verification has been enabled!',
+                  ephemeral: true
+                });
+              } 
+              else if (i.customId === 'captcha_disable') {
+                // Disable captcha
+                config.updateServerConfig(serverId, { captchaEnabled: false });
+                
+                const updatedEmbed = EmbedBuilder.from(captchaStatusEmbed)
+                  .setDescription('CAPTCHA verification is currently disabled ❌')
+                  .setColor(0xE74C3C);
+                
+                await i.editReply({ 
+                  embeds: [updatedEmbed],
+                  components: [captchaRow]
+                });
+                
+                await i.followUp({
+                  content: '❌ CAPTCHA Verification has been disabled.',
+                  ephemeral: true
+                });
+              }
+              else if (i.customId === 'captcha_config') {
+                await i.followUp({
+                  content: '⚙️ CAPTCHA configuration options will be available soon! For now, you can use `/captcha setup` for detailed configuration.',
+                  ephemeral: true
+                });
+              }
+            } catch (error) {
+              console.error('Error handling captcha button:', error);
+              await i.followUp({
+                content: '❌ An error occurred while processing your request.',
+                ephemeral: true
+              }).catch(console.error);
+            }
+          });
+          
+          captchaCollector.on('end', () => {
+            // Disable buttons when collector expires
+            const disabledRow = ActionRowBuilder.from(captchaRow);
+            
+            for (const button of disabledRow.components) {
+              button.setDisabled(true);
+            }
+            
+            interaction.editReply({
+              embeds: [captchaStatusEmbed],
+              components: [disabledRow]
+            }).catch(console.error);
           });
         }
         break;
@@ -744,9 +993,63 @@ module.exports = {
                 .setEmoji('👥')
             );
             
-          await interaction.followUp({ 
+          const analyticsResponse = await interaction.followUp({ 
             embeds: [analyticsEmbed],
-            components: [analyticsRow]
+            components: [analyticsRow],
+            fetchReply: true
+          });
+          
+          // Set up collector for analytics button interactions
+          const analyticsFilter = i => i.user.id === interaction.user.id;
+          const analyticsCollector = analyticsResponse.createMessageComponentCollector({ 
+            filter: analyticsFilter, 
+            time: 60000 // 1 minute timeout
+          });
+          
+          analyticsCollector.on('collect', async i => {
+            try {
+              // Defer the update to prevent "interaction failed" errors
+              await i.deferUpdate();
+              
+              if (i.customId === 'analytics_detailed') {
+                await i.followUp({
+                  content: '📑 Detailed security report is being generated. This feature will be available soon!',
+                  ephemeral: true
+                });
+              } 
+              else if (i.customId === 'analytics_threats') {
+                await i.followUp({
+                  content: '⚠️ Threat analysis dashboard is being prepared. This feature will be available soon!',
+                  ephemeral: true
+                });
+              }
+              else if (i.customId === 'analytics_members') {
+                await i.followUp({
+                  content: '👥 Member activity report is being compiled. This feature will be available soon!',
+                  ephemeral: true
+                });
+              }
+            } catch (error) {
+              console.error('Error handling analytics button:', error);
+              await i.followUp({
+                content: '❌ An error occurred while processing your request.',
+                ephemeral: true
+              }).catch(console.error);
+            }
+          });
+          
+          analyticsCollector.on('end', () => {
+            // Disable buttons when collector expires
+            const disabledRow = ActionRowBuilder.from(analyticsRow);
+            
+            for (const button of disabledRow.components) {
+              button.setDisabled(true);
+            }
+            
+            interaction.editReply({
+              embeds: [analyticsEmbed],
+              components: [disabledRow]
+            }).catch(console.error);
           });
         } catch (error) {
           console.error('Error generating analytics:', error);
@@ -912,9 +1215,92 @@ module.exports = {
                 .setEmoji('🧪')
             );
             
-          await interaction.followUp({ 
+          const alertResponse = await interaction.followUp({ 
             embeds: [alertSetupEmbed],
-            components: [alertRow]
+            components: [alertRow],
+            fetchReply: true
+          });
+          
+          // Set up collector for alert button interactions
+          const alertFilter = i => i.user.id === interaction.user.id;
+          const alertCollector = alertResponse.createMessageComponentCollector({ 
+            filter: alertFilter, 
+            time: 60000 // 1 minute timeout
+          });
+          
+          alertCollector.on('collect', async i => {
+            try {
+              // Defer the update to prevent "interaction failed" errors
+              await i.deferUpdate();
+              
+              if (i.customId === 'alerts_config') {
+                await i.followUp({
+                  content: '⚙️ Advanced alert configuration will be available soon! For now, you can use `/premium alerts` with a channel parameter to set the alert channel.',
+                  ephemeral: true
+                });
+              } 
+              else if (i.customId === 'alerts_test') {
+                // Send a test alert to the configured channel
+                if (channel) {
+                  try {
+                    const testAlertEmbed = new EmbedBuilder()
+                      .setTitle('🧪 Test Alert')
+                      .setDescription('This is a test alert to verify the alert system is working correctly.')
+                      .setColor(0x3498DB)
+                      .addFields(
+                        {
+                          name: '📝 Alert Info',
+                          value: 'This is a sample alert that shows how security notifications will appear in this channel.'
+                        },
+                        {
+                          name: '🔧 Alert System',
+                          value: 'If you\'re seeing this message, your alert system is properly configured!'
+                        }
+                      )
+                      .setFooter({ text: 'Premium Feature • Advanced Alert System • Test Message' })
+                      .setTimestamp();
+                      
+                    await channel.send({ embeds: [testAlertEmbed] });
+                    
+                    await i.followUp({
+                      content: `✅ Test alert sent to ${channel}! Check the channel to see the test message.`,
+                      ephemeral: true
+                    });
+                  } catch (error) {
+                    console.error('Error sending test alert:', error);
+                    await i.followUp({
+                      content: `❌ Error sending test alert: ${error.message}`,
+                      ephemeral: true
+                    });
+                  }
+                } else {
+                  await i.followUp({
+                    content: '❌ No alert channel configured. Please set an alert channel first using `/premium alerts #channel`.',
+                    ephemeral: true
+                  });
+                }
+              }
+            } catch (error) {
+              console.error('Error handling alert button:', error);
+              await i.followUp({
+                content: '❌ An error occurred while processing your request.',
+                ephemeral: true
+              }).catch(console.error);
+            }
+          });
+          
+          alertCollector.on('end', () => {
+            // Disable buttons when collector expires
+            const disabledRow = ActionRowBuilder.from(alertRow);
+            
+            for (const button of disabledRow.components) {
+              button.setDisabled(true);
+            }
+            
+            interaction.editReply({
+              embeds: [alertSetupEmbed],
+              components: [disabledRow]
+            }).catch(console.error);
           });
         } else {
           // Show alert status

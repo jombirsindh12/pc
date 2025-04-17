@@ -36,13 +36,26 @@ for (const file of commandFiles) {
     
     // Convert regular command to slash command
     execute: async (interaction, client) => {
-      // Get server config
-      const serverId = interaction.guild.id;
-      const serverConfig = config.getServerConfig(serverId);
+      // Get server config if in a guild
+      let serverId = null;
+      let serverConfig = null;
+      
+      if (interaction.guild) {
+        serverId = interaction.guild.id;
+        serverConfig = config.getServerConfig(serverId);
+      }
       
       try {
-        // Check if the command requires admin permissions
+        // Check if the command requires admin permissions and is in a guild
         if (command.requiresAdmin) {
+          // If not in a guild, can't be an admin
+          if (!interaction.guild) {
+            return interaction.reply({
+              content: '❌ This command can only be used in a server!',
+              ephemeral: true
+            });
+          }
+          
           // Check if the user has admin permissions
           if (!interaction.member.permissions.has('Administrator')) {
             return interaction.reply({
@@ -50,6 +63,14 @@ for (const file of commandFiles) {
               ephemeral: true
             });
           }
+        }
+        
+        // For guild-only commands, check if in a guild
+        if (command.guildOnly && !interaction.guild) {
+          return interaction.reply({
+            content: '❌ This command can only be used in a server!',
+            ephemeral: true
+          });
         }
         
         // DO NOT defer reply here - let the command handle it

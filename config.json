@@ -69,6 +69,15 @@
       "enabled": true
     },
     "raidProtection": true,
-    "imageVerification": true
+    "imageVerification": true,
+    "welcomeSettings": {
+      "enabled": true,
+      "channelId": "1352325136690319391",
+      "message": "welcome to server enjoy",
+      "title": "wrl bh",
+      "color": "#fffff",
+      "roleId": "1352325100740935776",
+      "roleName": "𝐁𝐢𝐠 𝐁𝐫𝐨"
+    }
   }
 }
