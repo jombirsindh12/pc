@@ -1,4 +1,4 @@
-const { MessageActionRow, MessageSelectMenu, MessageButton } = require('discord.js');
+const { ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuOptionBuilder, EmbedBuilder } = require('discord.js');
 const config = require('../utils/config');
 
 module.exports = {

@@ -83,10 +83,19 @@ module.exports = {
     // Use interaction if available (slash command), otherwise use message (legacy)
     const isSlashCommand = !!interaction;
     
+    // Get the user
+    const user = isSlashCommand ? interaction.user : message.author;
+    
+    // Check if the user is the bot owner
+    const isBotOwner = user.id === process.env.BOT_OWNER_ID || user.id === client.application?.owner?.id;
+    
     // Get guild ID and other parameters
     const guild = isSlashCommand ? interaction.guild : message.guild;
     const serverId = guild.id;
     const serverConfig = config.getServerConfig(serverId);
+    
+    // Bot owners always have premium access regardless of server settings
+    const hasPremiumAccess = isBotOwner || serverConfig.premium || false;
     
     // Check if premium is enabled for this server
     const isPremium = serverConfig.premium || false;
@@ -110,14 +119,16 @@ module.exports = {
     // Premium status embed for server
     const premiumStatusEmbed = new EmbedBuilder()
       .setTitle('🌟 Premium Security Status')
-      .setDescription(isPremium ? 
-        '✅ This server has premium security features enabled!' : 
-        '❌ This server does not have premium security features enabled.')
-      .setColor(isPremium ? 0xF1C40F : 0x95A5A6) // Gold for premium, gray for non-premium
+      .setDescription(
+        isBotOwner ? '👑 You are the bot owner! All premium features are automatically available to you in all servers.' :
+        isPremium ? '✅ This server has premium security features enabled!' : 
+        '❌ This server does not have premium security features enabled.'
+      )
+      .setColor(isBotOwner || isPremium ? 0xF1C40F : 0x95A5A6) // Gold for premium, gray for non-premium
       .setTimestamp();
     
     // Add fields to premium status embed
-    if (isPremium) {
+    if (hasPremiumAccess) {
       // Premium features statuses
       premiumStatusEmbed.addFields(
         {
@@ -173,7 +184,7 @@ module.exports = {
         break;
         
       case 'automod':
-        if (!isPremium) {
+        if (!hasPremiumAccess) {
           return await interaction.followUp({ 
             content: '❌ This feature requires premium access! Check `/premium status` for more information.',
             ephemeral: true
@@ -252,7 +263,7 @@ module.exports = {
         break;
         
       case 'lockdown':
-        if (!isPremium) {
+        if (!hasPremiumAccess) {
           return await interaction.followUp({ 
             content: '❌ This feature requires premium access! Check `/premium status` for more information.',
             ephemeral: true
@@ -451,7 +462,7 @@ module.exports = {
         break;
         
       case 'antinuke':
-        if (!isPremium) {
+        if (!hasPremiumAccess) {
           return await interaction.followUp({ 
             content: '❌ This feature requires premium access! Check `/premium status` for more information.',
             ephemeral: true
@@ -548,7 +559,7 @@ module.exports = {
         break;
         
       case 'captcha':
-        if (!isPremium) {
+        if (!hasPremiumAccess) {
           return await interaction.followUp({ 
             content: '❌ This feature requires premium access! Check `/premium status` for more information.',
             ephemeral: true
@@ -639,7 +650,7 @@ module.exports = {
         break;
         
       case 'analytics':
-        if (!isPremium) {
+        if (!hasPremiumAccess) {
           return await interaction.followUp({ 
             content: '❌ This feature requires premium access! Check `/premium status` for more information.',
             ephemeral: true
@@ -743,7 +754,7 @@ module.exports = {
         break;
         
       case 'backup':
-        if (!isPremium) {
+        if (!hasPremiumAccess) {
           return await interaction.followUp({ 
             content: '❌ This feature requires premium access! Check `/premium status` for more information.',
             ephemeral: true
@@ -837,7 +848,7 @@ module.exports = {
         break;
         
       case 'alerts':
-        if (!isPremium) {
+        if (!hasPremiumAccess) {
           return await interaction.followUp({ 
             content: '❌ This feature requires premium access! Check `/premium status` for more information.',
             ephemeral: true
