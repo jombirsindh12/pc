@@ -4,6 +4,9 @@ const { Client, GatewayIntentBits, Collection, Events, REST, Routes } = require(
 const config = require('./utils/config');
 
 // Create a new client instance with ALL required intents
+// Fixed with proper Discord.js v14 Partials and ActivityType
+const { Partials, ActivityType } = require('discord.js');
+
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
@@ -13,17 +16,16 @@ const client = new Client({
     GatewayIntentBits.GuildMessageReactions,
     GatewayIntentBits.GuildVoiceStates,
     GatewayIntentBits.GuildPresences,
-    GatewayIntentBits.GuildModeration,
     GatewayIntentBits.DirectMessages,
     GatewayIntentBits.DirectMessageReactions,
   ],
   // Enable all privileged intents
   presence: {
     status: 'online',
-    activities: [{ name: '/help', type: 3 }] // WATCHING
+    activities: [{ name: '/help', type: ActivityType.Watching }]
   },
-  // Ensure we receive all events
-  partials: ['CHANNEL', 'MESSAGE', 'REACTION'],
+  // Ensure we receive all events with proper enums for v14
+  partials: [Partials.Channel, Partials.Message, Partials.Reaction],
 });
 
 // Load commands
@@ -413,31 +415,56 @@ console.log('Bot token available:', token ? 'Yes' : 'No');
 // Enhanced login with more robust error handling and logging
 // Using more detailed debugging for connection issues
 console.log('Starting login process with detailed error reporting...');
+
+// Write token info for debugging
+fs.appendFileSync('./.logs/debug.log', `Token check: ${token ? 'Valid token exists (length:'+token.length+')' : 'No token found'}\n`);
+fs.appendFileSync('./.logs/debug.log', `Timestamp: ${new Date().toISOString()}\n`);
+
+// Login with delay and advanced error handling
 setTimeout(() => {
   client.login(token)
     .then(() => {
-      console.log(`Successfully logged in as ${client.user.tag}!`);
+      const successMsg = `Successfully logged in as ${client.user.tag}!`;
+      console.log(successMsg);
+      fs.appendFileSync('./.logs/debug.log', successMsg + '\n');
       console.log(`Bot is in ${client.guilds.cache.size} servers`);
       console.log('Bot is now ONLINE and ready to respond to commands');
       
-      // Set bot status explicitly
-      client.user.setStatus('online');
-      client.user.setActivity('/help', { type: 'WATCHING' });
+      // Set proper activity using V14 format
+      client.user.setPresence({
+        status: 'online',
+        activities: [{ 
+          name: '/help for commands', 
+          type: ActivityType.Watching 
+        }]
+      });
     })
     .catch(error => {
-      console.error('=======================================');
-      console.error('DETAILED LOGIN ERROR:');
-      console.error(error.name + ': ' + error.message);
-      console.error(error.stack);
-      console.error('---------------------------------------');
-      console.error('Common fixes:');
-      console.error('1. Check if token is valid in Discord Developer Portal');
-      console.error('2. Ensure all privileged intents are enabled in Developer Portal');
-      console.error('3. Verify your bot is not banned or rate-limited');
-      console.error('=======================================');
+      // Detailed error reporting to file and console
+      const errorDetails = [
+        '=======================================',
+        'DETAILED LOGIN ERROR:',
+        error.name + ': ' + error.message,
+        error.stack,
+        '---------------------------------------',
+        'Common fixes:',
+        '1. Check if token is valid in Discord Developer Portal',
+        '2. Ensure all privileged intents are enabled in Developer Portal',
+        '3. Verify your bot is not banned or rate-limited',
+        '=======================================',
+      ].join('\n');
+      
+      console.error(errorDetails);
+      fs.appendFileSync('./.logs/error.log', `${new Date().toISOString()}\n${errorDetails}\n\n`);
       
       // Don't exit immediately, try to reconnect
       console.log('Will attempt to reconnect in 30 seconds...');
+      setTimeout(() => {
+        console.log('Attempting to reconnect...');
+        client.login(process.env.DISCORD_TOKEN).catch(e => {
+          console.error('Reconnection attempt failed:', e.message);
+        });
+      }, 30000);
     });
 }, 5000); // Small delay to ensure all initialization is complete
 
