@@ -3,15 +3,27 @@ const fs = require('fs');
 const { Client, GatewayIntentBits, Collection, Events, REST, Routes } = require('discord.js');
 const config = require('./utils/config');
 
-// Create a new client instance
+// Create a new client instance with ALL required intents
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.MessageContent,
     GatewayIntentBits.GuildMembers,
-    GatewayIntentBits.GuildMessageReactions
+    GatewayIntentBits.GuildMessageReactions,
+    GatewayIntentBits.GuildVoiceStates,
+    GatewayIntentBits.GuildPresences,
+    GatewayIntentBits.GuildModeration,
+    GatewayIntentBits.DirectMessages,
+    GatewayIntentBits.DirectMessageReactions,
   ],
+  // Enable all privileged intents
+  presence: {
+    status: 'online',
+    activities: [{ name: '/help', type: 3 }] // WATCHING
+  },
+  // Ensure we receive all events
+  partials: ['CHANNEL', 'MESSAGE', 'REACTION'],
 });
 
 // Load commands
@@ -393,10 +405,19 @@ client.on(Events.MessageCreate, async message => {
   }
 });
 
-// Login to Discord
+// Login to Discord with proper intents
 const token = process.env.DISCORD_TOKEN;
-client.login(token).catch(error => {
-  console.error('Failed to log in:', error);
+console.log('Attempting to log in to Discord...');
+console.log('Bot token available:', token ? 'Yes' : 'No');
+
+// Enhanced login with more robust error handling and logging
+client.login(token).then(() => {
+  console.log(`Successfully logged in as ${client.user.tag}!`);
+  console.log(`Bot is in ${client.guilds.cache.size} servers`);
+  console.log('Bot is now ONLINE and ready to respond to commands');
+}).catch(error => {
+  console.error('Failed to log in to Discord:', error);
+  console.error('Please check your DISCORD_TOKEN in the .env file');
   process.exit(1);
 });
 
