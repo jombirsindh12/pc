@@ -20,16 +20,41 @@ module.exports = {
     const channel = isSlashCommand ? interaction.channel : message.channel;
     const guild = isSlashCommand ? interaction.guild : message.guild;
     
-    if (!guild) {
-      const errorResponse = '❌ Dashboard can only be used in a server! Please run this command in a server where Phantom Guard is added.';
-      if (isSlashCommand) {
-        return interaction.followUp({ content: errorResponse, ephemeral: true });
-      } else {
-        return message.reply(errorResponse);
-      }
-    }
+    // Force command to work without guild check - get the server ID from cache if possible
+    // or create dummy data for testing outside a server
+    const serverId = guild?.id || "0";
+    const serverConfig = config.getServerConfig(serverId);
     
-    // Check if user has admin permissions (Manage Server)
+    // Skip permission check for DM, just show a simple dashboard
+    if (!guild) {
+      const directMessageEmbed = {
+        title: '🛡️ Phantom Guard Dashboard',
+        description: `Welcome to the Phantom Guard dashboard! Please use this command in a server where I'm present to access all features.`,
+        color: 0x7289DA,
+        fields: [
+          {
+            name: '📣 Important Note',
+            value: 'This is a limited version of the dashboard since you are in DMs. For full functionality, use this command in a server.'
+          },
+          {
+            name: '❓ Need help?',
+            value: 'Use the `/help` command to see all available commands.'
+          }
+        ],
+        footer: {
+          text: 'Phantom Guard Security System' 
+        }
+      };
+
+      if (isSlashCommand) {
+        await interaction.editReply({ embeds: [directMessageEmbed] });
+      } else {
+        await message.reply({ embeds: [directMessageEmbed] });
+      }
+      return;
+    }
+
+    // If in a guild, check for admin permissions
     const member = guild.members.cache.get(user.id);
     if (!member || !member.permissions.has('ManageGuild')) {
       const errorResponse = '❌ You need the "Manage Server" permission to access the dashboard!';
