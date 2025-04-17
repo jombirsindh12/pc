@@ -397,10 +397,9 @@ uptimeManager.setupUptimeManager(client);
 securityManager.startSecurityMonitoring(client);
 
 // Initialize web dashboard
-const dashboardPort = 5000;
 try {
   const dashboard = initDashboard(client);
-  console.log(`Web dashboard running on port ${dashboardPort}`);
+  console.log(`Web dashboard running on default Replit port`);
 } catch (error) {
   console.error('Error starting web dashboard:', error);
 }

@@ -27,9 +27,10 @@ function detectReplitUrl() {
         return baseUrl;
       }
       
-      // The most reliable approach in Replit is to use webview URL
-      console.log('Replit environment detected - using webview URL');
-      return 'https://5000-' + process.env.REPL_ID + '.' + process.env.REPL_OWNER + '.repl.co';
+      // The most reliable approach in Replit is to use standard webview URL
+      console.log('Replit environment detected - using standard webview URL');
+      // Use default Replit URL format
+      return 'https://' + process.env.REPL_ID + '-' + process.env.REPL_OWNER + '.repl.co';
     } else {
       console.log('Not running in a Replit environment');
       return 'http://localhost:5000';

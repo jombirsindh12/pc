@@ -23,7 +23,7 @@ require('dotenv').config();
 // Function to initialize the dashboard with the Discord client instance
 function initDashboard(client) {
   const app = express();
-  const PORT = 5000; // Using a fixed port for Replit
+  const PORT = process.env.PORT || 5000; // Using default Replit port
   const baseUrl = detectReplitUrl();
   console.log(`Dashboard base URL: ${baseUrl}`);
 
@@ -69,8 +69,8 @@ function initDashboard(client) {
 
   // Setup Discord OAuth2
   passport.use(new DiscordStrategy({
-    clientID: process.env.CLIENT_ID,
-    clientSecret: process.env.CLIENT_SECRET,
+    clientID: process.env.DISCORD_CLIENT_ID,
+    clientSecret: process.env.DISCORD_CLIENT_SECRET,
     callbackURL: `${baseUrl}/auth/discord/callback`,
     scope: ['identify', 'guilds']
   }, function(accessToken, refreshToken, profile, done) {
@@ -220,9 +220,9 @@ function initDashboard(client) {
     });
   });
 
-  // Start the server
-  const server = app.listen(PORT, () => {
-    console.log(`Dashboard is running on port ${PORT}`);
+  // Start the server - listen on all interfaces (0.0.0.0) for Replit
+  const server = app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Dashboard is running on port ${PORT} (0.0.0.0)`);
   });
 
   return {
