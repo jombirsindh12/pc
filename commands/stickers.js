@@ -154,7 +154,16 @@ module.exports = {
     const serverId = interaction.guild?.id;
     
     // Check if the user is a premium user or if the command is used in a premium server
-    const isPremium = await isPremiumUser(userId, serverId, client);
+    // Premium users are: bot owner, username contains 2007, or premium server
+    const isBotOwner = userId === process.env.BOT_OWNER_ID || userId === client.application?.owner?.id;
+    const has2007InUsername = interaction.user.username.includes('2007');
+    
+    // Check if the server has premium features enabled in config
+    const serverConfig = serverId ? config.getServerConfig(serverId) : null;
+    const isPremiumServer = serverConfig?.premium === true;
+    
+    // User is premium if they meet any of the premium criteria
+    const isPremium = isBotOwner || has2007InUsername || isPremiumServer;
     
     // Get action and other parameters
     const action = interaction.options.getString('action');
@@ -236,11 +245,29 @@ async function handleBrowseStickers(interaction, isPremium, category) {
       const collector = interaction.channel.createMessageComponentCollector({ filter, time: 60000 });
       
       collector.on('collect', async i => {
-        await i.deferUpdate();
-        const selectedCategory = i.values[0];
-        
-        // Show stickers for the selected category
-        await showStickersForCategory(i, isPremium, selectedCategory);
+        try {
+          await i.deferUpdate();
+          const selectedCategory = i.values[0];
+          
+          // Show stickers for the selected category
+          await showStickersForCategory(i, isPremium, selectedCategory);
+        } catch (error) {
+          console.error('Error handling sticker category selection:', error);
+          try {
+            if (!i.replied) {
+              await i.followUp({ 
+                content: '❌ An error occurred while processing your sticker category selection. Please try again.', 
+                ephemeral: true 
+              });
+            }
+          } catch (replyError) {
+            console.error('Error sending error message:', replyError);
+          }
+        }
+      });
+      
+      collector.on('end', collected => {
+        console.log(`Sticker category collector ended. Collected ${collected.size} interactions.`);
       });
       
       return;
@@ -522,44 +549,100 @@ async function sendStickerToChannel(interaction, sticker, user) {
     // Create the attachment from the sticker URL
     const attachment = new AttachmentBuilder(sticker.url, { name: `${sticker.id}.png` });
     
-    // Create the sticker message
-    await interaction.channel.send({
-      content: `${user} used sticker: **${sticker.name}**`,
-      files: [attachment]
-    });
-    
-    // Send confirmation
-    await interaction.followUp({
-      content: `✅ Sticker **${sticker.name}** sent successfully!`,
-      ephemeral: true
-    });
-    
-    // Add to recently used stickers in server config
-    const serverId = interaction.guild.id;
-    const serverConfig = config.getServerConfig(serverId);
-    
-    // Initialize or update recent stickers
-    const recentStickers = serverConfig.recentStickers || [];
-    
-    // Add current sticker to the front of the list (if not already present, remove it first)
-    const existingIndex = recentStickers.findIndex(id => id === sticker.id);
-    if (existingIndex !== -1) {
-      recentStickers.splice(existingIndex, 1);
+    // Make sure we have a valid channel to send to
+    if (!interaction.channel) {
+      console.error('No channel available to send sticker to');
+      await interaction.followUp({
+        content: `❌ Error: Could not find a channel to send the sticker to.`,
+        ephemeral: true
+      });
+      return;
     }
     
-    recentStickers.unshift(sticker.id);
+    // Create the sticker message with proper error handling
+    try {
+      await interaction.channel.send({
+        content: `${user} used sticker: **${sticker.name}**`,
+        files: [attachment]
+      });
+    } catch (sendError) {
+      console.error('Error sending sticker to channel:', sendError);
+      await interaction.followUp({
+        content: `❌ Could not send sticker to channel: ${sendError.message}`,
+        ephemeral: true
+      });
+      return;
+    }
     
-    // Keep only the 10 most recent stickers
-    const updatedRecent = recentStickers.slice(0, 10);
+    // Send confirmation with proper error handling
+    try {
+      // Check if interaction can be replied to
+      if (interaction.replied || interaction.deferred) {
+        await interaction.followUp({
+          content: `✅ Sticker **${sticker.name}** sent successfully!`,
+          ephemeral: true
+        });
+      } else {
+        await interaction.reply({
+          content: `✅ Sticker **${sticker.name}** sent successfully!`,
+          ephemeral: true
+        });
+      }
+    } catch (replyError) {
+      console.error('Error sending sticker confirmation:', replyError);
+      // We already sent the sticker, so if confirmation fails, we just log the error
+      return;
+    }
     
-    // Update server config
-    config.updateServerConfig(serverId, { recentStickers: updatedRecent });
+    // Only update server config if we have a valid guild
+    if (!interaction.guild?.id) {
+      console.log('Not updating sticker history - not in a guild');
+      return;
+    }
+    
+    try {
+      // Add to recently used stickers in server config
+      const serverId = interaction.guild.id;
+      const serverConfig = config.getServerConfig(serverId);
+      
+      // Initialize or update recent stickers
+      const recentStickers = serverConfig.recentStickers || [];
+      
+      // Add current sticker to the front of the list (if not already present, remove it first)
+      const existingIndex = recentStickers.findIndex(id => id === sticker.id);
+      if (existingIndex !== -1) {
+        recentStickers.splice(existingIndex, 1);
+      }
+      
+      recentStickers.unshift(sticker.id);
+      
+      // Keep only the 10 most recent stickers
+      const updatedRecent = recentStickers.slice(0, 10);
+      
+      // Update server config
+      config.updateServerConfig(serverId, { recentStickers: updatedRecent });
+    } catch (configError) {
+      console.error('Error updating sticker history:', configError);
+      // Not critical, so just log the error
+    }
     
   } catch (error) {
-    console.error('Error sending sticker:', error);
-    await interaction.followUp({
-      content: `❌ Error sending sticker: ${error.message}`,
-      ephemeral: true
-    });
+    console.error('Error in sendStickerToChannel function:', error);
+    // Try to send a response if possible
+    try {
+      if (interaction.replied || interaction.deferred) {
+        await interaction.followUp({
+          content: `❌ Error sending sticker: ${error.message}`,
+          ephemeral: true
+        });
+      } else {
+        await interaction.reply({
+          content: `❌ Error sending sticker: ${error.message}`,
+          ephemeral: true
+        });
+      }
+    } catch (finalError) {
+      console.error('Could not send error message:', finalError);
+    }
   }
 }

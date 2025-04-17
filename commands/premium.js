@@ -124,7 +124,13 @@ module.exports = {
         .setTimestamp();
       
       if (isSlashCommand) {
-        await interaction.editReply({ embeds: [dmPremiumEmbed] });
+        // First check if we need to defer the reply (prevents "application did not respond" errors)
+        if (!interaction.deferred && !interaction.replied) {
+          await interaction.deferReply();
+        }
+        
+        // Now we can safely reply
+        await interaction.followUp({ embeds: [dmPremiumEmbed] });
       } else {
         await message.reply({ embeds: [dmPremiumEmbed] });
       }

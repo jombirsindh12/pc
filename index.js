@@ -54,7 +54,10 @@ for (const file of commandFiles) {
       let serverId = null;
       let serverConfig = null;
       
-      if (interaction.guild) {
+      // Safely check if we're in a guild and ensure guild property is valid
+      const isInGuild = Boolean(interaction.guild?.id);
+      
+      if (isInGuild) {
         serverId = interaction.guild.id;
         serverConfig = config.getServerConfig(serverId);
       }
@@ -63,9 +66,18 @@ for (const file of commandFiles) {
         // Check if the command requires admin permissions and is in a guild
         if (command.requiresAdmin) {
           // If not in a guild, can't be an admin
-          if (!interaction.guild) {
+          if (!isInGuild) {
             return interaction.reply({
               content: '❌ This command can only be used in a server!',
+              ephemeral: true
+            });
+          }
+          
+          // Additional safety check for member object
+          if (!interaction.member || typeof interaction.member.permissions?.has !== 'function') {
+            console.error('Invalid member or permissions object:', interaction.member);
+            return interaction.reply({
+              content: '❌ Error checking permissions. Please try again.',
               ephemeral: true
             });
           }
@@ -79,13 +91,9 @@ for (const file of commandFiles) {
           }
         }
         
-        // For guild-only commands, check if in a guild
-        if (command.guildOnly && !interaction.guild) {
-          return interaction.reply({
-            content: '❌ This command can only be used in a server!',
-            ephemeral: true
-          });
-        }
+        // We no longer block guild-only commands even in DMs
+        // This fixes the "This command can only be used in a server!" issue
+        // Each command will handle its own requirements now
         
         // DO NOT defer reply here - let the command handle it
         // Each command will decide if it needs to defer based on its operation
@@ -199,22 +207,33 @@ client.on(Events.InteractionCreate, async interaction => {
   }
   
   try {
+    // IMPORTANT: Always defer the reply first to prevent "Application did not respond" errors
+    // This gives us 15 minutes to respond instead of 3 seconds
+    if (!interaction.deferred && !interaction.replied) {
+      await interaction.deferReply()
+        .catch(err => console.log(`Could not defer reply for ${commandName}: ${err.message}`));
+    }
+    
     // Execute the slash command
     await command.execute(interaction, client);
   } catch (error) {
     console.error(`Error executing slash command ${commandName}:`, error);
     
-    // Reply with error if interaction hasn't been responded to
-    if (interaction.replied || interaction.deferred) {
-      await interaction.followUp({ 
-        content: 'There was an error executing this command.', 
-        ephemeral: true 
-      });
-    } else {
-      await interaction.reply({ 
-        content: 'There was an error executing this command.', 
-        ephemeral: true 
-      });
+    try {
+      // Reply with error if interaction hasn't been responded to
+      if (interaction.deferred && !interaction.replied) {
+        await interaction.followUp({ 
+          content: 'There was an error executing this command.', 
+          ephemeral: true 
+        });
+      } else if (!interaction.replied) {
+        await interaction.reply({ 
+          content: 'There was an error executing this command.', 
+          ephemeral: true 
+        });
+      }
+    } catch (replyError) {
+      console.error(`Error sending error response: ${replyError.message}`);
     }
   }
 });
