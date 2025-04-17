@@ -56,6 +56,7 @@ module.exports = {
       required: false
     }
   ],
+  guildOnly: true, // This command can only be used in servers
   
   async execute(message, args, client, interaction = null) {
     // Use interaction if available (slash command), otherwise use message (legacy)

@@ -4,6 +4,7 @@ module.exports = {
   name: 'embed',
   description: 'Create a custom embed message',
   usage: '/embed',
+  guildOnly: true, // This command can only be used in servers
   options: [
     {
       name: 'title',

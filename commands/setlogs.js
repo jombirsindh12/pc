@@ -44,6 +44,7 @@ module.exports = {
       required: true
     }
   ],
+  guildOnly: true, // This command can only be used in servers
   requiresAdmin: true, // Only admins can use this command
   
   async execute(message, args, client, interaction = null) {

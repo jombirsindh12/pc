@@ -4,6 +4,7 @@ module.exports = {
   name: 'info',
   description: 'Show detailed information about bot commands',
   usage: '/info [command]',
+  guildOnly: false, // Allow this command to work in DMs
   options: [
     {
       name: 'command',

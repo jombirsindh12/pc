@@ -4,6 +4,7 @@ const config = require('../utils/config');
 module.exports = {
   name: 'dashboard',
   description: 'Access the in-Discord dashboard for server settings',
+  guildOnly: true, // This command only works in servers
   async execute(message, args, client, interaction = null) {
     // Use interaction if available (slash command), otherwise use message (legacy)
     const isSlashCommand = !!interaction;

@@ -7,6 +7,7 @@ module.exports = {
   name: 'premium',
   description: 'Access premium security features and enhanced protection',
   usage: '/premium [action]',
+  guildOnly: false, // This command can work in DMs for status checks
   options: [
     {
       name: 'action',
@@ -77,7 +78,8 @@ module.exports = {
       required: false
     }
   ],
-  requiresAdmin: true, // Only admins can use this command
+  requiresAdmin: false, // Allow this command to be used without admin permissions
+  // We'll check for admin permissions in the execute function for specific actions
   
   async execute(message, args, client, interaction = null) {
     // Use interaction if available (slash command), otherwise use message (legacy)
@@ -94,6 +96,42 @@ module.exports = {
     
     // Get guild ID and other parameters
     const guild = isSlashCommand ? interaction.guild : message.guild;
+    
+    // Special handling for DMs
+    if (!guild) {
+      // If in DM, we can only check premium status based on user
+      const isPremiumUser = isBotOwner || has2007InUsername;
+      
+      // Create special DM premium status embed
+      const dmPremiumEmbed = new EmbedBuilder()
+        .setTitle('🌟 Your Premium Status')
+        .setDescription(
+          isBotOwner ? '👑 You are the bot owner! All premium features are automatically available to you in all servers.' :
+          has2007InUsername ? '🔢 Your username contains "2007"! All premium features are automatically available to you in all servers.' :
+          'You do not have personal premium access. Join a premium server to access premium features.'
+        )
+        .setColor(isPremiumUser ? 0xF1C40F : 0x95A5A6) // Gold for premium, gray for non-premium
+        .addFields(
+          {
+            name: '🏠 Server-Specific',
+            value: 'Premium features are applied on a per-server basis. Use this command in a server to see its premium status.',
+          },
+          {
+            name: '💎 Premium Features',
+            value: '• Advanced Anti-Nuke Protection\n• Auto-Mod with Custom Rules\n• Emergency Server Lockdown\n• CAPTCHA Verification\n• Security Analytics\n• Server Backup System'
+          }
+        )
+        .setTimestamp();
+      
+      if (isSlashCommand) {
+        await interaction.editReply({ embeds: [dmPremiumEmbed] });
+      } else {
+        await message.reply({ embeds: [dmPremiumEmbed] });
+      }
+      
+      return; // Exit early since we're in DMs
+    }
+    
     const serverId = guild.id;
     const serverConfig = config.getServerConfig(serverId);
     

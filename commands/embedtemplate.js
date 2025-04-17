@@ -4,6 +4,7 @@ module.exports = {
   name: 'embedtemplate',
   description: 'Use or manage saved embed templates',
   usage: '/embedtemplate [action] [name]',
+  guildOnly: true, // This command can only be used in servers
   options: [
     {
       name: 'action',

@@ -4,6 +4,7 @@ module.exports = {
   name: 'ban',
   description: 'Ban a user from the server with optional reason and delete days',
   usage: '/ban [user] [reason] [delete_days] [notify]',
+  guildOnly: true, // This command can only be used in servers
   options: [
     {
       name: 'user',

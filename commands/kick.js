@@ -4,6 +4,7 @@ module.exports = {
   name: 'kick',
   description: 'Kick a user from the server with optional reason',
   usage: '/kick [user] [reason]',
+  guildOnly: true, // This command can only be used in servers
   options: [
     {
       name: 'user',
