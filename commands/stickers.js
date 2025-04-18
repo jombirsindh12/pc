@@ -149,6 +149,15 @@ module.exports = {
       return message.reply('Please use the slash command `/stickers` to access premium stickers.');
     }
     
+    // Always defer reply for slash commands to prevent timeout and interaction failed errors
+    if (isSlashCommand && !interaction.deferred && !interaction.replied) {
+      try {
+        await interaction.deferReply();
+      } catch (err) {
+        console.error(`[Stickers] Failed to defer reply: ${err}`);
+      }
+    }
+    
     // Get user and server info
     const userId = interaction.user.id;
     const serverId = interaction.guild?.id;
