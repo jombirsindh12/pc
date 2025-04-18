@@ -464,8 +464,11 @@ module.exports = {
           components: [endSelectorRow]
         });
         
-        // Set up select menu collector for ending games
-        const endCollector = interaction.channel.createMessageComponentCollector({
+        // Get the message from the interaction response
+        const message = await interaction.fetchReply();
+        
+        // Set up select menu collector on the message itself, not the channel
+        const endCollector = message.createMessageComponentCollector({
           filter: i => i.customId === 'game_end_selector' && i.user.id === userId,
           time: 60000 // 1 minute
         });

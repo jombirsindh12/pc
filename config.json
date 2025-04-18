@@ -28,7 +28,20 @@
     "roleName": "Subscribed",
     "subCountChannelId": "1351819837596368957",
     "voiceChannelFormat": "YOUTUBE {subCount} subscribers`",
-    "updateFrequencyMinutes": 10
+    "updateFrequencyMinutes": 10,
+    "autoModEnabled": true,
+    "antiNukeEnabled": true,
+    "antiNukeSettings": {
+      "maxBansPerMinute": 3,
+      "maxChannelDeletionsPerMinute": 2,
+      "maxRoleDeletionsPerMinute": 2,
+      "punishmentType": "ban"
+    },
+    "securityDisabled": false,
+    "recentStickers": [
+      "wumpus_happy"
+    ],
+    "imageVerification": true
   },
   "1351801466095931445": {
     "prefix": "!",

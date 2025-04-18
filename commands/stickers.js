@@ -249,14 +249,16 @@ async function handleBrowseStickers(interaction, isPremium, category) {
         ])
         .setFooter({ text: 'Select a category to browse stickers' });
       
-      await interaction.followUp({
+      // Send the message with fetchReply: true to get the message object directly
+      const response = await interaction.followUp({
         embeds: [categoryEmbed],
-        components: [categoryRow]
+        components: [categoryRow],
+        fetchReply: true
       });
       
-      // Set up collector for category selection
+      // Set up collector on the response message itself, not the channel
       const filter = i => i.customId === 'sticker_category' && i.user.id === interaction.user.id;
-      const collector = interaction.channel.createMessageComponentCollector({ filter, time: 60000 });
+      const collector = response.createMessageComponentCollector({ filter, time: 60000 });
       
       collector.on('collect', async i => {
         try {
@@ -352,14 +354,16 @@ async function showStickersForCategory(interaction, isPremium, category) {
     ])
     .setFooter({ text: 'Select a sticker to send it to the channel' });
   
-  await interaction.followUp({
+  // Send message with fetchReply: true to get response object directly
+  const response = await interaction.followUp({
     embeds: [categoryEmbed],
-    components: [stickerRow]
+    components: [stickerRow],
+    fetchReply: true
   });
   
-  // Set up collector for sticker selection
+  // Set up collector on the response message, not the channel
   const filter = i => i.customId === 'sticker_select' && i.user.id === interaction.user.id;
-  const collector = interaction.channel.createMessageComponentCollector({ filter, time: 60000 });
+  const collector = response.createMessageComponentCollector({ filter, time: 60000 });
   
   collector.on('collect', async i => {
     await i.deferUpdate();
@@ -453,14 +457,16 @@ async function handleSearchStickers(interaction, isPremium, query) {
     ])
     .setFooter({ text: 'Select a sticker to send it to the channel' });
   
-  await interaction.followUp({
+  // Send message with fetchReply: true to get response object directly
+  const response = await interaction.followUp({
     embeds: [searchEmbed],
-    components: [stickerRow]
+    components: [stickerRow],
+    fetchReply: true
   });
   
-  // Set up collector for sticker selection
+  // Set up collector on the response message, not the channel
   const filter = i => i.customId === 'sticker_search' && i.user.id === interaction.user.id;
-  const collector = interaction.channel.createMessageComponentCollector({ filter, time: 60000 });
+  const collector = response.createMessageComponentCollector({ filter, time: 60000 });
   
   collector.on('collect', async i => {
     await i.deferUpdate();
@@ -486,7 +492,12 @@ async function handleSearchStickers(interaction, isPremium, query) {
  */
 async function handleFavoriteStickers(interaction, isPremium, userId) {
   // Get user's favorite stickers from config
-  const serverConfig = config.getServerConfig(interaction.guild.id);
+  // Check if we're in a guild first
+  if (!interaction.guildId) {
+    await interaction.followUp('❌ This command can only be used in a server.');
+    return;
+  }
+  const serverConfig = config.getServerConfig(interaction.guildId);
   const userFavorites = serverConfig.userFavorites?.[userId] || [];
   
   if (!userFavorites || userFavorites.length === 0) {
@@ -527,14 +538,16 @@ async function handleFavoriteStickers(interaction, isPremium, userId) {
     ])
     .setFooter({ text: 'Select a sticker to send it to the channel' });
   
-  await interaction.followUp({
+  // Send message with fetchReply: true to get response object directly
+  const response = await interaction.followUp({
     embeds: [favoritesEmbed],
-    components: [stickerRow]
+    components: [stickerRow],
+    fetchReply: true
   });
   
-  // Set up collector for sticker selection
+  // Set up collector on the response message, not the channel
   const filter = i => i.customId === 'sticker_favorite' && i.user.id === interaction.user.id;
-  const collector = interaction.channel.createMessageComponentCollector({ filter, time: 60000 });
+  const collector = response.createMessageComponentCollector({ filter, time: 60000 });
   
   collector.on('collect', async i => {
     await i.deferUpdate();
@@ -609,14 +622,14 @@ async function sendStickerToChannel(interaction, sticker, user) {
     }
     
     // Only update server config if we have a valid guild
-    if (!interaction.guild?.id) {
+    if (!interaction.guildId) {
       console.log('Not updating sticker history - not in a guild');
       return;
     }
     
     try {
       // Add to recently used stickers in server config
-      const serverId = interaction.guild.id;
+      const serverId = interaction.guildId;
       const serverConfig = config.getServerConfig(serverId);
       
       // Initialize or update recent stickers

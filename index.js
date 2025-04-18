@@ -54,12 +54,19 @@ for (const file of commandFiles) {
       let serverId = null;
       let serverConfig = null;
       
-      // Safely check if we're in a guild and ensure guild property is valid
-      const isInGuild = Boolean(interaction.guild?.id);
+      // In Discord.js v14, we can use either interaction.guild or interaction.guildId
+      // Using guildId is safer as it's a primitive and won't cause any reference issues
+      const isInGuild = Boolean(interaction.guildId);
       
       if (isInGuild) {
-        serverId = interaction.guild.id;
+        serverId = interaction.guildId;
+        // Initialize serverConfig with guild ID - important for commands
         serverConfig = config.getServerConfig(serverId);
+        
+        // Make sure guild property is correctly initialized for backward compatibility
+        if (!interaction.guild && interaction.guildId) {
+          console.log(`Warning: interaction.guild was null but guildId exists: ${interaction.guildId}`);
+        }
       }
       
       try {
@@ -217,18 +224,30 @@ client.on(Events.InteractionCreate, async interaction => {
       });
     }
     
+    // Check if the guildId exists but interaction.guild is null (this is the core issue)
+    if (interaction.guildId && !interaction.guild) {
+      console.warn(`Warning: interaction.guild was null but guildId exists: ${interaction.guildId}`);
+    }
+    
+    // Make sure we have a proper guild object resolved before proceeding
+    const resolvedGuild = interaction.guild || (interaction.guildId ? await client.guilds.fetch(interaction.guildId).catch(err => {
+      console.error(`Failed to fetch guild for ${interaction.guildId}: ${err}`);
+      return null;
+    }) : null);
+    
     // Execute the slash command and get mock interaction to wrap the command
     // This helps prevent the double-reply issue
     const mockInteraction = {
       ...interaction,
       responded: false,
       deferredReply: false,
+      guild: resolvedGuild, // Use our manually resolved guild
       
       // Fix for channel type detection - add missing properties for channel type handling
       channel: {
         ...interaction.channel,
         type: interaction.channel?.type,
-        guild: interaction.guild
+        guild: resolvedGuild // Use our manually resolved guild here too
       },
       
       // Override reply method to track response state
@@ -286,7 +305,47 @@ client.on(Events.MessageCreate, async message => {
   // Ignore messages from bots
   if (message.author.bot) return;
 
-  // Load server configuration
+  // Check if we're in a DM
+  const isDM = message.channel.type === 1; // Discord.js v14 uses numeric types, DM is 1
+  
+  // Skip server-specific handling for DMs
+  if (isDM) {
+    console.log(`DM received from ${message.author.tag}: ${message.content}`);
+    // Use default prefix for DMs
+    const prefix = '!';
+    
+    // Check if it's a command
+    if (message.content.startsWith(prefix)) {
+      const args = message.content.slice(prefix.length).trim().split(/ +/);
+      const commandName = args.shift().toLowerCase();
+      
+      console.log(`DM command received: ${commandName}, Arguments: ${args.join(', ')}`);
+      
+      if (!client.commands.has(commandName)) {
+        message.reply("I don't understand that command. Try sending !help for a list of available commands.");
+        return;
+      }
+      
+      const command = client.commands.get(commandName);
+      
+      try {
+        command.execute(message, args, client);
+      } catch (error) {
+        console.error(`Error executing DM command ${commandName}:`, error);
+        message.reply('There was an error executing that command.');
+      }
+    }
+    return;
+  }
+  
+  // We're in a server (not DM)
+  // Make sure we have a valid guild before proceeding
+  if (!message.guild || !message.guild.id) {
+    console.warn(`Warning: message.guild is missing in a non-DM channel type ${message.channel.type}`);
+    return;
+  }
+
+  // Now safely load server configuration
   const serverConfig = config.getServerConfig(message.guild.id);
   const prefix = serverConfig.prefix || '!';
 

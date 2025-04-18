@@ -101,15 +101,36 @@ module.exports = {
     // Check if the user has "2007" in their username - they get automatic premium access
     const has2007InUsername = user.username.includes('2007');
     
-    // SIMPLIFIED SERVER DETECTION - Direct approach
-    const guild = isSlashCommand ? interaction.guild : message.guild;
+    // IMPROVED SERVER DETECTION - Using guildId for more reliability
+    // For Discord.js v14, interaction.guildId is more reliable than guild object
+    const guildId = isSlashCommand ? interaction.guildId : message.guild?.id;
     
-    // Log server detection results
-    console.log(`[Premium] Command used by ${user.tag} in ${guild?.name || 'DM'}`); 
+    // ENHANCED - Log warning and try to fetch guild if guildId exists but guild object doesn't
+    if (guildId && !(isSlashCommand ? interaction.guild : message.guild)) {
+      console.warn(`[Premium] Warning: Guild ID exists (${guildId}) but guild object is missing`);
+    }
     
+    // Get guild object - try to fetch it if we have guildId but no guild object
+    let guild = isSlashCommand ? interaction.guild : message.guild;
+    if (guildId && !guild) {
+      try {
+        // Try to fetch the guild from the client
+        guild = await client.guilds.fetch(guildId).catch(err => {
+          console.error(`[Premium] Failed to fetch guild for ${guildId}: ${err}`);
+          return null;
+        });
+        
+        console.log(`[Premium] Fetched guild from ID: ${guild ? guild.name : 'Failed to fetch'}`);
+      } catch (error) {
+        console.error(`[Premium] Error fetching guild: ${error}`);
+      }
+    }
     
-    // Special handling for DMs
-    if (!guild) {
+    // Log server detection results with additional detail
+    console.log(`[Premium] Command used by ${user.tag} | guildId: ${guildId || 'null'} | guild object: ${guild ? guild.name : 'missing'}`); 
+    
+    // Special handling for DMs - we now check guildId which is more reliable
+    if (!guildId) {
       // If in DM, we can only check premium status based on user
       const isPremiumUser = isBotOwner || has2007InUsername;
       

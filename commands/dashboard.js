@@ -19,25 +19,28 @@ module.exports = {
     const user = isSlashCommand ? interaction.user : message.author;
     const channel = isSlashCommand ? interaction.channel : message.channel;
     
-    // SIMPLIFIED SERVER DETECTION - Direct approach that was working previously
+    // SIMPLIFIED SERVER DETECTION with v14 channel type values
+    // In Discord.js v14, DM channel type is 1 (not 'DM' string)
     const isDM = isSlashCommand 
-      ? (interaction.channel?.type === 'DM') 
-      : (message.channel?.type === 'DM');
+      ? (interaction.channel?.type === 1) 
+      : (message.channel?.type === 1);
     
-    // Use the most direct approach - these are guaranteed to work in guild contexts
-    const guild = isSlashCommand 
-      ? interaction.guild 
-      : message.guild;
+    // IMPROVED SERVER DETECTION - Using guildId for more reliability in v14
+    const guildId = isSlashCommand ? interaction.guildId : message.guild?.id;
+    const guild = isSlashCommand ? interaction.guild : message.guild;
+    
+    // If guild object is not available but guildId is, try to fetch the guild using client
+    const resolvedGuild = guild || (guildId ? await client.guilds.fetch(guildId).catch(e => null) : null);
     
     // Detailed logging for diagnostics
     console.log(`Dashboard command used by ${user.tag} | isDM=${isDM}`);
-    console.log(`Guild detection: hasGuild=${!!guild}, guildName=${guild?.name || 'Unknown'}`);
+    console.log(`Guild detection: guildId=${guildId || 'null'}, hasGuild=${!!resolvedGuild}, guildName=${resolvedGuild?.name || 'Unknown'}`);
     if (isSlashCommand) {
-      console.log(`Extra interaction data: guildId=${interaction.guildId}, channelId=${interaction.channelId}`);
+      console.log(`Extra interaction data: channel.type=${interaction.channel?.type}, channelId=${interaction.channelId}`);
     }
     
-    // Skip if determined to be in DM
-    if (isDM || !guild) {
+    // Skip if determined to be in DM - now using more reliable guildId check
+    if (isDM || !guildId) {
       const directMessageEmbed = {
         title: '🛡️ Phantom Guard Dashboard',
         description: `Welcome to the Phantom Guard dashboard! Please use this command in a server where I'm present to access all features.`,
@@ -65,13 +68,14 @@ module.exports = {
       return;
     }
 
-    // Get server configuration
-    const serverId = guild.id;
+    // Get server configuration using guildId directly which is more reliable
+    const serverId = guildId; // Using guildId which we verified earlier
     const serverConfig = config.getServerConfig(serverId);
     
     // If in a guild, check for admin permissions
-    const member = guild.members.cache.get(user.id);
-    if (!member || !member.permissions.has('ManageGuild')) {
+    // Use the resolvedGuild that we properly initialized earlier
+    const member = resolvedGuild?.members.cache.get(user.id);
+    if (!resolvedGuild || !member || !member.permissions.has('ManageGuild')) {
       const errorResponse = '❌ You need the "Manage Server" permission to access the dashboard!';
       if (isSlashCommand) {
         return interaction.followUp({ content: errorResponse, ephemeral: true });
@@ -194,30 +198,30 @@ module.exports = {
         });
         
         const selection = i.values[0];
-        const serverConfig = config.getServerConfig(guild.id);
+        const serverConfig = config.getServerConfig(serverId); // Use the serverId we've already verified
         
         // Handle different dashboard sections
         switch (selection) {
           case 'security':
-            await handleSecuritySettings(i, guild, serverConfig, client);
+            await handleSecuritySettings(i, resolvedGuild, serverConfig, client);
             break;
           case 'notifications':
-            await handleNotificationSettings(i, guild, serverConfig, client);
+            await handleNotificationSettings(i, resolvedGuild, serverConfig, client);
             break;
           case 'youtube':
-            await handleYouTubeSettings(i, guild, serverConfig, client);
+            await handleYouTubeSettings(i, resolvedGuild, serverConfig, client);
             break;
           case 'voice':
-            await handleVoiceSettings(i, guild, serverConfig, client);
+            await handleVoiceSettings(i, resolvedGuild, serverConfig, client);
             break;
           case 'games':
-            await handleGameSettings(i, guild, serverConfig, client);
+            await handleGameSettings(i, resolvedGuild, serverConfig, client);
             break;
           case 'stats':
-            await handleStatsView(i, guild, serverConfig, client);
+            await handleStatsView(i, resolvedGuild, serverConfig, client);
             break;
           case 'help':
-            await handleHelpInfo(i, guild, serverConfig, client);
+            await handleHelpInfo(i, resolvedGuild, serverConfig, client);
             break;
         }
       } catch (error) {
