@@ -153,14 +153,38 @@ module.exports = {
     if (isSlashCommand && !interaction.deferred && !interaction.replied) {
       try {
         await interaction.deferReply();
+        console.log(`[Stickers] Successfully deferred reply`);
       } catch (err) {
         console.error(`[Stickers] Failed to defer reply: ${err}`);
+        // Continue execution even if deferral fails
+      }
+    }
+    
+    // ULTRA RELIABLE SERVER DETECTION - Multiple checks to ensure we detect server context correctly
+    let guild = null;
+    
+    // Method 1: Check if guildId exists
+    if (interaction.guildId) {
+      guild = interaction.guild;
+    }
+    // Method 2: Check channel.guild
+    else if (interaction.channel?.guild) {
+      guild = interaction.channel.guild;
+    }
+    // Last resort - check if we can get guild from client cache
+    else if (interaction.channelId) {
+      const possibleChannel = client.channels.cache.get(interaction.channelId);
+      if (possibleChannel?.guild) {
+        guild = possibleChannel.guild;
       }
     }
     
     // Get user and server info
     const userId = interaction.user.id;
-    const serverId = interaction.guild?.id;
+    const serverId = guild?.id;
+    
+    // Log server detection results
+    console.log(`[Stickers] Command used by ${interaction.user.tag} | Server detection: ${!!guild ? guild.name : 'Not in a server'}`);
     
     // Check if the user is a premium user or if the command is used in a premium server
     // Premium users are: bot owner, username contains 2007, or premium server
@@ -179,12 +203,9 @@ module.exports = {
     const query = interaction.options.getString('query');
     const category = interaction.options.getString('category');
     
-    // Defer reply for most actions as they might take time
-    if (!interaction.deferred && !interaction.replied) {
-      await interaction.deferReply().catch(err => {
-        console.error(`[Stickers] Failed to defer reply: ${err}`);
-      });
-    }
+    // Defer reply is already handled above, no need to defer again
+    // Just log that we're proceeding with the sticker action
+    console.log(`[Stickers] Proceeding with sticker action: ${action}`);
     
     switch (action) {
       case 'browse':

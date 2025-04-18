@@ -87,9 +87,13 @@ module.exports = {
     
     // Always defer reply for slash commands to prevent timeout
     if (isSlashCommand && !interaction.deferred && !interaction.replied) {
-      await interaction.deferReply({ ephemeral: true }).catch(err => {
+      try {
+        await interaction.deferReply({ ephemeral: true });
+        console.log(`[Premium] Successfully deferred reply`);
+      } catch (err) {
         console.error(`[Premium] Failed to defer reply: ${err}`);
-      });
+        // Continue execution even if deferral fails
+      }
     }
     
     // Get the user
@@ -101,8 +105,33 @@ module.exports = {
     // Check if the user has "2007" in their username - they get automatic premium access
     const has2007InUsername = user.username.includes('2007');
     
-    // Get guild ID and other parameters
-    const guild = isSlashCommand ? interaction.guild : message.guild;
+    // ULTRA RELIABLE SERVER DETECTION - Multiple checks to ensure we detect server context correctly
+    let guild = null;
+    
+    if (isSlashCommand) {
+      // Method 1: Check if guildId exists
+      if (interaction.guildId) {
+        guild = interaction.guild;
+      }
+      // Method 2: Check channel.guild
+      else if (interaction.channel?.guild) {
+        guild = interaction.channel.guild;
+      }
+      // Last resort - check if we can get guild from client cache
+      else if (interaction.channelId) {
+        const possibleChannel = client.channels.cache.get(interaction.channelId);
+        if (possibleChannel?.guild) {
+          guild = possibleChannel.guild;
+        }
+      }
+    } else {
+      // Legacy message command
+      guild = message.guild || message.channel?.guild;
+    }
+    
+    // Log server detection results
+    console.log(`[Premium] Command used by ${user.tag} | Server detection: ${!!guild ? guild.name : 'Not in a server'}`);
+    
     
     // Special handling for DMs
     if (!guild) {

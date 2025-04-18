@@ -18,8 +18,41 @@ module.exports = {
     
     // Always defer the reply for slash commands to prevent timeout
     if (isSlashCommand && !interaction.deferred && !interaction.replied) {
-      await interaction.deferReply({ ephemeral: false });
+      try {
+        await interaction.deferReply({ ephemeral: false });
+        console.log(`[Info] Successfully deferred reply`);
+      } catch (err) {
+        console.error(`[Info] Failed to defer reply: ${err}`);
+        // Continue execution even if deferral fails
+      }
     }
+    
+    // ULTRA RELIABLE SERVER DETECTION - Multiple checks to ensure we detect server context correctly
+    let guild = null;
+    
+    if (isSlashCommand) {
+      // Method 1: Check if guildId exists
+      if (interaction.guildId) {
+        guild = interaction.guild;
+      }
+      // Method 2: Check channel.guild
+      else if (interaction.channel?.guild) {
+        guild = interaction.channel.guild;
+      }
+      // Last resort - check if we can get guild from client cache
+      else if (interaction.channelId) {
+        const possibleChannel = client.channels.cache.get(interaction.channelId);
+        if (possibleChannel?.guild) {
+          guild = possibleChannel.guild;
+        }
+      }
+    } else {
+      // Legacy message command
+      guild = message.guild || message.channel?.guild;
+    }
+    
+    // Log server detection results
+    console.log(`[Info] Command used by ${isSlashCommand ? interaction.user.tag : message.author.tag} | Server detection: ${!!guild ? guild.name : 'Not in a server'}`);
     
     const commandName = isSlashCommand 
       ? interaction.options.getString('command')

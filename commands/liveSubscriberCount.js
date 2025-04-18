@@ -9,20 +9,53 @@ module.exports = {
   async execute(message, args, client, interaction = null) {
     const isSlashCommand = !!interaction;
     
-    // Handle different sources (slash command or message)
+    // Always defer reply for slash commands to prevent timeout
+    if (isSlashCommand && !interaction.deferred && !interaction.replied) {
+      try {
+        await interaction.deferReply({ ephemeral: false });
+        console.log(`[LiveSubCount] Successfully deferred reply`);
+      } catch (err) {
+        console.error(`[LiveSubCount] Failed to defer reply: ${err}`);
+        // Continue execution even if deferral fails
+      }
+    }
+    
+    // ULTRA RELIABLE SERVER DETECTION - Multiple checks to ensure we detect server context correctly
+    let guild = null;
+    
+    if (isSlashCommand) {
+      // Method 1: Check if guildId exists
+      if (interaction.guildId) {
+        guild = interaction.guild;
+      }
+      // Method 2: Check channel.guild
+      else if (interaction.channel?.guild) {
+        guild = interaction.channel.guild;
+      }
+      // Last resort - check if we can get guild from client cache
+      else if (interaction.channelId) {
+        const possibleChannel = client.channels.cache.get(interaction.channelId);
+        if (possibleChannel?.guild) {
+          guild = possibleChannel.guild;
+        }
+      }
+    } else {
+      // Legacy message command
+      guild = message.guild || message.channel?.guild;
+    }
+    
+    // Get the user
     const user = isSlashCommand ? interaction.user : message.author;
-    const guild = isSlashCommand ? interaction.guild : message.guild;
+    
+    // Log server detection results
+    console.log(`[LiveSubCount] Command used by ${user.tag} | Server detection: ${!!guild ? guild.name : 'Not in a server'}`);
     
     // Early exit if not in a guild/server
     if (!guild) {
       const response = '❌ This command must be used in a server to manage voice channels!';
       
       if (isSlashCommand) {
-        // Check if we need to defer first
-        if (!interaction.deferred && !interaction.replied) {
-          await interaction.deferReply({ ephemeral: true });
-        }
-        return interaction.followUp({ content: response, ephemeral: true });
+        return interaction.editReply({ content: response });
       } else {
         return message.reply(response);
       }
@@ -37,10 +70,7 @@ module.exports = {
       
       const errorMsg = "❌ Error: Couldn't verify your server permissions. Please try again.";
       if (isSlashCommand) {
-        if (!interaction.deferred && !interaction.replied) {
-          await interaction.deferReply({ ephemeral: true });
-        }
-        return interaction.followUp({ content: errorMsg, ephemeral: true });
+        return interaction.editReply({ content: errorMsg });
       } else {
         return message.reply(errorMsg);
       }

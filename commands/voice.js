@@ -53,20 +53,51 @@ module.exports = {
     
     // Always defer reply for slash commands to prevent timeout
     if (isSlashCommand && !interaction.deferred && !interaction.replied) {
-      await interaction.deferReply({ ephemeral: true }).catch(err => {
+      try {
+        await interaction.deferReply({ ephemeral: true });
+        console.log(`[Voice] Successfully deferred reply`);
+      } catch (err) {
         console.error(`[Voice] Failed to defer reply: ${err}`);
-      });
+        // Continue execution even if deferral fails
+      }
     }
     
-    // Check if in a guild/server
-    const guild = isSlashCommand ? interaction.guild : message.guild;
+    // Get the user
+    const user = isSlashCommand ? interaction.user : message.author;
+    
+    // ULTRA RELIABLE SERVER DETECTION - Multiple checks to ensure we detect server context correctly
+    let guild = null;
+    
+    if (isSlashCommand) {
+      // Method 1: Check if guildId exists
+      if (interaction.guildId) {
+        guild = interaction.guild;
+      }
+      // Method 2: Check channel.guild
+      else if (interaction.channel?.guild) {
+        guild = interaction.channel.guild;
+      }
+      // Last resort - check if we can get guild from client cache
+      else if (interaction.channelId) {
+        const possibleChannel = client.channels.cache.get(interaction.channelId);
+        if (possibleChannel?.guild) {
+          guild = possibleChannel.guild;
+        }
+      }
+    } else {
+      // Legacy message command
+      guild = message.guild || message.channel?.guild;
+    }
+    
+    // Log server detection results
+    console.log(`[Voice] Command used by ${user.tag} | Server detection: ${!!guild ? guild.name : 'Not in a server'}`);
     
     // If not in a guild, send an error message
     if (!guild) {
       const response = '❌ This command must be used in a server to manage voice channels.';
       
       if (isSlashCommand) {
-        return interaction.followUp({ content: response, ephemeral: true });
+        return interaction.editReply({ content: response });
       } else {
         return message.reply(response);
       }
