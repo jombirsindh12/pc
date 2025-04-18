@@ -207,6 +207,9 @@ client.on(Events.InteractionCreate, async interaction => {
   }
   
   try {
+    // Add detailed debug info for channel detection
+    console.log(`Command execution info: ${commandName} | channel.type: ${interaction.channel?.type} | guildId: ${interaction.guildId} | channelId: ${interaction.channelId}`);
+    
     // GLOBAL DEFERRED REPLY: Add this to every slash command to prevent "Phantom guard is thinking" issues
     if (!interaction.deferred && !interaction.replied) {
       await interaction.deferReply().catch(err => {
@@ -220,6 +223,13 @@ client.on(Events.InteractionCreate, async interaction => {
       ...interaction,
       responded: false,
       deferredReply: false,
+      
+      // Fix for channel type detection - add missing properties for channel type handling
+      channel: {
+        ...interaction.channel,
+        type: interaction.channel?.type,
+        guild: interaction.guild
+      },
       
       // Override reply method to track response state
       reply: async (options) => {

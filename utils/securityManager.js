@@ -51,6 +51,24 @@ function recordAction(serverId, userId, actionType, details = {}) {
       return false;
     }
     
+    // Check if the user is whitelisted
+    if (serverConfig.whitelistedUsers && serverConfig.whitelistedUsers.includes(userId)) {
+      console.log(`Security action skipped: User ${userId} is whitelisted`);
+      return false;
+    }
+    
+    // Check if the user has a whitelisted role (if role info is provided)
+    if (details.memberRoles && serverConfig.whitelistedRoles) {
+      const hasWhitelistedRole = details.memberRoles.some(roleId => 
+        serverConfig.whitelistedRoles.includes(roleId)
+      );
+      
+      if (hasWhitelistedRole) {
+        console.log(`Security action skipped: User ${userId} has a whitelisted role`);
+        return false;
+      }
+    }
+    
     // Check if user has a whitelisted role - also fully exempt
     if (details.hasWhitelistedRole) {
       console.log(`Security action skipped: User ${userId} has a whitelisted role`);
@@ -519,6 +537,20 @@ async function applySecurityAction(client, serverId, userId, reason) {
     if (whitelistedUsers.includes(userId)) {
       console.log(`Security action skipped: User ${userId} is in the whitelist`);
       return { success: false, reason: 'User is in security whitelist', action: 'none' };
+    }
+    
+    // Check if user has a whitelisted role
+    const whitelistedRoles = serverConfig.whitelistedRoles || [];
+    if (member && whitelistedRoles.length > 0) {
+      // Check if member has any of the whitelisted roles
+      const hasWhitelistedRole = member.roles.cache.some(role => 
+        whitelistedRoles.includes(role.id)
+      );
+      
+      if (hasWhitelistedRole) {
+        console.log(`Security action skipped: User ${userId} has a whitelisted role`);
+        return { success: false, reason: 'User has a whitelisted role', action: 'none' };
+      }
     }
     
     // Try to fetch the member (may fail if user left)

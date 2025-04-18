@@ -19,13 +19,25 @@ module.exports = {
     const user = isSlashCommand ? interaction.user : message.author;
     const channel = isSlashCommand ? interaction.channel : message.channel;
     
-    // IMPORTANT: Force treat interaction as in guild, override previous logic
-    // This fixes the issue where commands in servers are detected as DMs
-    const guild = isSlashCommand ? interaction.guild : message.guild;
-    console.log(`Dashboard command used by ${user.tag} | In guild: ${!!guild} | Guild name: ${guild?.name || 'Unknown'}`);
+    // ULTRA RELIABILE SERVER DETECTION - Use channel type as the definitive check
+    const isDM = isSlashCommand 
+      ? (interaction.channel?.type === 'DM') 
+      : (message.channel?.type === 'DM');
     
-    // Skip if no guild is detected (probably in DM)
-    if (!guild) {
+    // Force guild data from the most reliable source - channel.guild is more reliable than interaction.guild
+    const guild = isSlashCommand 
+      ? (interaction.channel?.guild || interaction.guild) 
+      : (message.channel?.guild || message.guild);
+    
+    // Detailed logging for diagnostics
+    console.log(`Dashboard command used by ${user.tag} | Channel type: ${isSlashCommand ? interaction.channel?.type : message.channel?.type}`);
+    console.log(`Guild detection: isDM=${isDM}, hasGuild=${!!guild}, guildName=${guild?.name || 'Unknown'}`);
+    if (isSlashCommand) {
+      console.log(`Extra interaction data: guildId=${interaction.guildId}, channelId=${interaction.channelId}`);
+    }
+    
+    // Skip if determined to be in DM
+    if (isDM || !guild) {
       const directMessageEmbed = {
         title: '🛡️ Phantom Guard Dashboard',
         description: `Welcome to the Phantom Guard dashboard! Please use this command in a server where I'm present to access all features.`,
