@@ -24,12 +24,8 @@ module.exports = {
     const guild = isSlashCommand ? interaction.guild : message.guild;
     console.log(`Dashboard command used by ${user.tag} | In guild: ${!!guild} | Guild name: ${guild?.name || 'Unknown'}`);
     
-    // ADDITIONAL CHECK: If we're actually in DM (client knows for sure)
-    const isDM = channel.type === 'DM';
-    console.log(`Channel type: ${channel.type} | Is DM: ${isDM}`);
-    
-    // Skip permission check for DM, just show a simple dashboard
-    if (isDM) {
+    // Skip if no guild is detected (probably in DM)
+    if (!guild) {
       const directMessageEmbed = {
         title: '🛡️ Phantom Guard Dashboard',
         description: `Welcome to the Phantom Guard dashboard! Please use this command in a server where I'm present to access all features.`,

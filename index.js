@@ -207,8 +207,12 @@ client.on(Events.InteractionCreate, async interaction => {
   }
   
   try {
-    // We WILL NOT automatically defer the reply anymore
-    // Each command will handle its own deferring as needed
+    // GLOBAL DEFERRED REPLY: Add this to every slash command to prevent "Phantom guard is thinking" issues
+    if (!interaction.deferred && !interaction.replied) {
+      await interaction.deferReply().catch(err => {
+        console.error(`Failed to defer reply for ${commandName}: ${err}`);
+      });
+    }
     
     // Execute the slash command and get mock interaction to wrap the command
     // This helps prevent the double-reply issue
