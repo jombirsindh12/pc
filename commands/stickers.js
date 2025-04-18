@@ -151,40 +151,20 @@ module.exports = {
     
     // Always defer reply for slash commands to prevent timeout and interaction failed errors
     if (isSlashCommand && !interaction.deferred && !interaction.replied) {
-      try {
-        await interaction.deferReply();
-        console.log(`[Stickers] Successfully deferred reply`);
-      } catch (err) {
+      await interaction.deferReply().catch(err => {
         console.error(`[Stickers] Failed to defer reply: ${err}`);
-        // Continue execution even if deferral fails
-      }
+      });
     }
     
-    // ULTRA RELIABLE SERVER DETECTION - Multiple checks to ensure we detect server context correctly
-    let guild = null;
-    
-    // Method 1: Check if guildId exists
-    if (interaction.guildId) {
-      guild = interaction.guild;
-    }
-    // Method 2: Check channel.guild
-    else if (interaction.channel?.guild) {
-      guild = interaction.channel.guild;
-    }
-    // Last resort - check if we can get guild from client cache
-    else if (interaction.channelId) {
-      const possibleChannel = client.channels.cache.get(interaction.channelId);
-      if (possibleChannel?.guild) {
-        guild = possibleChannel.guild;
-      }
-    }
+    // SIMPLIFIED SERVER DETECTION - Direct approach
+    const guild = interaction.guild;
     
     // Get user and server info
     const userId = interaction.user.id;
     const serverId = guild?.id;
     
-    // Log server detection results
-    console.log(`[Stickers] Command used by ${interaction.user.tag} | Server detection: ${!!guild ? guild.name : 'Not in a server'}`);
+    // Log server detection
+    console.log(`[Stickers] Command used by ${interaction.user.tag} in ${guild?.name || 'DM'}`);
     
     // Check if the user is a premium user or if the command is used in a premium server
     // Premium users are: bot owner, username contains 2007, or premium server

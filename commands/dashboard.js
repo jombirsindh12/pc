@@ -11,50 +11,23 @@ module.exports = {
     
     // Always defer reply for slash commands to prevent timeout
     if (isSlashCommand && !interaction.deferred && !interaction.replied) {
-      try {
-        await interaction.deferReply({ ephemeral: false });
-        console.log(`[Dashboard] Successfully deferred reply`);
-      } catch (err) {
+      await interaction.deferReply({ ephemeral: false }).catch(err => {
         console.error(`[Dashboard] Failed to defer reply: ${err}`);
-        // Even if defer fails, we'll continue with command execution
-      }
+      });
     }
     
     const user = isSlashCommand ? interaction.user : message.author;
     const channel = isSlashCommand ? interaction.channel : message.channel;
     
-    // ULTRA RELIABLE SERVER DETECTION - Multiple checks to ensure we detect server context correctly
-    let isDM = false;
-    let guild = null;
+    // SIMPLIFIED SERVER DETECTION - Direct approach that was working previously
+    const isDM = isSlashCommand 
+      ? (interaction.channel?.type === 'DM') 
+      : (message.channel?.type === 'DM');
     
-    if (isSlashCommand) {
-      // Method 1: Check if guildId exists
-      if (interaction.guildId) {
-        guild = interaction.guild;
-        isDM = false;
-      }
-      // Method 2: Check channel.guild
-      else if (interaction.channel?.guild) {
-        guild = interaction.channel.guild;
-        isDM = false;
-      }
-      // Method 3: Check channel type
-      else if (interaction.channel?.type === 'DM') {
-        isDM = true;
-      }
-      // Last resort - check if we can get guild from client cache
-      else if (interaction.channelId) {
-        const possibleChannel = client.channels.cache.get(interaction.channelId);
-        if (possibleChannel?.guild) {
-          guild = possibleChannel.guild;
-          isDM = false;
-        }
-      }
-    } else {
-      // Legacy message command
-      guild = message.guild || message.channel?.guild;
-      isDM = !guild || message.channel?.type === 'DM';
-    }
+    // Use the most direct approach - these are guaranteed to work in guild contexts
+    const guild = isSlashCommand 
+      ? interaction.guild 
+      : message.guild;
     
     // Detailed logging for diagnostics
     console.log(`Dashboard command used by ${user.tag} | isDM=${isDM}`);
