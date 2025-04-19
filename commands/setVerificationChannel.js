@@ -25,11 +25,11 @@ module.exports = {
     if (isSlashCommand) {
       try {
         // Get channel from options (default to current channel if not specified)
-        const channel = interaction.options.getChannel('channel') || interaction.channel;
+        const selectedChannel = interaction.options.getChannel('channel') || interaction.channel;
         const serverId = interaction.guild.id;
         
         // Ensure we have a text channel
-        if (channel.type !== ChannelType.GuildText) {
+        if (selectedChannel.type !== ChannelType.GuildText) {
           return await interaction.reply({
             content: '❌ The channel must be a text channel.',
             ephemeral: true
@@ -37,7 +37,8 @@ module.exports = {
         }
         
         // Update server config
-        config.updateServerConfig(serverId, { verificationChannelId: channel.id });
+        config.updateServerConfig(serverId, { verificationChannelId: selectedChannel.id });
+        console.log(`Updated configuration for server ${serverId}`);
         
         // Get server config to check for YouTube channel and role
         const serverConfig = config.getServerConfig(serverId);
@@ -53,14 +54,23 @@ module.exports = {
           warningMessage += '\n\n⚠️ **Warning**: No role has been set for verified subscribers. Please use `/setrole` to set one.';
         }
         
-        // Send success message
+        // Get the actual channel object from the client to make sure we have the proper methods
+        const targetChannel = client.channels.cache.get(selectedChannel.id);
+        if (!targetChannel) {
+          throw new Error(`Could not find channel with ID ${selectedChannel.id} in cache`);
+        }
+        
+        // Send success message as first response
         await interaction.reply({
-          content: `✅ Verification channel has been set to <#${channel.id}>\nUsers can now post screenshots here to verify their YouTube subscription.${warningMessage}`,
+          content: `✅ Verification channel has been set to <#${selectedChannel.id}>\nUsers can now post screenshots here to verify their YouTube subscription.${warningMessage}`,
           ephemeral: false
         });
         
-        // Send an instruction message to the verification channel
-        await channel.send('📝 **Verification Instructions**\n1. Subscribe to the YouTube channel\n2. Take a screenshot showing your subscription\n3. Post the screenshot in this channel\n4. Wait for verification and role assignment');
+        // Send an instruction message to the verification channel using the properly fetched channel
+        await targetChannel.send({
+          content: '📝 **Verification Instructions**\n1. Subscribe to the YouTube channel\n2. Take a screenshot showing your subscription\n3. Post the screenshot in this channel\n4. Wait for verification and role assignment'
+        });
+        
       } catch (error) {
         console.error('Error setting verification channel (slash command):', error);
         
@@ -91,6 +101,7 @@ module.exports = {
       const serverId = message.guild.id;
       
       config.updateServerConfig(serverId, { verificationChannelId: channelId });
+      console.log(`Updated configuration for server ${serverId} (message command)`);
       
       message.reply(`✅ Verification channel has been set to <#${channelId}>\nUsers can now post screenshots here to verify their YouTube subscription.`);
       
