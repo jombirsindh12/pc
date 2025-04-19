@@ -1,11 +1,11 @@
 {
   "prefix": "!",
   "notificationChannelId": null,
-  "verificationChannelId": null,
+  "verificationChannelId": "1352140742398574674",
   "youtubeChannelId": null,
   "youtubeChannelName": null,
-  "roleId": null,
-  "roleName": null,
+  "roleId": "1361307304477327520",
+  "roleName": "PC FAMILY ❤",
   "verifiedImages": {},
   "premium": false,
   "welcomeEnabled": false,
@@ -24,5 +24,14 @@
   "autoModeration": false,
   "punishmentType": "ban",
   "whitelistedRoles": [],
-  "imageVerification": true
+  "imageVerification": true,
+  "verificationChannelName": "✅・🇻🇪🇷🇮🇫🇾",
+  "verificationType": "button",
+  "verificationSettings": {
+    "title": "WELCOME TO OUR SERVER",
+    "description": "Please verify yourself to access the server.",
+    "color": "#ff0000"
+  },
+  "unverifiedRoleId": "1352141109135937627",
+  "unverifiedRoleName": "Unverified"
 }
