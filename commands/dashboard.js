@@ -1018,13 +1018,20 @@ async function handleSecuritySettings(interaction, guild, serverConfig, client) 
   
   securityCollector.on('collect', async i => {
     try {
-      await i.deferUpdate().catch(err => {
+      // Always make sure we have the latest config
+      const updatedConfig = config.getServerConfig(guild.id);
+      
+      // Attempt to defer the update - properly handle failure
+      try {
+        await i.deferUpdate();
+      } catch (err) {
         console.error(`[Dashboard] Failed to defer security button interaction: ${err}`);
-      });
+        // Don't return - try to continue with the operation
+      }
       
       // Handle button interactions
       if (i.customId === 'toggle_antinuke') {
-        const newValue = !serverConfig.antiNuke;
+        const newValue = !updatedConfig.antiNuke;
         config.updateServerConfig(guild.id, { antiNuke: newValue });
         
         // Create updated button with new state
@@ -1038,23 +1045,48 @@ async function handleSecuritySettings(interaction, guild, serverConfig, client) 
           );
         
         // Create updated embed with new values
-        const updatedEmbed = { ...securityEmbed };
-        updatedEmbed.fields[0].value = `Status: ${newValue ? '✅ Enabled' : '❌ Disabled'}\n` +
+        const updatedEmbed = EmbedBuilder.from(securityEmbed);
+        updatedEmbed.data.fields[0].value = `Status: ${newValue ? '✅ Enabled' : '❌ Disabled'}\n` +
                  `Threshold: ${antiNukeThreshold} actions`;
         
-        // Update the message
+        // Update the message with proper error handling
         try {
+          // Use followUp if message edit fails
           await i.message.edit({
-            embeds: [updatedEmbed],
+            embeds: [updatedEmbed.data],
             components: [updatedSecurityRow, moderationRow, backRow]
+          }).catch(async (error) => {
+            console.error('Error updating message after toggling anti-nuke:', error);
+            // Try using followUp instead as a backup method
+            await i.followUp({
+              content: `✅ Anti-Nuke protection has been ${newValue ? 'enabled' : 'disabled'}.`,
+              ephemeral: true
+            }).catch(e => console.error('Failed to send followUp:', e));
           });
         } catch (error) {
           console.error('Error updating message after toggling anti-nuke:', error);
+          // Try one more alternate approach
+          try {
+            await interaction.followUp({
+              content: `✅ Anti-Nuke protection has been ${newValue ? 'enabled' : 'disabled'}.`,
+              ephemeral: true
+            });
+          } catch (finalError) {
+            console.error('All attempts to respond failed:', finalError);
+          }
         }
       }
       else if (i.customId === 'toggle_verification') {
-        const newValue = !serverConfig.verificationRequired;
+        // Get latest config value
+        const updatedConfig = config.getServerConfig(guild.id);
+        const newValue = !updatedConfig.verificationRequired;
         config.updateServerConfig(guild.id, { verificationRequired: newValue });
+        
+        // Send feedback to ensure user knows the change was applied
+        await i.followUp({
+          content: `✅ Verification requirement ${newValue ? 'enabled' : 'disabled'} successfully!`,
+          ephemeral: true
+        }).catch(err => console.error('Failed to send feedback after toggling verification:', err));
         
         // Create updated button with new state
         const updatedSecurityRow = new ActionRowBuilder()
@@ -1067,23 +1099,34 @@ async function handleSecuritySettings(interaction, guild, serverConfig, client) 
           );
         
         // Create updated embed with new values
-        const updatedEmbed = { ...securityEmbed };
-        updatedEmbed.fields[1].value = `Status: ${newValue ? '✅ Enabled' : '❌ Disabled'}\n` +
+        const updatedEmbed = EmbedBuilder.from(securityEmbed);
+        updatedEmbed.data.fields[1].value = `Status: ${newValue ? '✅ Enabled' : '❌ Disabled'}\n` +
                  `New members must verify before accessing the server`;
         
-        // Update the message
+        // Update the message with better error handling
         try {
           await i.message.edit({
-            embeds: [updatedEmbed],
+            embeds: [updatedEmbed.data],
             components: [updatedSecurityRow, moderationRow, backRow]
+          }).catch(async error => {
+            console.error('Error updating message after toggling verification:', error);
+            // No need for additional action here since we already sent feedback
           });
         } catch (error) {
           console.error('Error updating message after toggling verification:', error);
         }
       }
       else if (i.customId === 'toggle_automod') {
-        const newValue = !serverConfig.autoModeration;
+        // Get latest config value
+        const updatedConfig = config.getServerConfig(guild.id);
+        const newValue = !updatedConfig.autoModeration;
         config.updateServerConfig(guild.id, { autoModeration: newValue });
+        
+        // Send feedback to ensure user knows the change was applied
+        await i.followUp({
+          content: `✅ Auto-Moderation ${newValue ? 'enabled' : 'disabled'} successfully!`,
+          ephemeral: true
+        }).catch(err => console.error('Failed to send feedback after toggling auto-mod:', err));
         
         // Create updated button with new state
         const updatedModerationRow = new ActionRowBuilder()
@@ -1096,15 +1139,18 @@ async function handleSecuritySettings(interaction, guild, serverConfig, client) 
           );
         
         // Create updated embed with new values
-        const updatedEmbed = { ...securityEmbed };
-        updatedEmbed.fields[2].value = `Status: ${newValue ? '✅ Enabled' : '❌ Disabled'}\n` +
+        const updatedEmbed = EmbedBuilder.from(securityEmbed);
+        updatedEmbed.data.fields[2].value = `Status: ${newValue ? '✅ Enabled' : '❌ Disabled'}\n` +
                  `Automatically removes spam, invites, and harmful content`;
         
-        // Update the message
+        // Update the message with better error handling
         try {
           await i.message.edit({
-            embeds: [updatedEmbed],
+            embeds: [updatedEmbed.data],
             components: [securityRow, updatedModerationRow, backRow]
+          }).catch(async error => {
+            console.error('Error updating message after toggling auto-mod:', error);
+            // No need for additional action here since we already sent feedback
           });
         } catch (error) {
           console.error('Error updating message after toggling auto-mod:', error);
@@ -1307,25 +1353,502 @@ async function handleSecuritySettings(interaction, guild, serverConfig, client) 
 }
 
 async function handleNotificationSettings(interaction, guild, serverConfig, client) {
-  // TODO: Implement notification settings handler
-  await interaction.followUp({
-    content: 'Notification settings are not yet implemented. Use `/setlogs`, `/setwelcome`, or `/setannouncer` commands.',
-    ephemeral: true
+  // Get current notification settings
+  const welcomeEnabled = serverConfig.welcomeEnabled || false;
+  const welcomeChannelId = serverConfig.welcomeChannelId || null;
+  const logChannelId = serverConfig.logChannelId || null;
+  const announcerEnabled = serverConfig.announcerEnabled || false;
+  const announcerChannelId = serverConfig.announcerChannelId || null;
+  
+  // Create notification settings embed
+  const notificationEmbed = new EmbedBuilder()
+    .setTitle('🔔 Notification Settings')
+    .setDescription(`Manage notification settings for ${guild.name}`)
+    .setColor(0x3498DB) // Blue
+    .addFields(
+      {
+        name: '👋 Welcome Messages',
+        value: `Status: ${welcomeEnabled ? '✅ Enabled' : '❌ Disabled'}\n` +
+               `Channel: ${welcomeChannelId ? `<#${welcomeChannelId}>` : 'None set'}`
+      },
+      {
+        name: '📝 Server Logs',
+        value: `Status: ${logChannelId ? '✅ Enabled' : '❌ Disabled'}\n` +
+               `Channel: ${logChannelId ? `<#${logChannelId}>` : 'None set'}`
+      },
+      {
+        name: '📢 Voice Announcer',
+        value: `Status: ${announcerEnabled ? '✅ Enabled' : '❌ Disabled'}\n` +
+               `Channel: ${announcerChannelId ? `<#${announcerChannelId}>` : 'None set'}`
+      }
+    )
+    .setFooter({ text: 'Use the buttons below to manage notification settings' });
+  
+  // Create notification settings buttons
+  const welcomeRow = new ActionRowBuilder()
+    .addComponents(
+      new ButtonBuilder()
+        .setCustomId('toggle_welcome')
+        .setLabel(`${welcomeEnabled ? 'Disable' : 'Enable'} Welcome Messages`)
+        .setStyle(welcomeEnabled ? ButtonStyle.Danger : ButtonStyle.Success),
+      new ButtonBuilder()
+        .setCustomId('set_welcome_channel')
+        .setLabel('Set Welcome Channel')
+        .setStyle(ButtonStyle.Primary)
+    );
+  
+  const logsRow = new ActionRowBuilder()
+    .addComponents(
+      new ButtonBuilder()
+        .setCustomId('setup_logs')
+        .setLabel('Setup Log Channels')
+        .setStyle(ButtonStyle.Primary),
+      new ButtonBuilder()
+        .setCustomId('toggle_announcer')
+        .setLabel(`${announcerEnabled ? 'Disable' : 'Enable'} Voice Announcer`)
+        .setStyle(announcerEnabled ? ButtonStyle.Danger : ButtonStyle.Success)
+    );
+  
+  const backRow = new ActionRowBuilder()
+    .addComponents(
+      new ButtonBuilder()
+        .setCustomId('back_to_dashboard')
+        .setLabel('Back to Main Dashboard')
+        .setStyle(ButtonStyle.Secondary)
+    );
+  
+  // Update the message with notification settings
+  try {
+    await interaction.message.edit({
+      embeds: [notificationEmbed],
+      components: [welcomeRow, logsRow, backRow]
+    }).catch(async error => {
+      console.error('Failed to update message with notification settings:', error);
+      // Fallback to followUp if edit fails
+      await interaction.followUp({
+        content: 'Failed to load notification settings interface. Please try again.',
+        ephemeral: true
+      }).catch(e => console.error('Failed to send followUp:', e));
+    });
+  } catch (error) {
+    console.error('Error updating message with notification settings:', error);
+    try {
+      await interaction.followUp({
+        content: 'Error loading notification settings. Use `/setwelcome`, `/setlogs`, or `/setannouncer` commands directly.',
+        ephemeral: true
+      });
+    } catch (finalError) {
+      console.error('All attempts to respond failed:', finalError);
+    }
+    return;
+  }
+  
+  // Set up collector for notification settings buttons
+  const filter = i => i.user.id === interaction.user.id;
+  const notificationCollector = interaction.message.createMessageComponentCollector({
+    filter,
+    time: 180000 // 3 minutes
   });
   
-  // Return to main dashboard
-  await handleHelpInfo(interaction, guild, serverConfig, client);
+  notificationCollector.on('collect', async i => {
+    try {
+      // Always try to defer update first with proper error handling
+      try {
+        await i.deferUpdate();
+      } catch (err) {
+        console.error(`[Dashboard] Failed to defer notification button interaction: ${err}`);
+        // Continue with operation anyway
+      }
+      
+      // Handle button interactions
+      if (i.customId === 'toggle_welcome') {
+        const newValue = !serverConfig.welcomeEnabled;
+        config.updateServerConfig(guild.id, { welcomeEnabled: newValue });
+        
+        await i.followUp({
+          content: `✅ Welcome messages ${newValue ? 'enabled' : 'disabled'} successfully!`,
+          ephemeral: true
+        }).catch(err => console.error('Failed to send feedback after toggling welcome:', err));
+        
+        // Update the button and embed
+        try {
+          const updatedWelcomeRow = new ActionRowBuilder()
+            .addComponents(
+              new ButtonBuilder()
+                .setCustomId('toggle_welcome')
+                .setLabel(`${newValue ? 'Disable' : 'Enable'} Welcome Messages`)
+                .setStyle(newValue ? ButtonStyle.Danger : ButtonStyle.Success),
+              welcomeRow.components[1]
+            );
+          
+          const updatedEmbed = EmbedBuilder.from(notificationEmbed);
+          updatedEmbed.data.fields[0].value = `Status: ${newValue ? '✅ Enabled' : '❌ Disabled'}\n` +
+            `Channel: ${welcomeChannelId ? `<#${welcomeChannelId}>` : 'None set'}`;
+          
+          await i.message.edit({
+            embeds: [updatedEmbed.data],
+            components: [updatedWelcomeRow, logsRow, backRow]
+          });
+        } catch (error) {
+          console.error('Error updating message after toggling welcome:', error);
+        }
+      }
+      else if (i.customId === 'set_welcome_channel') {
+        await i.followUp({
+          content: 'To set a welcome channel, use the `/setwelcome #channel` command in your server.',
+          ephemeral: true
+        });
+      }
+      else if (i.customId === 'setup_logs') {
+        await i.followUp({
+          content: 'To set up server logs, use the `/setlogs #channel` command in your server.',
+          ephemeral: true
+        });
+      }
+      else if (i.customId === 'toggle_announcer') {
+        const newValue = !serverConfig.announcerEnabled;
+        config.updateServerConfig(guild.id, { announcerEnabled: newValue });
+        
+        await i.followUp({
+          content: `✅ Voice announcer ${newValue ? 'enabled' : 'disabled'} successfully!`,
+          ephemeral: true
+        }).catch(err => console.error('Failed to send feedback after toggling announcer:', err));
+        
+        // Update the button and embed
+        try {
+          const updatedLogsRow = new ActionRowBuilder()
+            .addComponents(
+              logsRow.components[0],
+              new ButtonBuilder()
+                .setCustomId('toggle_announcer')
+                .setLabel(`${newValue ? 'Disable' : 'Enable'} Voice Announcer`)
+                .setStyle(newValue ? ButtonStyle.Danger : ButtonStyle.Success)
+            );
+          
+          const updatedEmbed = EmbedBuilder.from(notificationEmbed);
+          updatedEmbed.data.fields[2].value = `Status: ${newValue ? '✅ Enabled' : '❌ Disabled'}\n` +
+            `Channel: ${announcerChannelId ? `<#${announcerChannelId}>` : 'None set'}`;
+          
+          await i.message.edit({
+            embeds: [updatedEmbed.data],
+            components: [welcomeRow, updatedLogsRow, backRow]
+          });
+        } catch (error) {
+          console.error('Error updating message after toggling announcer:', error);
+        }
+      }
+      else if (i.customId === 'back_to_dashboard') {
+        // Stop the collector
+        notificationCollector.stop();
+        
+        // Return to main dashboard
+        try {
+          await handleHelpInfo(interaction, guild, serverConfig, client);
+        } catch (error) {
+          console.error('Error returning to main dashboard:', error);
+          
+          // Fallback to just sending a message
+          await i.followUp({
+            content: 'Error returning to dashboard. Try using `/dashboard` command again.',
+            ephemeral: true
+          }).catch(e => console.error('Failed to send fallback message:', e));
+        }
+      }
+    } catch (error) {
+      console.error('[Dashboard] Error handling notification button:', error);
+      try {
+        await i.followUp({ 
+          content: '❌ An error occurred processing your request. Please try again.', 
+          ephemeral: true 
+        });
+      } catch (followUpError) {
+        console.error('[Dashboard] Failed to handle error recovery:', followUpError);
+      }
+    }
+  });
 }
 
 async function handleGameSettings(interaction, guild, serverConfig, client) {
-  // TODO: Implement game settings handler
-  await interaction.followUp({
-    content: 'Game settings are not yet implemented. Use `/game` command to manage games.',
-    ephemeral: true
+  // Get current game settings
+  const gameEnabled = serverConfig.gameEnabled || false;
+  const giveawaysEnabled = serverConfig.giveawaysEnabled || false;
+  const pollsEnabled = serverConfig.pollsEnabled || false;
+  const gameChannelId = serverConfig.gameChannelId || null;
+  
+  // Create game settings embed
+  const gameEmbed = new EmbedBuilder()
+    .setTitle('🎮 Game & Entertainment Settings')
+    .setDescription(`Manage game and entertainment features for ${guild.name}`)
+    .setColor(0x9B59B6) // Purple
+    .addFields(
+      {
+        name: '🎲 Interactive Games',
+        value: `Status: ${gameEnabled ? '✅ Enabled' : '❌ Disabled'}\n` +
+               `Channel: ${gameChannelId ? `<#${gameChannelId}>` : 'None set'}`
+      },
+      {
+        name: '🎁 Giveaways',
+        value: `Status: ${giveawaysEnabled ? '✅ Enabled' : '❌ Disabled'}\n` +
+               `Use the \`/game giveaway\` command to create a giveaway`
+      },
+      {
+        name: '📊 Polls & Voting',
+        value: `Status: ${pollsEnabled ? '✅ Enabled' : '❌ Disabled'}\n` +
+               `Use the \`/game poll\` command to create a poll`
+      }
+    )
+    .setFooter({ text: 'Use the buttons below to manage entertainment settings' });
+  
+  // Create game settings buttons
+  const gameRow = new ActionRowBuilder()
+    .addComponents(
+      new ButtonBuilder()
+        .setCustomId('toggle_games')
+        .setLabel(`${gameEnabled ? 'Disable' : 'Enable'} Games`)
+        .setStyle(gameEnabled ? ButtonStyle.Danger : ButtonStyle.Success),
+      new ButtonBuilder()
+        .setCustomId('set_game_channel')
+        .setLabel('Set Games Channel')
+        .setStyle(ButtonStyle.Primary)
+    );
+  
+  const featureRow = new ActionRowBuilder()
+    .addComponents(
+      new ButtonBuilder()
+        .setCustomId('toggle_giveaways')
+        .setLabel(`${giveawaysEnabled ? 'Disable' : 'Enable'} Giveaways`)
+        .setStyle(giveawaysEnabled ? ButtonStyle.Danger : ButtonStyle.Success),
+      new ButtonBuilder()
+        .setCustomId('toggle_polls')
+        .setLabel(`${pollsEnabled ? 'Disable' : 'Enable'} Polls`)
+        .setStyle(pollsEnabled ? ButtonStyle.Danger : ButtonStyle.Success)
+    );
+  
+  const backRow = new ActionRowBuilder()
+    .addComponents(
+      new ButtonBuilder()
+        .setCustomId('create_game')
+        .setLabel('Create New Game')
+        .setStyle(ButtonStyle.Primary),
+      new ButtonBuilder()
+        .setCustomId('back_to_dashboard')
+        .setLabel('Back to Main Dashboard')
+        .setStyle(ButtonStyle.Secondary)
+    );
+  
+  // Update the message with game settings
+  try {
+    await interaction.message.edit({
+      embeds: [gameEmbed],
+      components: [gameRow, featureRow, backRow]
+    }).catch(async error => {
+      console.error('Failed to update message with game settings:', error);
+      // Fallback to followUp if edit fails
+      await interaction.followUp({
+        content: 'Failed to load game settings interface. Please try again or use the `/game` command.',
+        ephemeral: true
+      }).catch(e => console.error('Failed to send followUp:', e));
+    });
+  } catch (error) {
+    console.error('Error updating message with game settings:', error);
+    try {
+      await interaction.followUp({
+        content: 'Error loading game settings. Use the `/game` command directly to manage games.',
+        ephemeral: true
+      });
+      
+      // Try to return to dashboard
+      await handleHelpInfo(interaction, guild, serverConfig, client);
+    } catch (finalError) {
+      console.error('All attempts to respond failed:', finalError);
+    }
+    return;
+  }
+  
+  // Set up collector for game settings buttons
+  const filter = i => i.user.id === interaction.user.id;
+  const gameCollector = interaction.message.createMessageComponentCollector({
+    filter,
+    time: 180000 // 3 minutes
   });
   
-  // Return to main dashboard
-  await handleHelpInfo(interaction, guild, serverConfig, client);
+  gameCollector.on('collect', async i => {
+    try {
+      // Always try to defer update first with proper error handling
+      try {
+        await i.deferUpdate();
+      } catch (err) {
+        console.error(`[Dashboard] Failed to defer game button interaction: ${err}`);
+        // Continue with operation anyway
+      }
+      
+      // Get the latest config
+      const latestConfig = config.getServerConfig(guild.id);
+      
+      // Handle button interactions
+      if (i.customId === 'toggle_games') {
+        const newValue = !latestConfig.gameEnabled;
+        config.updateServerConfig(guild.id, { gameEnabled: newValue });
+        
+        // Send feedback
+        await i.followUp({
+          content: `✅ Interactive games ${newValue ? 'enabled' : 'disabled'} successfully!`,
+          ephemeral: true
+        }).catch(err => console.error('Failed to send feedback after toggling games:', err));
+        
+        // Update button and embed
+        try {
+          const updatedGameRow = new ActionRowBuilder()
+            .addComponents(
+              new ButtonBuilder()
+                .setCustomId('toggle_games')
+                .setLabel(`${newValue ? 'Disable' : 'Enable'} Games`)
+                .setStyle(newValue ? ButtonStyle.Danger : ButtonStyle.Success),
+              gameRow.components[1]
+            );
+          
+          const updatedEmbed = EmbedBuilder.from(gameEmbed);
+          updatedEmbed.data.fields[0].value = `Status: ${newValue ? '✅ Enabled' : '❌ Disabled'}\n` +
+            `Channel: ${gameChannelId ? `<#${gameChannelId}>` : 'None set'}`;
+          
+          await i.message.edit({
+            embeds: [updatedEmbed.data],
+            components: [updatedGameRow, featureRow, backRow]
+          });
+        } catch (error) {
+          console.error('Error updating message after toggling games:', error);
+        }
+      }
+      else if (i.customId === 'set_game_channel') {
+        // Send instructions for setting game channel
+        await i.followUp({
+          content: 'To set a game channel, use the `/game setchannel #channel` command in your server.',
+          ephemeral: true
+        });
+      }
+      else if (i.customId === 'toggle_giveaways') {
+        const newValue = !latestConfig.giveawaysEnabled;
+        config.updateServerConfig(guild.id, { giveawaysEnabled: newValue });
+        
+        // Send feedback
+        await i.followUp({
+          content: `✅ Giveaways ${newValue ? 'enabled' : 'disabled'} successfully!`,
+          ephemeral: true
+        }).catch(err => console.error('Failed to send feedback after toggling giveaways:', err));
+        
+        // Update button and embed
+        try {
+          const updatedFeatureRow = new ActionRowBuilder()
+            .addComponents(
+              new ButtonBuilder()
+                .setCustomId('toggle_giveaways')
+                .setLabel(`${newValue ? 'Disable' : 'Enable'} Giveaways`)
+                .setStyle(newValue ? ButtonStyle.Danger : ButtonStyle.Success),
+              featureRow.components[1]
+            );
+          
+          const updatedEmbed = EmbedBuilder.from(gameEmbed);
+          updatedEmbed.data.fields[1].value = `Status: ${newValue ? '✅ Enabled' : '❌ Disabled'}\n` +
+            `Use the \`/game giveaway\` command to create a giveaway`;
+          
+          await i.message.edit({
+            embeds: [updatedEmbed.data],
+            components: [gameRow, updatedFeatureRow, backRow]
+          });
+        } catch (error) {
+          console.error('Error updating message after toggling giveaways:', error);
+        }
+      }
+      else if (i.customId === 'toggle_polls') {
+        const newValue = !latestConfig.pollsEnabled;
+        config.updateServerConfig(guild.id, { pollsEnabled: newValue });
+        
+        // Send feedback
+        await i.followUp({
+          content: `✅ Polls ${newValue ? 'enabled' : 'disabled'} successfully!`,
+          ephemeral: true
+        }).catch(err => console.error('Failed to send feedback after toggling polls:', err));
+        
+        // Update button and embed
+        try {
+          const updatedFeatureRow = new ActionRowBuilder()
+            .addComponents(
+              featureRow.components[0],
+              new ButtonBuilder()
+                .setCustomId('toggle_polls')
+                .setLabel(`${newValue ? 'Disable' : 'Enable'} Polls`)
+                .setStyle(newValue ? ButtonStyle.Danger : ButtonStyle.Success)
+            );
+          
+          const updatedEmbed = EmbedBuilder.from(gameEmbed);
+          updatedEmbed.data.fields[2].value = `Status: ${newValue ? '✅ Enabled' : '❌ Disabled'}\n` +
+            `Use the \`/game poll\` command to create a poll`;
+          
+          await i.message.edit({
+            embeds: [updatedEmbed.data],
+            components: [gameRow, updatedFeatureRow, backRow]
+          });
+        } catch (error) {
+          console.error('Error updating message after toggling polls:', error);
+        }
+      }
+      else if (i.customId === 'create_game') {
+        // Get available games information
+        const gameInfoEmbed = new EmbedBuilder()
+          .setTitle('🎮 Available Games')
+          .setDescription('Choose from the following games to start:')
+          .setColor(0x9B59B6)
+          .addFields(
+            {
+              name: '🎯 Trivia',
+              value: 'Test your knowledge with multi-category trivia questions'
+            },
+            {
+              name: '🎲 Dice Roll',
+              value: 'Roll dice and compete for the highest number'
+            },
+            {
+              name: '✂️ Rock Paper Scissors',
+              value: 'Play the classic game against other members'
+            }
+          )
+          .setFooter({ text: 'Use the `/game start` command to begin a game' });
+        
+        // Show available games
+        await i.followUp({
+          embeds: [gameInfoEmbed],
+          ephemeral: true
+        });
+      }
+      else if (i.customId === 'back_to_dashboard') {
+        // Stop collector
+        gameCollector.stop();
+        
+        // Return to main dashboard
+        try {
+          await handleHelpInfo(interaction, guild, serverConfig, client);
+        } catch (error) {
+          console.error('Error returning to main dashboard:', error);
+          
+          // Fallback
+          await i.followUp({
+            content: 'Error returning to dashboard. Try using `/dashboard` command again.',
+            ephemeral: true
+          }).catch(e => console.error('Failed to send fallback message:', e));
+        }
+      }
+    } catch (error) {
+      console.error('[Dashboard] Error handling game button:', error);
+      try {
+        await i.followUp({ 
+          content: '❌ An error occurred processing your request. Please try again.', 
+          ephemeral: true 
+        });
+      } catch (followUpError) {
+        console.error('[Dashboard] Failed to handle error recovery:', followUpError);
+      }
+    }
+  });
 }
 
 async function handleStatsView(interaction, guild, serverConfig, client) {

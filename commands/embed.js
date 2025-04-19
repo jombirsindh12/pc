@@ -147,11 +147,20 @@ module.exports = {
     
     // Send the embed
     try {
-      // Get the channel to send in (always current channel)
-      const channel = isSlashCommand ? interaction.channel : message.channel;
-      
-      // Send the embed
-      await channel.send({ embeds: [embed] });
+      // In Discord.js v14, we need to handle channels differently
+      if (isSlashCommand) {
+        // For slash commands, we should use the channelId to fetch the proper channel
+        const resolvedChannel = interaction.guild.channels.cache.get(interaction.channelId);
+        if (!resolvedChannel) {
+          throw new Error('Could not resolve channel from interaction');
+        }
+        
+        // Send the embed to the channel
+        await resolvedChannel.send({ embeds: [embed] });
+      } else {
+        // For legacy commands
+        await message.channel.send({ embeds: [embed] });
+      }
       
       // Send confirmation
       const confirmationEmbed = {

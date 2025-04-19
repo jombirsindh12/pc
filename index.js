@@ -1,7 +1,30 @@
 require('dotenv').config();
 const fs = require('fs');
+const path = require('path');
 const { Client, GatewayIntentBits, Collection, Events, REST, Routes } = require('discord.js');
 const config = require('./utils/config');
+
+// Ensure required directories exist
+const LOGS_DIR = path.join(__dirname, '.logs');
+const TEMP_DIR = path.join(__dirname, 'temp');
+
+// Create directories if they don't exist
+try {
+  if (!fs.existsSync(LOGS_DIR)) {
+    fs.mkdirSync(LOGS_DIR, { recursive: true });
+    console.log('Created logs directory');
+  }
+  
+  if (!fs.existsSync(TEMP_DIR)) {
+    fs.mkdirSync(TEMP_DIR, { recursive: true });
+    console.log('Created temp directory');
+  }
+  
+  // Ensure the config directories also exist
+  config.ensureDirectories();
+} catch (error) {
+  console.error('Error creating required directories:', error);
+}
 
 // Create a new client instance with ALL required intents
 // Fixed with proper Discord.js v14 Partials and ActivityType
@@ -537,9 +560,67 @@ console.log('Bot token available:', token ? 'Yes' : 'No');
 // Using more detailed debugging for connection issues
 console.log('Starting login process with detailed error reporting...');
 
+// Safely write to log file with error handling
+function safelyWriteToLog(logFile, message) {
+  try {
+    fs.appendFileSync(logFile, message + '\n');
+    return true;
+  } catch (error) {
+    console.error(`Failed to write to log file ${logFile}:`, error.message);
+    
+    // Try to create directory again if it doesn't exist
+    try {
+      if (!fs.existsSync(path.dirname(logFile))) {
+        fs.mkdirSync(path.dirname(logFile), { recursive: true });
+        console.log(`Created missing directory for ${logFile}`);
+        
+        // Try writing again
+        fs.appendFileSync(logFile, message + '\n');
+        console.log(`Successfully wrote to log after creating directory`);
+        return true;
+      }
+    } catch (mkdirError) {
+      console.error(`Failed to create log directory:`, mkdirError.message);
+    }
+    
+    return false;
+  }
+}
+
+// Check token and provide clear instructions if missing
+if (!token) {
+  const errorMessage = `
+============ DISCORD TOKEN MISSING ============
+
+No Discord bot token found in environment variables!
+
+To fix this issue:
+1. Create a .env file in the project root directory
+2. Add the following line to the .env file:
+   DISCORD_TOKEN=your_bot_token_here
+
+   Replace 'your_bot_token_here' with your actual Discord bot token
+   from the Discord Developer Portal: https://discord.com/developers/applications
+
+3. Restart the bot
+
+If you're using a hosting service, add DISCORD_TOKEN
+as an environment variable in your hosting settings.
+
+See .env.example for a template of all required variables.
+=================================================
+`;
+
+  console.error(errorMessage);
+  safelyWriteToLog(path.join(LOGS_DIR, 'error.log'), errorMessage);
+  
+  // Exit with error code if no token
+  process.exit(1);
+}
+
 // Write token info for debugging
-fs.appendFileSync('./.logs/debug.log', `Token check: ${token ? 'Valid token exists (length:'+token.length+')' : 'No token found'}\n`);
-fs.appendFileSync('./.logs/debug.log', `Timestamp: ${new Date().toISOString()}\n`);
+safelyWriteToLog(path.join(LOGS_DIR, 'debug.log'), `Token check: Valid token exists (length: ${token.length})`);
+safelyWriteToLog(path.join(LOGS_DIR, 'debug.log'), `Timestamp: ${new Date().toISOString()}`);
 
 // Login with delay and advanced error handling
 setTimeout(() => {
@@ -547,7 +628,7 @@ setTimeout(() => {
     .then(() => {
       const successMsg = `Successfully logged in as ${client.user.tag}!`;
       console.log(successMsg);
-      fs.appendFileSync('./.logs/debug.log', successMsg + '\n');
+      safelyWriteToLog(path.join(LOGS_DIR, 'debug.log'), successMsg);
       console.log(`Bot is in ${client.guilds.cache.size} servers`);
       console.log('Bot is now ONLINE and ready to respond to commands');
       
@@ -561,22 +642,42 @@ setTimeout(() => {
       });
     })
     .catch(error => {
-      // Detailed error reporting to file and console
+      // Detailed error reporting with clear explanations
       const errorDetails = [
         '=======================================',
-        'DETAILED LOGIN ERROR:',
+        'DISCORD LOGIN ERROR:',
         error.name + ': ' + error.message,
         error.stack,
         '---------------------------------------',
-        'Common fixes:',
-        '1. Check if token is valid in Discord Developer Portal',
-        '2. Ensure all privileged intents are enabled in Developer Portal',
-        '3. Verify your bot is not banned or rate-limited',
+        'TROUBLESHOOTING GUIDE:',
+        '',
+        '1. TOKEN ISSUES:',
+        '   - Verify your token is correct and not expired',
+        '   - Check for typos in your .env file',
+        '   - Regenerate a new token in Discord Developer Portal if needed',
+        '',
+        '2. PERMISSION ISSUES:',
+        '   - Enable ALL "Privileged Gateway Intents" in Developer Portal:',
+        '     * Presence Intent',
+        '     * Server Members Intent',
+        '     * Message Content Intent',
+        '',
+        '3. NETWORK/HOSTING ISSUES:',
+        '   - Check your internet connection',
+        '   - Verify your hosting service allows outbound connections',
+        '   - Ensure your IP is not blocked by Discord',
+        '',
+        '4. RATE LIMITING:',
+        '   - If you\'ve restarted many times, wait 15-30 minutes',
+        '   - Avoid rapidly restarting the bot multiple times',
+        '',
+        '5. NOT SURE?',
+        '   - Join Discord API server for help: https://discord.gg/discord-api',
         '=======================================',
       ].join('\n');
       
       console.error(errorDetails);
-      fs.appendFileSync('./.logs/error.log', `${new Date().toISOString()}\n${errorDetails}\n\n`);
+      safelyWriteToLog(path.join(LOGS_DIR, 'error.log'), `${new Date().toISOString()}\n${errorDetails}\n\n`);
       
       // Don't exit immediately, try to reconnect
       console.log('Will attempt to reconnect in 30 seconds...');

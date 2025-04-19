@@ -21,11 +21,11 @@
   "1332552503216177366": {
     "prefix": "!",
     "notificationChannelId": "1350455356161261730",
-    "verificationChannelId": "1350455331037253655",
+    "verificationChannelId": "1350455344782118993",
     "youtubeChannelId": "UCTqVAZM7HsFoz7xrpRMoADg",
     "youtubeChannelName": "PHANTOM GAMING ",
-    "roleId": "1350455234828308561",
-    "roleName": "Subscribed",
+    "roleId": "1361307304477327520",
+    "roleName": "PC FAMILY ❤",
     "subCountChannelId": "1351819837596368957",
     "voiceChannelFormat": "YOUTUBE {subCount} subscribers`",
     "updateFrequencyMinutes": 10,
@@ -41,7 +41,52 @@
     "recentStickers": [
       "wumpus_happy"
     ],
-    "imageVerification": true
+    "imageVerification": true,
+    "antiNuke": true,
+    "verificationRequired": true,
+    "autoModeration": true,
+    "punishmentType": "kick",
+    "embedTemplates": {
+      "rule": {
+        "title": "PHANTOM CHEATS COMMUNITY RULES",
+        "description": "**1. Be Respectful**\n- Treat all members with kindness and respect. Harassment, hate speech, and discriminatory remarks are strictly prohibited.\n\n**2. Maintain Appropriate Content**\n- Keep discussions and shared content appropriate for all members. NSFW or offensive material is not allowed.\n\n**3. No Spamming**\n- Avoid sending repetitive messages, excessive emojis, or unnecessary mentions. This includes spamming in voice channels\n**4. No Self-Promotion Without Permission**\n- Refrain from promoting personal content, servers, or services without prior approval from the staff.\n\n**5. Use Channels Appropriately**\n- Keep conversations relevant to the channel topics. Off-topic discussions should be moved to the appropriate channels.\n\n**6. Protect Personal Information**\n- Do not share personal information about yourself or others. Doxxing and sharing private details are forbidden.\n\n**7. Follow Discord's Community Guidelines**\n- Adhere to [Discord's Community Guidelines](https://discord.com/guidelines) to ensure a safe environment for everyone.\n\n**8. No Impersonation**\n- Do not impersonate other members, staff, or public figures.\n\n**9. Report Issues to Staff**\n- If you encounter any problems or witness rule violations, report them to the moderators or administrators.\n\n**10. Have Fun and Collaborate**\n- Engage positively with the community, share knowledge, and enjoy your time here!\n\n---\n\n*Note: Failure to comply with these rules",
+        "color": "#ff0000",
+        "imageUrl": null,
+        "thumbnailUrl": null,
+        "footerText": null,
+        "createdAt": "2025-04-18T07:27:29.964Z",
+        "createdBy": "1155442418309673000"
+      }
+    },
+    "modLogs": [
+      {
+        "type": "kick",
+        "userId": "530825629793517590",
+        "username": "KITT#3121",
+        "moderatorId": "1155442418309673000",
+        "moderatorName": "mohitbhai2007",
+        "reason": "No reason provided",
+        "timestamp": "2025-04-18T07:30:54.997Z"
+      }
+    ],
+    "activeVoiceChannelId": "1350455350117142559",
+    "activeVoiceChannelName": "🎙・ɢᴇɴᴇʀᴀʟ ᴠᴄ",
+    "voiceAnnouncements": true,
+    "voiceSessionData": {},
+    "logChannels": {
+      "mod": "1350455377803612180",
+      "server": "1350455377803612180",
+      "message": "1350455377803612180",
+      "voice": "1350455377803612180",
+      "joinleave": "1350455377803612180"
+    },
+    "verificationChannelName": "🔐・ᴘʀɪᴠᴀᴛᴇ",
+    "verificationType": "button",
+    "verificationSettings": {
+      "title": "✅ Server Verification",
+      "description": "to gain acess",
+      "color": "#ff0000"
+    }
   },
   "1351801466095931445": {
     "prefix": "!",

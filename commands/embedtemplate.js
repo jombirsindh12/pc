@@ -135,8 +135,14 @@ module.exports = {
           // Defer the reply first
           await interaction.deferReply();
           
-          // Send embed to channel
-          await interaction.channel.send({ embeds: [embed] });
+          // Get the proper channel from the guild
+          const resolvedChannel = interaction.guild.channels.cache.get(interaction.channelId);
+          if (!resolvedChannel) {
+            throw new Error('Could not resolve channel from interaction');
+          }
+          
+          // Send embed to proper channel
+          await resolvedChannel.send({ embeds: [embed] });
           
           // Send confirmation
           await interaction.followUp({ 
