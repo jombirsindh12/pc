@@ -714,8 +714,8 @@ console.log(`Discord-native dashboard is available via /dashboard command`);
 const server = uptimeManager.createUptimeServer();
 
 // Start the server on a port that works with UptimeRobot
-server.listen(8080, '0.0.0.0', () => {
-  console.log('Enhanced uptime monitoring server running on port 8080');
+server.listen(6870, '0.0.0.0', () => {
+  console.log('Enhanced uptime monitoring server running on port 6870');
   console.log('Bot is configured for 24/7 operation with automatic reconnection');
 });
 

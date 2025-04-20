@@ -223,7 +223,7 @@ module.exports = {
             
             if (notificationChannel) {
               await notificationChannel.send({
-                content: `🤖 **KITT System**: I have joined voice channel **${targetChannel.name}**. I will now monitor this channel and announce member activity.`
+                content: `🤖 **PHANTOM GUARD SYSTEM**: I have joined voice channel **${targetChannel.name}**. I will now monitor this channel and announce member activity.`
               });
             }
             
@@ -298,7 +298,7 @@ module.exports = {
               
               if (notificationChannel) {
                 await notificationChannel.send({
-                  content: `🤖 **KITT System**: I am now leaving voice channel **${channelName}**. Voice monitoring has been stopped.`
+                  content: `🤖 **PHANTOM GUARD SYSTEM**: I am now leaving voice channel **${channelName}**. Voice monitoring has been stopped.`
                 });
               }
               
@@ -662,7 +662,7 @@ async function handleVoiceJoin(state) {
     
     // Send KITT-like text message
     await notificationChannel.send({
-      content: `🤖 **KITT System**: User **${username}** has entered voice channel **${channelName}**. ${memberCount > 1 ? `There are now **${memberCount}** users in the channel.` : 'They are currently alone in the channel.'}`
+      content: `🤖 **PHANTOM GUARD SYSTEM**: User **${username}** has entered voice channel **${channelName}**. ${memberCount > 1 ? `There are now **${memberCount}** users in the channel.` : 'They are currently alone in the channel.'}`
     });
     
     // Make voice announcement in the voice channel
@@ -782,7 +782,7 @@ async function handleVoiceLeave(state) {
     
     // Send KITT-like text message
     await notificationChannel.send({
-      content: `🤖 **KITT System**: User **${username}** has left voice channel **${channelName}**. ${
+      content: `🤖 **PHANTOM GUARD SYSTEM**: User **${username}** has left voice channel **${channelName}**. ${
         remainingCount === 0 ? 'The channel is now empty.' : 
         remainingCount === 1 ? 'One user remains in the channel.' : 
         `${remainingCount} users remain in the channel.`}`

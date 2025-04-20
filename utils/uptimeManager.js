@@ -128,7 +128,7 @@ function createUptimeServer() {
       console.log('[UptimeManager] Port already in use, trying again in 10 seconds...');
       setTimeout(() => {
         server.close();
-        server.listen(8080, '0.0.0.0');
+        server.listen(6870, '0.0.0.0');
       }, 10000);
     }
   });
