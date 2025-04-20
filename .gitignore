@@ -1,10 +1,33 @@
+# Packages
 node_modules/
+package-lock.json
+
+# Environment variables
 .env
+
+# Logs
 .logs/
-temp/
 *.log
-.upm/
-.cache/
-.config/
-.local/
-.npm/
+
+# Temporary files
+temp/
+*.tmp
+
+# Configuration
+config/servers/*.json
+!config/servers/defaultPrefix.json
+!config/servers/version.json
+!config/servers/botName.json
+!config/servers/ownerIds.json
+
+# Generated files
+generated-*
+
+# User-specific files
+.DS_Store
+.idea/
+.vscode/
+*.sublime-*
+
+# Bot-specific credentials
+bot-invite-link.txt
