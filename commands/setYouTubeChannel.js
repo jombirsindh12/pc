@@ -13,7 +13,7 @@ module.exports = {
     .setDescription('Sets the YouTube channel for subscription verification')
     .addStringOption(option =>
       option.setName('channel')
-        .setDescription('YouTube channel ID, username, or URL')
+        .setDescription('YouTube channel ID or URL')
         .setRequired(true))
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
   

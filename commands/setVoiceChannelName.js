@@ -10,7 +10,7 @@ module.exports = {
     {
       name: 'format',
       type: 3, // STRING type
-      description: 'The format template for the voice channel name. Use {channel}, {count}, {short_count} as placeholders.',
+      description: 'Format for voice channel name',
       required: true
     }
   ],
@@ -19,7 +19,7 @@ module.exports = {
     .setDescription('Customizes the format of the subscriber count voice channel name')
     .addStringOption(option =>
       option.setName('format')
-        .setDescription('Format template. Use {channel}, {count}, {short_count} as placeholders')
+        .setDescription('Format for voice channel name with placeholders: {channel}, {count}, {short_count}')
         .setRequired(true))
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
   guildOnly: true, // This command can only be used in servers

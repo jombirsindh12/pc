@@ -27,7 +27,8 @@ task = "packager.installForAll"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "npm install && node index.js"
+args = "node index.js"
+waitForPort = 6870
 
 [deployment]
 run = ["sh", "-c", "npm install && node index.js"]

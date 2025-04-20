@@ -12,7 +12,7 @@ module.exports = {
     .setDescription('Sets the role to be assigned to verified subscribers')
     .addRoleOption(option => 
       option.setName('role')
-        .setDescription('The role to assign to verified subscribers')
+        .setDescription('Role for verified subscribers')
         .setRequired(true))
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
   
