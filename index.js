@@ -108,7 +108,7 @@ client.once(Events.ClientReady, async () => {
   
   try {
     // Create REST instance for registering commands
-    const rest = new REST({ version: '10' }).setToken(client.token);
+    const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
     
     // Transform regular commands to slash commands
     console.log('Started refreshing application (/) commands.');
