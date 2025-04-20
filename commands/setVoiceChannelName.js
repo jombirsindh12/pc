@@ -1,57 +1,139 @@
 const config = require('../utils/config');
 const youtubeAPI = require('../utils/youtubeAPI');
-const { PermissionFlagsBits } = require('discord.js');
+const { PermissionFlagsBits, SlashCommandBuilder } = require('discord.js');
 
 module.exports = {
   name: 'setvoicechannelname',
   description: 'Customizes the format of the subscriber count voice channel name',
-  usage: '!setvoicechannelname [format]',
+  usage: '/setvoicechannelname [format]',
+  options: [
+    {
+      name: 'format',
+      type: 3, // STRING type
+      description: 'The format template for the voice channel name. Use {channel}, {count}, {short_count} as placeholders.',
+      required: true
+    }
+  ],
+  data: new SlashCommandBuilder()
+    .setName('setvoicechannelname')
+    .setDescription('Customizes the format of the subscriber count voice channel name')
+    .addStringOption(option =>
+      option.setName('format')
+        .setDescription('Format template. Use {channel}, {count}, {short_count} as placeholders')
+        .setRequired(true))
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
   guildOnly: true, // This command can only be used in servers
-  execute(message, args, client) {
-    // Check if user has admin permissions
-    if (!message.member.permissions.has(PermissionFlagsBits.Administrator)) {
-      return message.reply('❌ You need to have Administrator permissions to use this command.');
+  
+  async execute(message, args, client, interaction = null) {
+    // Process differently based on whether it's a slash command or message command
+    const isSlashCommand = !!interaction;
+    let format, serverId, serverConfig;
+    
+    try {
+      if (isSlashCommand) {
+        // Slash command handling
+        await interaction.deferReply();
+        
+        serverId = interaction.guild.id;
+        serverConfig = config.getServerConfig(serverId);
+        format = interaction.options.getString('format');
+        
+        // Display current format if requested
+        if (format === 'show') {
+          const currentFormat = serverConfig.voiceChannelFormat || '📊 {channel}: {count} subs';
+          await interaction.followUp({
+            embeds: [{
+              title: '🔊 Voice Channel Name Format',
+              description: `The current voice channel name format is:\n\`${currentFormat}\`\n\nAvailable placeholders:\n• \`{channel}\` - YouTube channel name\n• \`{count}\` - Subscriber count\n• \`{short_count}\` - Shortened count (e.g., 1.5M)\n\nExample: \`📊 {channel}: {count} subs\``,
+              color: 0x7289DA
+            }]
+          });
+          return;
+        }
+        
+        // Validate format contains at least one placeholder
+        if (!format.includes('{count}') && !format.includes('{short_count}') && !format.includes('{channel}')) {
+          return interaction.followUp('❌ The format must include at least one placeholder: `{channel}`, `{count}`, or `{short_count}`.');
+        }
+        
+        // Check if format is too long for a Discord channel name (max 100 characters)
+        if (format.length > 90) {
+          return interaction.followUp('❌ The format is too long. Discord channel names can\'t exceed 100 characters.');
+        }
+        
+        // Update config
+        config.updateServerConfig(serverId, { voiceChannelFormat: format });
+        
+        // Update the voice channel if it exists
+        if (serverConfig.subCountChannelId) {
+          updateSubCountChannel(client, serverId).catch(error => {
+            console.error('Error updating voice channel after format change:', error);
+          });
+        }
+        
+        return interaction.followUp(`✅ Voice channel name format updated to: \`${format}\``);
+        
+      } else {
+        // Legacy message command handling
+        // Check if user has admin permissions
+        if (!message.member.permissions.has(PermissionFlagsBits.Administrator)) {
+          return message.reply('❌ You need to have Administrator permissions to use this command.');
+        }
+        
+        serverId = message.guild.id;
+        serverConfig = config.getServerConfig(serverId);
+        
+        // Display current format if no arguments provided
+        if (!args.length) {
+          const currentFormat = serverConfig.voiceChannelFormat || '📊 {channel}: {count} subs';
+          return message.reply({
+            embeds: [{
+              title: '🔊 Voice Channel Name Format',
+              description: `The current voice channel name format is:\n\`${currentFormat}\`\n\nAvailable placeholders:\n• \`{channel}\` - YouTube channel name\n• \`{count}\` - Subscriber count\n• \`{short_count}\` - Shortened count (e.g., 1.5M)\n\nExample: \`📊 {channel}: {count} subs\``,
+              color: 0x7289DA
+            }]
+          });
+        }
+        
+        // Join args to get the full format
+        format = args.join(' ');
+        
+        // Validate format contains at least one placeholder
+        if (!format.includes('{count}') && !format.includes('{short_count}') && !format.includes('{channel}')) {
+          return message.reply('❌ The format must include at least one placeholder: `{channel}`, `{count}`, or `{short_count}`.');
+        }
+        
+        // Check if format is too long for a Discord channel name (max 100 characters)
+        if (format.length > 90) {
+          return message.reply('❌ The format is too long. Discord channel names can\'t exceed 100 characters.');
+        }
+        
+        // Update config
+        config.updateServerConfig(serverId, { voiceChannelFormat: format });
+        
+        // Update the voice channel if it exists
+        if (serverConfig.subCountChannelId) {
+          updateSubCountChannel(client, serverId).catch(error => {
+            console.error('Error updating voice channel after format change:', error);
+          });
+        }
+        
+        return message.reply(`✅ Voice channel name format updated to: \`${format}\``);
+      }
+    } catch (error) {
+      console.error('Error in setVoiceChannelName command:', error);
+      const responseMsg = `❌ An error occurred: ${error.message}`;
+      
+      if (isSlashCommand) {
+        if (!interaction.replied && !interaction.deferred) {
+          await interaction.reply({ content: responseMsg, ephemeral: true });
+        } else {
+          await interaction.followUp({ content: responseMsg, ephemeral: true });
+        }
+      } else if (message) {
+        await message.reply(responseMsg);
+      }
     }
-    
-    const serverId = message.guild.id;
-    const serverConfig = config.getServerConfig(serverId);
-    
-    // Display current format if no arguments provided
-    if (!args.length) {
-      const currentFormat = serverConfig.voiceChannelFormat || '📊 {channel}: {count} subs';
-      return message.reply({
-        embeds: [{
-          title: '🔊 Voice Channel Name Format',
-          description: `The current voice channel name format is:\n\`${currentFormat}\`\n\nAvailable placeholders:\n• \`{channel}\` - YouTube channel name\n• \`{count}\` - Subscriber count\n• \`{short_count}\` - Shortened count (e.g., 1.5M)\n\nExample: \`📊 {channel}: {count} subs\``,
-          color: 0x7289DA
-        }]
-      });
-    }
-    
-    // Join args to get the full format
-    const format = args.join(' ');
-    
-    // Validate format contains at least one placeholder
-    if (!format.includes('{count}') && !format.includes('{short_count}') && !format.includes('{channel}')) {
-      return message.reply('❌ The format must include at least one placeholder: `{channel}`, `{count}`, or `{short_count}`.');
-    }
-    
-    // Check if format is too long for a Discord channel name (max 100 characters)
-    if (format.length > 90) {
-      return message.reply('❌ The format is too long. Discord channel names can\'t exceed 100 characters.');
-    }
-    
-    // Update config
-    config.updateServerConfig(serverId, { voiceChannelFormat: format });
-    
-    // Update the voice channel if it exists
-    if (serverConfig.subCountChannelId) {
-      updateSubCountChannel(client, serverId).catch(error => {
-        console.error('Error updating voice channel after format change:', error);
-      });
-    }
-    
-    return message.reply(`✅ Voice channel name format updated to: \`${format}\``);
   },
 };
 

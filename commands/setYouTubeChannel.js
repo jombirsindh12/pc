@@ -105,6 +105,11 @@ module.exports = {
 
       console.log(`Processing YouTube channel identifier: ${youtubeChannelId}`);
       
+      // Guard against null or undefined youtubeChannelId
+      if (!youtubeChannelId) {
+        return await sendReply('❌ No YouTube channel ID or URL provided. Please try again with a valid YouTube channel ID, URL, or handle.');
+      }
+      
       // Extract ID from URL if a URL was provided
       if (youtubeChannelId.includes('youtube.com') || youtubeChannelId.includes('youtu.be') || youtubeChannelId.includes('@')) {
         try {
