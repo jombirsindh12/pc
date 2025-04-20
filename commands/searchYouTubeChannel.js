@@ -48,10 +48,15 @@ module.exports = {
     
     // Handle slash command version
     try {
+      // Check for YouTube API Key first
+      if (!process.env.YOUTUBE_API_KEY) {
+        return interaction.followUp(`❌ YouTube API Key is missing. Please add a valid API key to your environment variables.`);
+      }
+      
       // Search for channels
       const channels = await youtubeAPI.searchChannels(query);
       
-      if (!channels.length) {
+      if (!channels || !channels.length) {
         return interaction.followUp(`❌ No YouTube channels found matching "${query}". Please try a different search term.`);
       }
       
@@ -88,7 +93,22 @@ module.exports = {
       
     } catch (error) {
       console.error('Error searching for YouTube channels:', error);
-      interaction.followUp(`❌ An error occurred while searching for YouTube channels: ${error.message}`);
+      
+      // Provide more helpful error message based on error type
+      if (error.response && error.response.data) {
+        console.error('YouTube API Error:', error.response.data);
+        
+        if (error.response.data.error && error.response.data.error.message) {
+          if (error.response.data.error.message.includes('API key not valid')) {
+            return interaction.followUp(`❌ YouTube API Key is not valid. Please update your API key in the environment variables.`);
+          } else if (error.response.data.error.message.includes('quota')) {
+            return interaction.followUp(`❌ YouTube API quota exceeded. Please try again later or use a different API key.`);
+          }
+        }
+      }
+      
+      // Generic error message as fallback
+      interaction.followUp(`❌ Error searching for YouTube channels. Please check the API key and try again later.`);
     }
   },
 };

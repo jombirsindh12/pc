@@ -1,8 +1,17 @@
 const axios = require('axios');
+const dotenv = require('dotenv');
+
+// Force reload environment variables
+dotenv.config({ override: true });
 
 // Get API key from environment variables
 const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY || '';
 console.log('YouTube API Key status:', YOUTUBE_API_KEY ? 'API key is set' : 'API key is missing or empty');
+if (YOUTUBE_API_KEY) {
+  console.log('API Key Length:', YOUTUBE_API_KEY.length);
+  console.log('API Key First 4 chars:', YOUTUBE_API_KEY.substring(0, 4));
+  console.log('API Key Last 4 chars:', YOUTUBE_API_KEY.substring(YOUTUBE_API_KEY.length - 4));
+}
 
 // YouTube API base URL
 const API_BASE_URL = 'https://www.googleapis.com/youtube/v3';

@@ -164,6 +164,11 @@ module.exports = {
         }
       }
       
+      // Check for YouTube API Key first
+      if (!process.env.YOUTUBE_API_KEY) {
+        return await sendReply(`❌ YouTube API Key is missing. Please add a valid API key to your environment variables.`);
+      }
+      
       // Validate the YouTube channel ID
       try {
         console.log(`About to validate YouTube channel ID: ${youtubeChannelId}`);
@@ -219,7 +224,22 @@ module.exports = {
         }
       } catch (error) {
         console.error('Error validating YouTube channel:', error);
-        await sendReply(`❌ An error occurred while validating the YouTube channel: ${error.message}. Make sure the API key is valid and try again.`);
+        
+        // Provide more helpful error message based on error type
+        if (error.response && error.response.data) {
+          console.error('YouTube API Error:', error.response.data);
+          
+          if (error.response.data.error && error.response.data.error.message) {
+            if (error.response.data.error.message.includes('API key not valid')) {
+              return await sendReply(`❌ YouTube API Key is not valid. Please update your API key in the environment variables.`);
+            } else if (error.response.data.error.message.includes('quota')) {
+              return await sendReply(`❌ YouTube API quota exceeded. Please try again later or use a different API key.`);
+            }
+          }
+        }
+        
+        // Generic error message as fallback
+        await sendReply(`❌ Error connecting to YouTube API. Please check the API key and try again later.`);
       }
     } catch (outerError) {
       console.error('Outer error in setYouTubeChannel command:', outerError);

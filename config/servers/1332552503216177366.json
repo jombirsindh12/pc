@@ -33,5 +33,6 @@
     "color": "#ff0000"
   },
   "unverifiedRoleId": "1352141109135937627",
-  "unverifiedRoleName": "Unverified"
+  "unverifiedRoleName": "Unverified",
+  "voiceChannelFormat": "{count}--- subs on yt"
 }
