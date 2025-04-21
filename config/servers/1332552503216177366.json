@@ -34,5 +34,15 @@
   },
   "unverifiedRoleId": "1352141109135937627",
   "unverifiedRoleName": "Unverified",
-  "voiceChannelFormat": "{count}--- subs on yt"
+  "voiceChannelFormat": "{count}--- subs on yt",
+  "activeVoiceChannelId": "1350455350117142559",
+  "activeVoiceChannelName": "🎙・ɢᴇɴᴇʀᴀʟ ᴠᴄ",
+  "voiceAnnouncements": true,
+  "antiNukeEnabled": true,
+  "antiNukeSettings": {
+    "maxBansPerMinute": 3,
+    "maxChannelDeletionsPerMinute": 2,
+    "maxRoleDeletionsPerMinute": 2,
+    "punishmentType": "ban"
+  }
 }
