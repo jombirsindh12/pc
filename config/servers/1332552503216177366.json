@@ -1,12 +1,29 @@
 {
   "prefix": "!",
   "notificationChannelId": null,
-  "verificationChannelId": "1350455377803612180",
+  "verificationChannelId": "1350455331037253655",
   "youtubeChannelId": "UCTqVAZM7HsFoz7xrpRMoADg",
   "youtubeChannelName": "PHANTOM GAMING ",
   "roleId": "1350455234828308561",
   "roleName": "SUPPORTERS💖",
-  "verifiedImages": {},
+  "verifiedImages": {
+    "1155442418309673000": {
+      "userId": "1155442418309673000",
+      "username": "mohitbhai2007",
+      "timestamp": "2025-04-21T07:12:01.912Z",
+      "method": "image",
+      "imageHash": "c917050d0f24d6b7b80892da044bcc62",
+      "guildId": "1332552503216177366"
+    },
+    "1210629996406767668": {
+      "userId": "1210629996406767668",
+      "username": "tnagamer.",
+      "timestamp": "2025-04-21T07:14:51.815Z",
+      "method": "image",
+      "imageHash": "d1da2dc73cea781c76e156d4ef2819a2",
+      "guildId": "1332552503216177366"
+    }
+  },
   "premium": false,
   "welcomeEnabled": false,
   "welcomeChannelId": null,
