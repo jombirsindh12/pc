@@ -286,6 +286,88 @@ client.on(Events.MessageCreate, async message => {
         imageProcessor.processImage(imageUrl).then(async (result) => {
           console.log("Image processing result:", result);
           
+          // Check for duplicate image hash to prevent reuse of verification screenshots
+          if (result.imageHash) {
+            // Get all verified images across all users in this server
+            const verifiedImages = serverConfig.verifiedImages || {};
+            
+            // Look for this image hash in previous verifications
+            let isDuplicate = false;
+            let originalVerifier = null;
+            
+            for (const userId in verifiedImages) {
+              if (verifiedImages[userId].imageHash === result.imageHash) {
+                isDuplicate = true;
+                originalVerifier = {
+                  userId: userId,
+                  username: verifiedImages[userId].username,
+                  timestamp: verifiedImages[userId].timestamp
+                };
+                break;
+              }
+            }
+            
+            // If this is a duplicate image, inform the user
+            if (isDuplicate) {
+              // Check if this user already has the verification role
+              const role = message.guild.roles.cache.get(serverConfig.roleId);
+              if (role && message.member.roles.cache.has(role.id)) {
+                return message.reply(`❌ This image has already been used for verification. You already have the ${role.name} role.`);
+              }
+              
+              // If another user used this image before
+              if (originalVerifier && originalVerifier.userId !== message.author.id) {
+                const verifyDate = new Date(originalVerifier.timestamp).toLocaleString();
+                return message.reply({
+                  embeds: [{
+                    title: '❌ Duplicate Verification Image',
+                    description: 'This exact image has already been used for verification by another user.',
+                    color: 0xFF0000,
+                    fields: [
+                      {
+                        name: 'Original Verifier',
+                        value: `<@${originalVerifier.userId}> (${originalVerifier.username})`
+                      },
+                      {
+                        name: 'Verification Date',
+                        value: verifyDate
+                      },
+                      {
+                        name: 'YouTube Channel',
+                        value: serverConfig.youtubeChannelName 
+                          ? `[${serverConfig.youtubeChannelName}](https://youtube.com/channel/${serverConfig.youtubeChannelId})`
+                          : `[Click here to view channel](https://youtube.com/channel/${serverConfig.youtubeChannelId})`
+                      }
+                    ],
+                    footer: {
+                      text: 'Please upload a new screenshot showing your own subscription'
+                    }
+                  }]
+                });
+              }
+              
+              // If this user had previously used this image
+              return message.reply({
+                embeds: [{
+                  title: '❌ Duplicate Verification Image',
+                  description: 'This exact image has already been used for verification.',
+                  color: 0xFF0000,
+                  fields: [
+                    {
+                      name: 'YouTube Channel',
+                      value: serverConfig.youtubeChannelName 
+                        ? `[${serverConfig.youtubeChannelName}](https://youtube.com/channel/${serverConfig.youtubeChannelId})`
+                        : `[Click here to view channel](https://youtube.com/channel/${serverConfig.youtubeChannelId})`
+                    }
+                  ],
+                  footer: {
+                    text: 'Please upload a new and unique screenshot showing your subscription'
+                  }
+                }]
+              });
+            }
+          }
+          
           if (result.success) {
             // Verify the subscription using our youtubeAPI utility
             const isVerified = await youtubeAPI.verifySubscription(
@@ -298,6 +380,11 @@ client.on(Events.MessageCreate, async message => {
               const role = message.guild.roles.cache.get(serverConfig.roleId);
               if (role) {
                 try {
+                  // Check if user already has the role
+                  if (message.member.roles.cache.has(role.id)) {
+                    return message.reply(`✅ You're already verified and have the ${role.name} role.`);
+                  }
+                  
                   await message.member.roles.add(role);
                   
                   // Store the verification record
