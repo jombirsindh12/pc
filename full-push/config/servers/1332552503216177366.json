@@ -1,0 +1,65 @@
+{
+  "prefix": "!",
+  "notificationChannelId": null,
+  "verificationChannelId": "1350455331037253655",
+  "youtubeChannelId": "UCTqVAZM7HsFoz7xrpRMoADg",
+  "youtubeChannelName": "PHANTOM GAMING ",
+  "roleId": "1350455234828308561",
+  "roleName": "SUPPORTERS💖",
+  "verifiedImages": {
+    "1155442418309673000": {
+      "userId": "1155442418309673000",
+      "username": "mohitbhai2007",
+      "timestamp": "2025-04-21T12:59:17.325Z",
+      "method": "image",
+      "imageHash": "d452f7c2b559299e6964ea26688eabee",
+      "guildId": "1332552503216177366"
+    },
+    "1210629996406767668": {
+      "userId": "1210629996406767668",
+      "username": "tnagamer.",
+      "timestamp": "2025-04-21T07:14:51.815Z",
+      "method": "image",
+      "imageHash": "d1da2dc73cea781c76e156d4ef2819a2",
+      "guildId": "1332552503216177366"
+    }
+  },
+  "premium": false,
+  "welcomeEnabled": false,
+  "welcomeChannelId": null,
+  "logChannelId": null,
+  "announcerEnabled": false,
+  "announcerChannelId": null,
+  "gameEnabled": false,
+  "giveawaysEnabled": false,
+  "pollsEnabled": false,
+  "gameChannelId": null,
+  "embedTemplates": {},
+  "antiNuke": true,
+  "antiNukeThreshold": 3,
+  "verificationRequired": true,
+  "autoModeration": true,
+  "punishmentType": "ban",
+  "whitelistedRoles": [],
+  "imageVerification": true,
+  "verificationChannelName": "✅・🇻🇪🇷🇮🇫🇾",
+  "verificationType": "button",
+  "verificationSettings": {
+    "title": "WELCOME TO OUR SERVER",
+    "description": "Please verify yourself to access the server.",
+    "color": "#ff0000"
+  },
+  "unverifiedRoleId": "1352141109135937627",
+  "unverifiedRoleName": "Unverified",
+  "voiceChannelFormat": "{count}--- subs on yt",
+  "activeVoiceChannelId": "1350455350117142559",
+  "activeVoiceChannelName": "🎙・ɢᴇɴᴇʀᴀʟ ᴠᴄ",
+  "voiceAnnouncements": true,
+  "antiNukeEnabled": true,
+  "antiNukeSettings": {
+    "maxBansPerMinute": 3,
+    "maxChannelDeletionsPerMinute": 2,
+    "maxRoleDeletionsPerMinute": 2,
+    "punishmentType": "ban"
+  }
+}
