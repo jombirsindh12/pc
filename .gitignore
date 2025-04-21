@@ -5,6 +5,12 @@ node_modules/
 .env
 .env.*
 
+# Zip files
+*.zip
+
+# Temp folder
+temp/
+
 # Logs
 logs/
 *.log
