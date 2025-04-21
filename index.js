@@ -256,10 +256,110 @@ client.on(Events.MessageCreate, async message => {
   
   // Handle verification channel logic
   if (serverConfig.verificationChannelId && message.channel.id === serverConfig.verificationChannelId) {
-    // Verification logic for image processing would go here
-    // (This is just a placeholder - implement your actual verification logic)
+    // Process verification images
     if (message.attachments.size > 0) {
-      console.log("Verification image received");
+      console.log("Verification image received from user:", message.author.tag);
+      
+      // Get the first image attachment
+      const attachment = message.attachments.first();
+      const imageUrl = attachment.url;
+      
+      // Check if we have a YouTube channel set up for verification
+      if (!serverConfig.youtubeChannelId) {
+        return message.reply("❌ No YouTube channel has been set for verification. Please ask an admin to set one up using `/setyoutubechannel`.");
+      }
+      
+      // Check if we have a role set up for verification
+      if (!serverConfig.roleId) {
+        return message.reply("❌ No role has been set for verification. Please ask an admin to set one up using `/setrole`.");
+      }
+      
+      // Let user know we're processing their image
+      message.reply("⏳ Processing your verification screenshot... Please wait a moment.");
+      
+      // Process the image using our image processor utility
+      try {
+        const imageProcessor = require('./utils/imageProcessor');
+        const youtubeAPI = require('./utils/youtubeAPI');
+        
+        // Process the image
+        imageProcessor.processImage(imageUrl).then(async (result) => {
+          console.log("Image processing result:", result);
+          
+          if (result.success) {
+            // Verify the subscription using our youtubeAPI utility
+            const isVerified = await youtubeAPI.verifySubscription(
+              result.channelId || null, 
+              serverConfig.youtubeChannelId
+            );
+            
+            if (isVerified) {
+              // Add role to the user
+              const role = message.guild.roles.cache.get(serverConfig.roleId);
+              if (role) {
+                try {
+                  await message.member.roles.add(role);
+                  
+                  // Store the verification record
+                  const verifiedImages = serverConfig.verifiedImages || {};
+                  verifiedImages[message.author.id] = {
+                    userId: message.author.id,
+                    username: message.author.tag,
+                    timestamp: new Date().toISOString(),
+                    method: 'image',
+                    imageHash: result.imageHash,
+                    guildId: message.guild.id
+                  };
+                  
+                  // Update server config with verification record
+                  config.updateServerConfig(message.guild.id, {
+                    verifiedImages: verifiedImages
+                  });
+                  
+                  // Send success message
+                  message.reply(`✅ **Verification successful!** You've been given the ${role.name} role.`);
+                  
+                  // Log verification
+                  console.log(`User ${message.author.tag} verified for YouTube channel ${serverConfig.youtubeChannelId} in server ${message.guild.name}`);
+                  
+                  // If notification channel is set, send notification
+                  if (serverConfig.notificationChannelId) {
+                    const notificationChannel = message.guild.channels.cache.get(serverConfig.notificationChannelId);
+                    if (notificationChannel) {
+                      notificationChannel.send({
+                        embeds: [{
+                          title: '✅ New Verified Subscriber',
+                          description: `<@${message.author.id}> has verified their subscription to the YouTube channel.`,
+                          color: 0x00FF00,
+                          timestamp: new Date(),
+                          footer: {
+                            text: 'YouTube Verification System'
+                          }
+                        }]
+                      }).catch(err => console.error('Error sending verification notification:', err));
+                    }
+                  }
+                } catch (roleError) {
+                  console.error('Error adding role to verified user:', roleError);
+                  message.reply("❌ An error occurred while giving you the verified role. Please contact a server admin.");
+                }
+              } else {
+                message.reply("❌ The verification role couldn't be found. Please contact a server admin.");
+              }
+            } else {
+              message.reply("❌ Couldn't verify your subscription from the screenshot. Please make sure you're subscribed to the correct channel and try again with a clearer screenshot.");
+            }
+          } else {
+            message.reply(`❌ ${result.message}`);
+          }
+        }).catch(error => {
+          console.error('Error processing verification image:', error);
+          message.reply("❌ There was an error processing your verification image. Please try again with a different screenshot.");
+        });
+      } catch (error) {
+        console.error('Error loading image processor:', error);
+        message.reply("❌ There was a system error with the verification process. Please contact a server admin.");
+      }
     }
   }
   
