@@ -124,9 +124,7 @@ module.exports = {
     // For slash commands
     if (interaction) {
       // We've already deferred the reply above, no need to defer again
-      if (!interaction.deferred && !interaction.replied) {
-        await interaction.deferReply();
-      }
+      // Skip this deferReply since we've already deferred at the beginning of the command
       
       const subcommand = interaction.options.getSubcommand();
       

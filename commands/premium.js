@@ -188,8 +188,7 @@ module.exports = {
       channel = interaction.options.getChannel('channel');
       threshold = interaction.options.getInteger('threshold');
       
-      // Defer reply since some operations might take time
-      await interaction.deferReply();
+      // Already deferred earlier in the command, no need to defer again
     } else {
       // Legacy command handling - not needed since we're focusing on slash commands
       return message.reply('Please use the slash command `/premium` instead.');

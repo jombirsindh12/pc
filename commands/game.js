@@ -85,13 +85,14 @@ module.exports = {
     sessionManager.trackCommand(userId, serverId, 'game', { action, gameName });
     
     // Defer reply for most actions as they might take time
-    if (action !== 'join') {
-      await interaction.deferReply();
-    }
+    // Deferring is handled in each case, don't defer here
     
     // Handle different actions
     switch (action) {
       case 'create':
+        // Defer reply for this action
+        await interaction.deferReply();
+        
         // Check required parameters
         if (!gameName) {
           return interaction.followUp('❌ Please specify a game name with the `game` parameter.');
@@ -197,6 +198,9 @@ module.exports = {
         break;
         
       case 'list':
+        // Defer reply for this action
+        await interaction.deferReply();
+        
         // List all active gaming sessions
         const activeSessions = Object.values(gamingSessions)
           .filter(session => session.status === 'open');
@@ -382,6 +386,9 @@ module.exports = {
         break;
         
       case 'end':
+        // Defer reply for this action
+        await interaction.deferReply();
+        
         // List user's hosted sessions for cancellation
         const hostedSessions = Object.entries(gamingSessions)
           .filter(([id, session]) => session.host.id === userId && session.status === 'open')

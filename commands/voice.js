@@ -115,8 +115,8 @@ module.exports = {
       targetChannel = interaction.options.getChannel('channel');
       messageContent = interaction.options.getString('message');
       
-      // Defer reply since some operations might take time
-      await interaction.deferReply();
+      // Don't defer reply again if it's already deferred
+      // The deferral is already handled above at line ~57
     } else {
       // Legacy command handling - not needed since we're focusing on slash commands
       return message.reply('Please use the slash command `/voice` instead.');

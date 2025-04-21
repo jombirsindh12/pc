@@ -132,8 +132,11 @@ module.exports = {
         
         // Send the embed
         try {
-          // Defer the reply first
-          await interaction.deferReply();
+          // Don't defer reply again if we're already in the 'list' action
+          // Only defer if we're in 'use' action
+          if (action !== 'list' && !interaction.deferred) {
+            await interaction.deferReply();
+          }
           
           // Get the proper channel from the guild
           const resolvedChannel = interaction.guild.channels.cache.get(interaction.channelId);

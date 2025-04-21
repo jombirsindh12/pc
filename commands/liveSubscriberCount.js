@@ -56,10 +56,12 @@ module.exports = {
       const permError = '❌ You need administrator permissions to use this command.';
       
       if (isSlashCommand) {
-        if (!interaction.deferred && !interaction.replied) {
-          await interaction.deferReply({ ephemeral: true });
+        // Use editReply if already deferred, otherwise reply directly
+        if (interaction.deferred) {
+          return interaction.editReply({ content: permError });
+        } else {
+          return interaction.reply({ content: permError, ephemeral: true });
         }
-        return interaction.followUp({ content: permError, ephemeral: true });
       } else {
         return message.reply(permError);
       }
@@ -209,10 +211,12 @@ module.exports = {
       const errorMsg = `❌ An error occurred: ${error.message}`;
       
       if (isSlashCommand) {
-        if (!interaction.deferred && !interaction.replied) {
-          await interaction.deferReply({ ephemeral: true });
+        // Use editReply if already deferred, otherwise reply directly
+        if (interaction.deferred) {
+          await interaction.editReply({ content: errorMsg });
+        } else {
+          await interaction.reply({ content: errorMsg, ephemeral: true });
         }
-        await interaction.followUp({ content: errorMsg, ephemeral: true });
       } else {
         await message.reply(errorMsg);
       }
