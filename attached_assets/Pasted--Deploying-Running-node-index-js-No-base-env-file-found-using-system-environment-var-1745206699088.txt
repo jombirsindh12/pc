@@ -1,0 +1,66 @@
+==> Deploying...
+==> Running 'node index.js'
+❌ No base .env file found, using system environment variables
+🔄 Setting up environment: production
+✅ Loaded environment-specific config from .env.production
+✅ All required environment variables are set
+🔑 Discord Token: YOUR_D...HERE
+🔑 YouTube API Key: YOUR_Y...HERE
+✨ Environment setup complete
+Starting bot in production environment
+Created logs directory
+Created temp directory
+Loaded command: ban
+Loaded command: captcha
+Loaded command: dashboard
+Loaded command: embed
+Loaded command: embedtemplate
+Loaded command: game
+Loaded command: help
+Loaded command: info
+Loaded command: kick
+Loaded command: listverified
+YouTube API Key status: API key is set
+API Key Length: 25
+API Key First 4 chars: YOUR
+API Key Last 4 chars: HERE
+Loaded command: livesubcount
+Loaded command: owner
+Loaded command: premium
+Loaded command: searchchannel
+Loaded command: security
+Loaded command: setnotificationchannel
+Loaded command: setrole
+Registered slash command: setrole
+Loaded command: setupdatefrequency
+Loaded command: setverificationchannel
+Registered slash command: setverificationchannel
+Loaded command: setvoicechannelname
+Registered slash command: setvoicechannelname
+Loaded command: setyoutubechannel
+Registered slash command: setyoutubechannel
+Loaded command: setannouncer
+Loaded command: setlogs
+Loaded command: setupverification
+Loaded command: setwelcome
+Loaded command: stickers
+Loaded command: voice
+Loaded command: whitelist
+Error during login: Error [TokenInvalid]: An invalid token was provided.
+    at WebSocketManager.connect (/opt/render/project/src/node_modules/discord.js/src/client/websocket/WebSocketManager.js:136:26)
+    at Client.login (/opt/render/project/src/node_modules/discord.js/src/client/Client.js:228:21)
+    at Object.<anonymous> (/opt/render/project/src/index.js:283:8)
+    at Module._compile (node:internal/modules/cjs/loader:1554:14)
+    at Object..js (node:internal/modules/cjs/loader:1706:10)
+    at Module.load (node:internal/modules/cjs/loader:1289:32)
+    at Function._load (node:internal/modules/cjs/loader:1108:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:220:24)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:170:5) {
+  code: 'TokenInvalid'
+}
+==> No open ports detected, continuing to scan...
+==> Docs on specifying a port: https://render.com/docs/web-services#port-binding
+==> No open ports detected, continuing to scan...
+==> Docs on specifying a port: https://render.com/docs/web-services#port-binding
+Need better ways to work with logs? Try theRender CLIor set up a log
