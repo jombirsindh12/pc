@@ -31,3 +31,5 @@ generated-*
 
 # Bot-specific credentials
 bot-invite-link.txt
+# Render deployment files
+.env.production

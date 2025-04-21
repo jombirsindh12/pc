@@ -1,8 +1,11 @@
-require('dotenv').config();
+// Load environment configuration from appropriate .env files
+const { environment, isProduction } = require('./setup-env');
 const fs = require('fs');
 const path = require('path');
 const { Client, GatewayIntentBits, Collection, Events, REST, Routes } = require('discord.js');
 const config = require('./utils/config');
+
+console.log(`Starting bot in ${environment} environment`);
 
 // Ensure required directories exist
 const LOGS_DIR = path.join(__dirname, '.logs');
