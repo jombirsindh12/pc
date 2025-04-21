@@ -1,0 +1,23 @@
+services:
+  - name: phantom-guard-bot
+    type: web
+    plan: free
+    env: node
+    buildCommand: npm install
+    startCommand: node -r dotenv/config index.js dotenv_config_path=.env.production
+    healthCheckPath: /
+    envVars:
+      - key: DISCORD_TOKEN
+        sync: false
+        value: MTM2MTk3NTMyNjQxODE0MTIxNQ.G7XdJZ.DwHUYnpR2_BqockTlMsS9UuMubgowCrP1gH7cY
+      - key: BOT_OWNER_ID
+        sync: false
+        value: 1155442418309673000
+      - key: YOUTUBE_API_KEY
+        sync: false
+        value: AIzaSyBNG93Zp_4bD2eVm97RnWj6nUqL4OXZip4
+      - key: PORT
+        value: 6870
+      - key: NODE_ENV
+        value: production
+    autoDeploy: true
