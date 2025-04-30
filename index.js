@@ -7,6 +7,134 @@ const config = require('./utils/config');
 
 console.log(`Starting bot in ${environment} environment`);
 
+// Function to initialize subscriber count intervals for all servers
+async function initializeAllSubCountIntervals(client) {
+  if (!client.subCountIntervals) {
+    client.subCountIntervals = new Map();
+  }
+  
+  console.log('Initializing subscriber count intervals for all servers...');
+  
+  // Get all server configurations
+  const allConfigs = config.loadConfig();
+  
+  // Loop through each server
+  for (const serverId in allConfigs) {
+    const serverConfig = allConfigs[serverId];
+    
+    // Only set up interval if the server has a YouTube channel and subscriber count channel
+    if (serverConfig.youtubeChannelId && serverConfig.subCountChannelId) {
+      try {
+        // Check if the guild is available
+        const guild = client.guilds.cache.get(serverId);
+        if (!guild) {
+          console.log(`Guild ${serverId} not found, skipping subscriber count initialization`);
+          continue;
+        }
+        
+        // Check if the channel exists
+        try {
+          const channel = await guild.channels.fetch(serverConfig.subCountChannelId);
+          if (!channel) {
+            console.log(`Channel ${serverConfig.subCountChannelId} not found in guild ${serverId}, skipping`);
+            continue;
+          }
+          
+          // Clear any existing interval for this server
+          if (client.subCountIntervals.has(serverId)) {
+            clearInterval(client.subCountIntervals.get(serverId));
+          }
+          
+          // Set up the interval to update the subscriber count
+          const intervalId = setInterval(async () => {
+            try {
+              const currentGuild = client.guilds.cache.get(serverId);
+              if (!currentGuild) {
+                console.log(`Guild ${serverId} not found for subscriber count update`);
+                return;
+              }
+              
+              const channel = await currentGuild.channels.fetch(serverConfig.subCountChannelId);
+              if (channel) {
+                // Get channel info from YouTube
+                const youtubeAPI = require('./utils/youtubeAPI');
+                const freshInfo = await youtubeAPI.getChannelInfo(serverConfig.youtubeChannelId);
+                
+                // Get the format from config and update channel name
+                const currentConfig = config.getServerConfig(serverId);
+                const format = currentConfig.voiceChannelFormat || '📊 {channelName}: {subCount} subs';
+                const newName = format
+                  .replace('{channelName}', freshInfo.title)
+                  .replace('{subCount}', freshInfo.subscriberCount || '0');
+                  
+                await channel.setName(newName);
+                console.log(`Updated subscriber count for ${freshInfo.title} to ${freshInfo.subscriberCount}`);
+              }
+            } catch (error) {
+              console.error(`Error updating subscriber count for server ${serverId}:`, error);
+            }
+          }, (serverConfig.updateFrequencyMinutes || 60) * 60000); // Use configured update frequency or default to 60 minutes
+          
+          // Store the interval ID
+          client.subCountIntervals.set(serverId, intervalId);
+          
+          console.log(`Subscriber count interval set up for server ${serverId}`);
+        } catch (channelError) {
+          console.error(`Error fetching channel for server ${serverId}:`, channelError);
+        }
+      } catch (error) {
+        console.error(`Error setting up subscriber count for server ${serverId}:`, error);
+      }
+    }
+  }
+  
+  console.log('Finished initializing subscriber count intervals');
+}
+
+// Function to initialize security monitoring for all servers
+function initializeSecurityMonitoring(client) {
+  console.log('Starting security monitoring for all servers...');
+  
+  try {
+    // Load security manager
+    const securityManager = require('./utils/securityManager');
+    
+    // Get all server configurations
+    const allConfigs = config.loadConfig();
+    
+    // Activate security for each server that doesn't have it disabled
+    for (const serverId in allConfigs) {
+      const serverConfig = allConfigs[serverId];
+      
+      if (!serverConfig.securityDisabled) {
+        try {
+          // Check if the guild is available
+          const guild = client.guilds.cache.get(serverId);
+          if (!guild) {
+            console.log(`Guild ${serverId} not found, skipping security initialization`);
+            continue;
+          }
+          
+          // Activate anti-nuke for this server with default threshold
+          if (typeof securityManager.activateAntiNuke === 'function') {
+            securityManager.activateAntiNuke(client, serverId, 3);
+          }
+          
+          console.log(`Security monitoring activated for server ${serverId}`);
+        } catch (error) {
+          console.error(`Error activating security for server ${serverId}:`, error);
+        }
+      } else {
+        console.log(`Security disabled for server ${serverId}, skipping`);
+      }
+    }
+    
+    console.log('Security monitoring active for all servers - checking for nukes, raids and spam');
+  } catch (error) {
+    console.error('Error initializing security monitoring:', error);
+  }
+}
+
 // Ensure required directories exist
 const LOGS_DIR = path.join(__dirname, '.logs');
 const TEMP_DIR = path.join(__dirname, 'temp');
@@ -136,6 +264,23 @@ client.once(Events.ClientReady, async () => {
           setupVerificationCollectors(client);
         }
       }
+    }
+    
+    // Initialize all subscriber count intervals for all servers
+    initializeAllSubCountIntervals(client);
+    
+    // Start security monitoring for all servers
+    initializeSecurityMonitoring(client);
+    
+    // Initialize the backup system
+    try {
+      const backupManager = require('./utils/backupManager');
+      if (typeof backupManager.scheduleAutomaticBackups === 'function') {
+        console.log('Setting up automatic server backup system');
+        backupManager.scheduleAutomaticBackups(client);
+      }
+    } catch (backupError) {
+      console.error('Error initializing backup system:', backupError);
     }
   } catch (error) {
     console.error('Error registering slash commands:', error);

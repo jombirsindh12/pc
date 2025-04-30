@@ -2,6 +2,7 @@ const { SlashCommandBuilder } = require('@discordjs/builders');
 const { EmbedBuilder, PermissionFlagsBits, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const config = require('../utils/config');
 const securityManager = require('../utils/securityManager');
+const backupManager = require('../utils/backupManager');
 
 module.exports = {
   name: 'premium',
@@ -1164,17 +1165,29 @@ module.exports = {
             .addFields(
               {
                 name: '📝 Features',
-                value: '• Automated Daily Backups\n• Channel Structure Backup\n• Role Hierarchy Backup\n• Server Settings Backup\n• Manual Restore Option'
+                value: '• Automated Daily Backups\n• Channel Structure Backup\n• Role Hierarchy Backup\n• Server Settings Backup\n• Message Backup\n• Manual Restore Option'
               },
               {
                 name: '⚙️ Configuration',
-                value: `• Frequency: Daily\n• Max Stored Backups: 5\n• Includes: Channels, Roles, Settings`
+                value: `• Frequency: Daily\n• Max Stored Backups: 5\n• Includes: Channels, Roles, Settings, Messages`
               }
             )
             .setFooter({ text: 'Premium Feature • Auto-Backup System' })
             .setTimestamp();
             
           await interaction.followUp({ embeds: [backupEmbed] });
+          
+          // Schedule automatic backups when enabled
+          if (setting === 'enable') {
+            try {
+              // Check if backupManager is initialized
+              if (typeof backupManager.scheduleAutomaticBackups === 'function') {
+                backupManager.scheduleAutomaticBackups(client);
+              }
+            } catch (scheduleError) {
+              console.error('Error scheduling automatic backups:', scheduleError);
+            }
+          }
         } else {
           // Generate immediate backup (manual backup)
           try {
@@ -1188,39 +1201,56 @@ module.exports = {
             // Send initial message
             const backupMsg = await interaction.followUp({ embeds: [backupStatusEmbed] });
             
-            // Simulate backup process (would need actual implementation)
-            setTimeout(async () => {
-              // Update with completed backup info
-              const backupCompleteEmbed = new EmbedBuilder()
-                .setTitle('💾 Server Backup Complete')
-                .setDescription('✅ Server backup has been successfully created!')
-                .setColor(0x2ECC71)
-                .addFields(
-                  {
-                    name: '📊 Backup Statistics',
-                    value: `• Channels: ${guild.channels.cache.size}\n• Roles: ${guild.roles.cache.size}\n• Emojis: ${guild.emojis.cache.size}\n• Server Settings: ✅\n• Backup Size: ${Math.round(guild.channels.cache.size * 0.3 + guild.roles.cache.size * 0.1 + guild.emojis.cache.size * 0.5)} KB`
-                  },
-                  {
-                    name: '⏱️ Backup Details',
-                    value: `• Date: ${new Date().toISOString().replace('T', ' ').substr(0, 19)}\n• Backup ID: BKP-${Date.now().toString(36).toUpperCase()}\n• Type: Manual Backup\n• Retention: 30 days`
-                  },
-                  {
-                    name: '🔄 Restoration',
-                    value: 'To restore this backup, use the `/backup restore` command with the Backup ID.'
-                  }
-                )
-                .setFooter({ text: 'Premium Feature • Server Backup System' })
+            // Actually perform the backup
+            try {
+              // Create backup with message history (limited to 50 messages per channel)
+              const backupResult = await backupManager.createServerBackup(guild, {
+                includeMessages: true,
+                messageLimit: 50
+              });
+              
+              if (backupResult.success) {
+                // Update with completed backup info
+                const backupCompleteEmbed = new EmbedBuilder()
+                  .setTitle('💾 Server Backup Complete')
+                  .setDescription('✅ Server backup has been successfully created!')
+                  .setColor(0x2ECC71)
+                  .addFields(
+                    {
+                      name: '📊 Backup Statistics',
+                      value: `• Channels: ${backupResult.statistics.channels}\n• Roles: ${backupResult.statistics.roles}\n• Settings: ${backupResult.statistics.settings}\n• Backup Size: ${Math.round(backupResult.statistics.size / 1024)} KB`
+                    },
+                    {
+                      name: '⏱️ Backup Details',
+                      value: `• Date: ${new Date().toISOString().replace('T', ' ').substr(0, 19)}\n• Backup ID: ${backupResult.backupId}\n• Type: Manual Backup\n• Retention: 30 days`
+                    },
+                    {
+                      name: '🔄 Restoration',
+                      value: 'To restore this backup, use the `/premium backup restore` command with the Backup ID.'
+                    }
+                  )
+                  .setFooter({ text: 'Premium Feature • Server Backup System' })
+                  .setTimestamp();
+                  
+                // Update the message
+                await backupMsg.edit({ embeds: [backupCompleteEmbed] });
+              } else {
+                throw new Error(backupResult.error || 'Unknown error during backup');
+              }
+            } catch (backupError) {
+              console.error('Error creating actual backup:', backupError);
+              
+              // Show error message
+              const errorEmbed = new EmbedBuilder()
+                .setTitle('❌ Backup Failed')
+                .setDescription(`There was an error creating the backup: ${backupError.message}`)
+                .setColor(0xE74C3C)
                 .setTimestamp();
                 
-              // Update the message
-              try {
-                await backupMsg.edit({ embeds: [backupCompleteEmbed] });
-              } catch (editError) {
-                console.error('Error updating backup message:', editError);
-              }
-            }, 3000);
+              await backupMsg.edit({ embeds: [errorEmbed] });
+            }
           } catch (error) {
-            console.error('Error creating backup:', error);
+            console.error('Error in backup process:', error);
             return interaction.followUp({
               content: `❌ Error creating backup: ${error.message}`,
               ephemeral: true
