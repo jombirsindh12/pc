@@ -51,7 +51,7 @@
   },
   "unverifiedRoleId": "1352141109135937627",
   "unverifiedRoleName": "Unverified",
-  "voiceChannelFormat": "{count}--- subs on yt",
+  "voiceChannelFormat": "{count}",
   "activeVoiceChannelId": "1350455350117142559",
   "activeVoiceChannelName": "🎙・ɢᴇɴᴇʀᴀʟ ᴠᴄ",
   "voiceAnnouncements": true,
@@ -61,5 +61,6 @@
     "maxChannelDeletionsPerMinute": 2,
     "maxRoleDeletionsPerMinute": 2,
     "punishmentType": "ban"
-  }
+  },
+  "subCountChannelId": "1367178439295242385"
 }

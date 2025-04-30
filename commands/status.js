@@ -10,6 +10,22 @@ module.exports = {
   name: 'status',
   description: 'Display and test status of all bot features',
   usage: '/status [action]',
+  // Add SlashCommandBuilder for proper registration
+  data: new SlashCommandBuilder()
+    .setName('status')
+    .setDescription('Display and test status of all bot features')
+    .addStringOption(option => 
+      option.setName('action')
+        .setDescription('Action to perform')
+        .setRequired(false)
+        .addChoices(
+          { name: 'Check all features', value: 'check' },
+          { name: 'Test all features', value: 'test' },
+          { name: 'Security settings', value: 'security' },
+          { name: 'Backup settings', value: 'backup' },
+          { name: 'YouTube features', value: 'youtube' }
+        )
+    ),
   options: [
     {
       name: 'action',
