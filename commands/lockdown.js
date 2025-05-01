@@ -2,6 +2,7 @@ const { SlashCommandBuilder } = require('@discordjs/builders');
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, PermissionFlagsBits } = require('discord.js');
 const securityManager = require('../utils/securityManager');
 const config = require('../utils/config');
+const permissionHelper = require('../utils/permissionHelper');
 
 module.exports = {
   name: 'lockdown',
@@ -40,11 +41,20 @@ module.exports = {
     const serverId = guild.id;
     const userId = user.id;
     
-    // Always require server owner for lockdown
+    // Always require server owner for lockdown, except for bot owner
     const isOwner = guild.ownerId === userId;
     
-    if (!isOwner) {
-      const errorResponse = '🔒 **SECURITY ALERT**: Only the server owner can use emergency lockdown features!';
+    // Check if user is bot owner
+    const isBotOwner = config.isBotOwner(userId);
+    
+    // Log if bot owner is using the command
+    if (isBotOwner) {
+      console.log(`Bot owner ${user.tag} (${userId}) bypassing lockdown ownership restriction in server ${guild.name}`);
+    }
+    
+    // Allow if user is server owner or bot owner
+    if (!isOwner && !isBotOwner) {
+      const errorResponse = '🔒 **SECURITY ALERT**: Only the server owner or bot owner can use emergency lockdown features!';
       if (isSlashCommand) {
         return interaction.reply({ content: errorResponse, ephemeral: true });
       } else {
@@ -115,7 +125,7 @@ module.exports = {
                          '• Disable messaging in all channels\n' +
                          '• Prevent new threads from being created\n' +
                          '• Send lockdown notifications to all channels\n\n' +
-                         '**Note:** Only you, the server owner, can end the lockdown.')
+                         '**Note:** Only you or the bot owner can end the lockdown.')
           .setColor(0xFF0000)
           .addFields(
             {
@@ -208,7 +218,7 @@ module.exports = {
                 },
                 {
                   name: 'How to End Lockdown',
-                  value: 'Only the server owner can end the lockdown using `/lockdown disable`'
+                  value: 'Only the server owner or bot owner can end the lockdown using `/lockdown disable`'
                 }
               )
               .setTimestamp();
@@ -455,7 +465,7 @@ module.exports = {
             },
             {
               name: 'How to End Lockdown',
-              value: 'Use `/lockdown disable` to end the lockdown and restore normal operations.'
+              value: 'Only the server owner or bot owner can use `/lockdown disable` to end the lockdown and restore normal operations.'
             }
           );
         } else if (lastLockdown.endedAt) {
@@ -542,7 +552,7 @@ module.exports = {
                   },
                   {
                     name: 'How to End Lockdown',
-                    value: 'Only the server owner can end the lockdown using `/lockdown disable`'
+                    value: 'Only the server owner or bot owner can end the lockdown using `/lockdown disable`'
                   }
                 )
                 .setTimestamp();
