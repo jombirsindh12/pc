@@ -1,6 +1,7 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, PermissionFlagsBits } = require('discord.js');
 const config = require('../utils/config');
+const permissionHelper = require('../utils/permissionHelper');
 
 module.exports = {
   name: 'antispam',
@@ -68,8 +69,17 @@ module.exports = {
     // Get server config
     const serverConfig = config.getServerConfig(serverId);
     
-    // Only server owner can use security commands now
-    if (!isOwner) {
+    // User must be server owner or bot owner to edit security settings
+    // Check if user is bot owner
+    const isBotOwner = config.isBotOwner(userId);
+    
+    // Log if bot owner is using the command
+    if (isBotOwner) {
+      console.log(`Bot owner ${user.tag} (${userId}) bypassing antispam security restriction in server ${guild.name}`);
+    }
+    
+    // Allow if user is server owner, bot owner, or has the security bypass flag
+    if (!isOwner && !isBotOwner && !serverConfig.securityBypass) {
       const errorResponse = '🔒 **SECURITY ALERT**: Only the server owner can modify security settings!';
       if (isSlashCommand) {
         return interaction.reply({ content: errorResponse, ephemeral: true });

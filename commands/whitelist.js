@@ -1,5 +1,6 @@
 const { EmbedBuilder, PermissionFlagsBits, ApplicationCommandOptionType } = require('discord.js');
 const config = require('../utils/config');
+const permissionHelper = require('../utils/permissionHelper');
 
 module.exports = {
   name: 'whitelist',
@@ -113,10 +114,20 @@ module.exports = {
       }
     }
     
-    // Check for admin permissions
+    // Check for admin permissions or bot owner
     const member = interaction?.member || message?.member;
-    if (!member.permissions.has(PermissionFlagsBits.Administrator)) {
-      return interaction
+    const user = interaction?.user || message?.author;
+    const guild = interaction?.guild || message?.guild;
+    
+    // Check if user is bot owner
+    const isBotOwner = config.isBotOwner(user.id);
+    if (isBotOwner) {
+      console.log(`Bot owner ${user.tag} (${user.id}) bypassing whitelist permission check in server ${guild.name}`);
+    }
+    
+    // Allow if admin or bot owner
+    if (!member.permissions.has(PermissionFlagsBits.Administrator) && !isBotOwner) {
+      return isSlashCommand
         ? interaction.reply({ content: '❌ You need Administrator permissions to use this command!', ephemeral: true })
         : message.reply('❌ You need Administrator permissions to use this command!');
     }
