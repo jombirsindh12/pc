@@ -1,5 +1,6 @@
 const { ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuOptionBuilder, EmbedBuilder } = require('discord.js');
 const config = require('../utils/config');
+const permissionHelper = require('../utils/permissionHelper');
 
 module.exports = {
   name: 'dashboard',
@@ -75,12 +76,28 @@ module.exports = {
     // If in a guild, check for admin permissions
     // Use the resolvedGuild that we properly initialized earlier
     const member = resolvedGuild?.members.cache.get(user.id);
-    if (!resolvedGuild || !member || !member.permissions.has('ManageGuild')) {
-      const errorResponse = '❌ You need the "Manage Server" permission to access the dashboard!';
-      if (isSlashCommand) {
-        return interaction.followUp({ content: errorResponse, ephemeral: true });
+    
+    // Check if the user is bot owner or has the ManageGuild permission
+    const hasPermission = permissionHelper.hasPermission(
+      user, 
+      resolvedGuild, 
+      member, 
+      ['ManageGuild'], 
+      isSlashCommand ? interaction : message, 
+      isSlashCommand
+    );
+    
+    if (!resolvedGuild || !member || !hasPermission) {
+      // Skip permission check for bot owner
+      if (config.isBotOwner(user.id)) {
+        console.log(`Bot owner ${user.tag} (${user.id}) bypassing dashboard permission check in server ${resolvedGuild.name}`);
       } else {
-        return message.reply(errorResponse);
+        const errorResponse = '❌ You need the "Manage Server" permission to access the dashboard!';
+        if (isSlashCommand) {
+          return interaction.followUp({ content: errorResponse, ephemeral: true });
+        } else {
+          return message.reply(errorResponse);
+        }
       }
     }
     

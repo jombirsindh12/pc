@@ -15,5 +15,8 @@
   "antiNukeDisabled": false,
   "strictSecurity": true,
   "strictSecurityAction": "kick",
-  "strictSecurityEnabled": 1746079575647
+  "strictSecurityEnabled": 1746080211048,
+  "antiNuke": true,
+  "verificationRequired": true,
+  "autoModeration": true
 }

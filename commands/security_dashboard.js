@@ -269,13 +269,10 @@ async function generateOverviewDashboard(guild, stats, serverConfig) {
     });
   }
   
-  // Generate canvas with chart
-  const image = await generateOverviewChart(stats);
-  
   return {
     description: `Security overview for **${guild.name}**. Use the dashboard to monitor threats and security incidents in real-time.`,
     fields: fields,
-    image: image
+    image: null
   };
 }
 
@@ -344,13 +341,10 @@ async function generateThreatDashboard(guild, stats, serverConfig) {
     });
   }
   
-  // Generate threat distribution chart
-  const image = await generateThreatChart(stats);
-  
   return {
     description: `Threat analysis for **${guild.name}**. This dashboard shows potential security threats and recent security incidents.`,
     fields: fields,
-    image: image
+    image: null
   };
 }
 
@@ -404,13 +398,10 @@ async function generateActivityDashboard(guild, stats, serverConfig) {
     }
   ];
   
-  // Generate activity chart
-  const image = await generateActivityChart(hourlyDistribution);
-  
   return {
     description: `Activity monitoring for **${guild.name}**. This dashboard shows server activity patterns and potential security concerns.`,
     fields: fields,
-    image: image
+    image: null
   };
 }
 
@@ -496,13 +487,10 @@ async function generateAuditDashboard(guild, stats, serverConfig) {
     });
   }
   
-  // Generate audit chart
-  const image = await generateAuditChart(stats);
-  
   return {
     description: `Audit log for **${guild.name}**. This dashboard shows moderation activity and enforcement actions.`,
     fields: fields,
-    image: image
+    image: null
   };
 }
 
