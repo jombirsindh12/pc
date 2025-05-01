@@ -1,0 +1,200 @@
+{
+  "prefix": "!",
+  "welcomeEnabled": false,
+  "securityEnabled": true,
+  "securityDisabled": false,
+  "antiRaidEnabled": true,
+  "antiRaidDisabled": false,
+  "antiSpamEnabled": true,
+  "antiSpamDisabled": false,
+  "antiScamEnabled": true,
+  "antiScamDisabled": false,
+  "securityOwnerOnly": true,
+  "antiNukeThreshold": 3,
+  "antiNukeEnabled": true,
+  "antiNukeDisabled": false,
+  "antiRaidSettings": {
+    "joinThreshold": 3,
+    "timeWindow": 8000,
+    "action": "lockdown"
+  },
+  "antiSpamSettings": {
+    "messageThreshold": 4,
+    "timeWindow": 3000,
+    "action": "mute"
+  },
+  "strictSecurity": true,
+  "strictSecurityAction": "kick",
+  "strictSecurityEnabled": 1746083978386,
+  "welcomeMessage": true,
+  "youtubeChannelId": "UCTqVAZM7HsFoz7xrpRMoADg",
+  "youtubeChannelName": "PHANTOM GAMING ",
+  "subCountChannelId": "1367397856079511594",
+  "securityIncidents": [
+    {
+      "type": "CHANNEL_CREATE",
+      "userId": "1361975326418141215",
+      "timestamp": 1746083197661,
+      "details": {
+        "channelId": "1367396778584047647",
+        "channelName": "📊 PHANTOM GAMING : 560 subs"
+      }
+    },
+    {
+      "type": "CHANNEL_CREATE",
+      "userId": "1361975326418141215",
+      "timestamp": 1746083248015,
+      "details": {
+        "channelId": "1367396990119579709",
+        "channelName": "📊 PHANTOM GAMING : 560 subs"
+      }
+    },
+    {
+      "type": "CHANNEL_CREATE",
+      "userId": "1361975326418141215",
+      "timestamp": 1746083330483,
+      "details": {
+        "channelId": "1367397336115843122",
+        "channelName": "📊 PHANTOM GAMING : 560 subs"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "491769129318088714",
+      "timestamp": 1746083341746,
+      "details": {
+        "channelId": "1352486908797648979",
+        "oldName": "ᴏꜰꜰʟɪɴᴇ : 985",
+        "newName": "ᴏꜰꜰʟɪɴᴇ : 983"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "1361975326418141215",
+      "timestamp": 1746083342208,
+      "details": {
+        "channelId": "1352602799745269905",
+        "oldName": "Online: 29",
+        "newName": "Online: 31"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "1361975326418141215",
+      "timestamp": 1746083342573,
+      "details": {
+        "channelId": "1352486908797648979",
+        "oldName": "ᴏꜰꜰʟɪɴᴇ : 983",
+        "newName": "ᴏꜰꜰʟɪɴᴇ : 985"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "1361975326418141215",
+      "timestamp": 1746083343033,
+      "details": {
+        "channelId": "1352602799745269905",
+        "oldName": "Online: 31",
+        "newName": "Online: 29"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "1361975326418141215",
+      "timestamp": 1746083343509,
+      "details": {
+        "channelId": "1352486908797648979",
+        "oldName": "ᴏꜰꜰʟɪɴᴇ : 985",
+        "newName": "ᴏꜰꜰʟɪɴᴇ : 983"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "1361975326418141215",
+      "timestamp": 1746083343892,
+      "details": {
+        "channelId": "1352602799745269905",
+        "oldName": "Online: 29",
+        "newName": "Online: 31"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "491769129318088714",
+      "timestamp": 1746083354434,
+      "details": {
+        "channelId": "1352486001830006807",
+        "oldName": "✿│ ᴀʟʟ ᴍᴇᴍʙᴇʀꜱ: 1028",
+        "newName": "✿│ ᴀʟʟ ᴍᴇᴍʙᴇʀꜱ: 1029"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "1361975326418141215",
+      "timestamp": 1746083355183,
+      "details": {
+        "channelId": "1352486001830006807",
+        "oldName": "✿│ ᴀʟʟ ᴍᴇᴍʙᴇʀꜱ: 1029",
+        "newName": "✿│ ᴀʟʟ ᴍᴇᴍʙᴇʀꜱ: 1028"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "1361975326418141215",
+      "timestamp": 1746083356053,
+      "details": {
+        "channelId": "1352486001830006807",
+        "oldName": "✿│ ᴀʟʟ ᴍᴇᴍʙᴇʀꜱ: 1028",
+        "newName": "✿│ ᴀʟʟ ᴍᴇᴍʙᴇʀꜱ: 1029"
+      }
+    },
+    {
+      "type": "CHANNEL_CREATE",
+      "userId": "1155442418309673000",
+      "timestamp": 1746083587250,
+      "details": {
+        "channelId": "1367398412865110146",
+        "channelName": "allowed"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "491769129318088714",
+      "timestamp": 1746083954367,
+      "details": {
+        "channelId": "1352486001830006807",
+        "oldName": "✿│ ᴀʟʟ ᴍᴇᴍʙᴇʀꜱ: 1029",
+        "newName": "✿│ ᴀʟʟ ᴍᴇᴍʙᴇʀꜱ: 1028"
+      }
+    }
+  ],
+  "whitelistedRoles": [
+    "1367396273904287765"
+  ],
+  "whitelistedUsers": [
+    "1361975326418141215",
+    "458276816071950337",
+    "1155442418309673000"
+  ],
+  "verificationChannelId": "1352277893698420736",
+  "roleId": "1352280579667656704",
+  "roleName": "SUBSCRIBED",
+  "notificationChannelId": "1367398591915753512",
+  "logChannels": {
+    "mod": "1337139067552534761",
+    "server": "1337139067552534761",
+    "message": "1337139067552534761",
+    "voice": "1337139067552534761",
+    "joinleave": "1337139067552534761"
+  },
+  "updateFrequencyMinutes": 5,
+  "welcomeSettings": {
+    "enabled": true,
+    "channelId": "1337418792690782219",
+    "message": "<a:lol:1301275117434966016> Hey**{mention}**,Do Check Out The Server.<a:lol:1301275117434966016>  <a:arrow_heartright:1017682681024229377>🔹 **Read the Rules** → <#1351766689053806622>(Follow the guidelines & stay safe!)<a:greenbolt:1215595223477125120> <a:arrow_heartright:1017682681024229377>🔹 **Get Free Panel** → <#1351766689053806622>(React Fast For NExt Free Panel!)<a:greenbolt:1215595223477125120> <a:arrow_heartright:1017682681024229377>🔹 **Stay Updated** → <#1350455305783349300>(Get the latest news & announcements!)<a:greenbolt:1215595223477125120> <a:arrow_heartright:1017682681024229377>🔹 **Need Help?** → <#1350455347789430824>(Facing issues? Get support here!)<a:greenbolt:1215595223477125120> <a:arrow_heartright:1017682681024229377>🔹 **Chat & Chill** → <#1350455286133162087>(Meet new people & have fun!)<a:greenbolt:1215595223477125120> <a:arrow_heartright:1017682681024229377>🔹 **Buy a Panel** →<#1350455352197382266>(For premium purchases & services!)<a:greenbolt:1215595223477125120>  **💎 Exclusive Giveaways – Stay active for surprise rewards!**  <a:1z_love:1216659232003457065> **Enjoy your stay & have fun!** <a:1z_love:1216659232003457065>",
+    "title": "👋 Welcome to the server!",
+    "color": "5865F2",
+    "roleId": null,
+    "roleName": null
+  }
+}

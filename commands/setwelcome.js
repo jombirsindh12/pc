@@ -118,6 +118,12 @@ module.exports = {
     }
     
     // Create embed for success message
+    // Ensure welcome message doesn't exceed Discord's 1024 character limit for embed fields
+    const processedWelcomeMessage = welcomeMessage.replace('{user}', '@user').replace('{server}', interaction.guild.name);
+    const truncatedMessage = processedWelcomeMessage.length > 1000 
+      ? processedWelcomeMessage.substring(0, 1000) + '...' 
+      : processedWelcomeMessage;
+      
     const embed = {
       title: '✅ Welcome System Set Up',
       description: `Welcome messages will now be sent to <#${channel.id}>.`,
@@ -125,7 +131,7 @@ module.exports = {
       fields: [
         {
           name: 'Welcome Message',
-          value: welcomeMessage.replace('{user}', '@user').replace('{server}', interaction.guild.name)
+          value: truncatedMessage
         }
       ]
     };
@@ -142,11 +148,17 @@ module.exports = {
     await interaction.followUp({ embeds: [embed] });
     
     // Send an example welcome message
+    // Also ensure the description doesn't exceed Discord's limits
+    const processedDescription = welcomeMessage
+      .replace('{user}', `<@${interaction.user.id}>`)
+      .replace('{server}', interaction.guild.name);
+    const truncatedDescription = processedDescription.length > 4000 
+      ? processedDescription.substring(0, 4000) + '...' 
+      : processedDescription;
+      
     const exampleEmbed = {
       title: welcomeTitle,
-      description: welcomeMessage
-        .replace('{user}', `<@${interaction.user.id}>`)
-        .replace('{server}', interaction.guild.name),
+      description: truncatedDescription,
       color: parseInt(welcomeColor?.replace('#', '') || '5865F2', 16),
       footer: {
         text: 'This is an example of how welcome messages will look'
@@ -191,11 +203,17 @@ function setupWelcomeHandler(client) {
     const welcomeSettings = serverConfig.welcomeSettings;
     
     // Create welcome embed
+    // Ensure description doesn't exceed Discord's limit
+    const processedDescription = welcomeSettings.message
+      .replace('{user}', `<@${member.id}>`)
+      .replace('{server}', member.guild.name);
+    const truncatedDescription = processedDescription.length > 4000 
+      ? processedDescription.substring(0, 4000) + '...' 
+      : processedDescription;
+      
     const welcomeEmbed = {
       title: welcomeSettings.title || '👋 Welcome to the server!',
-      description: welcomeSettings.message
-        .replace('{user}', `<@${member.id}>`)
-        .replace('{server}', member.guild.name),
+      description: truncatedDescription,
       color: parseInt(welcomeSettings.color?.replace('#', '') || '5865F2', 16),
       timestamp: new Date()
     };
