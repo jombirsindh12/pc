@@ -149,7 +149,7 @@ function isGuildOwner(guild, userId) {
 }
 
 // Analyze recent actions for nuke attempt patterns
-function checkForNukeAttempt(guildId, userId, actionType) {
+async function checkForNukeAttempt(guildId, userId, actionType) {
   const guild = global.client?.guilds.cache.get(guildId);
   if (!guild) return;
   
@@ -167,10 +167,32 @@ function checkForNukeAttempt(guildId, userId, actionType) {
     return;
   }
   
-  // Check if this user is whitelisted from security
-  if (serverConfig.whitelistedUsers && serverConfig.whitelistedUsers.includes(userId)) {
-    console.log(`[SECURITY] Skipping checks for whitelisted user ${userId}`);
+  // Check if this user is directly whitelisted by ID
+  if (serverConfig.whitelistedUsers && Array.isArray(serverConfig.whitelistedUsers) && 
+      serverConfig.whitelistedUsers.includes(userId)) {
+    console.log(`[SECURITY] Skipping nuke checks for whitelisted user ${userId}`);
     return;
+  }
+  
+  // Check for whitelisted roles (this requires fetching the member)
+  if (serverConfig.whitelistedRoles && Array.isArray(serverConfig.whitelistedRoles) && 
+      serverConfig.whitelistedRoles.length > 0) {
+    try {
+      const member = guild.members.cache.get(userId) || await guild.members.fetch(userId).catch(() => null);
+      if (member) {
+        // Check if member has any whitelisted roles
+        const hasWhitelistedRole = member.roles.cache.some(role => 
+          serverConfig.whitelistedRoles.includes(role.id)
+        );
+        
+        if (hasWhitelistedRole) {
+          console.log(`[SECURITY] Skipping nuke checks for user ${userId} with whitelisted role`);
+          return;
+        }
+      }
+    } catch (roleCheckError) {
+      console.error(`[SECURITY] Error checking roles for nuke detection:`, roleCheckError);
+    }
   }
   
   // Get recent actions of this type by this user
@@ -997,11 +1019,36 @@ function setupChannelModificationProtection(client) {
         return;
       }
       
-      // Check if this user is whitelisted
+      // Get the server config
       const guildConfig = config.getServerConfig(channel.guild.id);
-      if (guildConfig.whitelistedUsers && guildConfig.whitelistedUsers.includes(executor.id)) {
+      
+      // Check if this user is directly whitelisted by ID
+      if (guildConfig.whitelistedUsers && Array.isArray(guildConfig.whitelistedUsers) && 
+          guildConfig.whitelistedUsers.includes(executor.id)) {
         console.log(`[SECURITY] Channel deletion by whitelisted user ${executor.tag || executor.username}, ignoring`);
         return;
+      }
+      
+      // Check if the user has any whitelisted roles
+      if (guildConfig.whitelistedRoles && Array.isArray(guildConfig.whitelistedRoles) && 
+          guildConfig.whitelistedRoles.length > 0) {
+        try {
+          // Fetch member to check roles
+          const member = await channel.guild.members.fetch(executor.id).catch(() => null);
+          if (member) {
+            // Check if the member has any whitelisted roles
+            const hasWhitelistedRole = member.roles.cache.some(role => 
+              guildConfig.whitelistedRoles.includes(role.id)
+            );
+            
+            if (hasWhitelistedRole) {
+              console.log(`[SECURITY] Channel deletion by user ${executor.tag || executor.username} with whitelisted role, ignoring`);
+              return;
+            }
+          }
+        } catch (roleCheckError) {
+          console.error(`[SECURITY] Error checking user roles for whitelist:`, roleCheckError);
+        }
       }
       
       // Record the action for potential nuke detection
@@ -1162,10 +1209,36 @@ function setupChannelModificationProtection(client) {
       // Skip if the executor is the server owner
       if (executor.id === newGuild.ownerId) return;
       
-      // Check if this user is whitelisted
+      // Get server config
       const guildConfig = config.getServerConfig(newGuild.id);
-      if (guildConfig.whitelistedUsers && guildConfig.whitelistedUsers.includes(executor.id)) {
+      
+      // Check if this user is directly whitelisted by ID
+      if (guildConfig.whitelistedUsers && Array.isArray(guildConfig.whitelistedUsers) && 
+          guildConfig.whitelistedUsers.includes(executor.id)) {
+        console.log(`[SECURITY] Guild update by whitelisted user ${executor.tag || executor.username}, ignoring`);
         return;
+      }
+      
+      // Check if the user has any whitelisted roles
+      if (guildConfig.whitelistedRoles && Array.isArray(guildConfig.whitelistedRoles) && 
+          guildConfig.whitelistedRoles.length > 0) {
+        try {
+          // Fetch member to check roles
+          const member = await newGuild.members.fetch(executor.id).catch(() => null);
+          if (member) {
+            // Check if the member has any whitelisted roles
+            const hasWhitelistedRole = member.roles.cache.some(role => 
+              guildConfig.whitelistedRoles.includes(role.id)
+            );
+            
+            if (hasWhitelistedRole) {
+              console.log(`[SECURITY] Guild update by user ${executor.tag || executor.username} with whitelisted role, ignoring`);
+              return;
+            }
+          }
+        } catch (roleCheckError) {
+          console.error(`[SECURITY] Error checking user roles for whitelist:`, roleCheckError);
+        }
       }
       
       // Record the action for potential nuke detection

@@ -51,7 +51,9 @@
   "verificationRequired": true,
   "autoModeration": true,
   "punishmentType": "ban",
-  "whitelistedRoles": [],
+  "whitelistedRoles": [
+    "1350455279489384532"
+  ],
   "imageVerification": true,
   "verificationChannelName": "✅・🇻🇪🇷🇮🇫🇾",
   "verificationType": "button",
@@ -86,7 +88,7 @@
   "welcomeMessage": true,
   "strictSecurity": true,
   "strictSecurityAction": "kick",
-  "strictSecurityEnabled": 1746071715752,
+  "strictSecurityEnabled": 1746072581600,
   "securityIncidents": [
     {
       "type": "CHANNEL_DELETE",
@@ -95,6 +97,33 @@
       "details": {
         "channelId": "1367242943030624370",
         "channelName": "fucked-by-rex-cheats-16"
+      }
+    },
+    {
+      "type": "CHANNEL_DELETE",
+      "userId": "1361212350547492955",
+      "timestamp": 1746072113569,
+      "details": {
+        "channelId": "1367242938215829666",
+        "channelName": "fucked-by-rex-cheats-1"
+      }
+    },
+    {
+      "type": "CHANNEL_DELETE",
+      "userId": "1361212350547492955",
+      "timestamp": 1746072273235,
+      "details": {
+        "channelId": "1367242940862431325",
+        "channelName": "fucked-by-rex-cheats-2"
+      }
+    },
+    {
+      "type": "CHANNEL_DELETE",
+      "userId": "1361212350547492955",
+      "timestamp": 1746072381754,
+      "details": {
+        "channelId": "1367242943953502238",
+        "channelName": "fucked-by-rex-cheats-247"
       }
     }
   ]
