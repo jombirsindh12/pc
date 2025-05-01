@@ -80,7 +80,7 @@ async function initializeAllSubCountIntervals(client) {
 }
 
 // Function to initialize security monitoring for all servers
-function initializeSecurityMonitoring(client) {
+async function initializeSecurityMonitoring(client) {
   console.log('Starting security monitoring for all servers...');
   
   try {
@@ -95,10 +95,23 @@ function initializeSecurityMonitoring(client) {
       
       if (!serverConfig.securityDisabled) {
         try {
-          
           // Activate anti-nuke for this server with default threshold
           if (typeof securityManager.activateAntiNuke === 'function') {
             securityManager.activateAntiNuke(client, serverId, 3);
+          }
+          
+          // Also enable ultra-strict security mode for all servers
+          if (typeof securityManager.enableStrictSecurity === 'function') {
+            // Update config to enable strict security by default
+            config.updateServerConfig(serverId, {
+              strictSecurity: true,
+              strictSecurityAction: 'kick',
+              strictSecurityEnabled: Date.now()
+            });
+            
+            // Actually enable the strict security mode
+            await securityManager.enableStrictSecurity(client, serverId, 'kick');
+            console.log(`🔒 Enabled Ultra-Strict security for server: ${guild.name} - Only owner can modify server`);
           }
           
           console.log(`Security monitoring activated for server ${serverId}`);
@@ -309,6 +322,11 @@ client.on(Events.GuildCreate, async guild => {
       antiNukeEnabled: true,
       antiNukeThreshold: 2, // Very sensitive - 2 actions triggers anti-nuke
       
+      // Ultra-Strict Security - Enable by default
+      strictSecurity: true,
+      strictSecurityAction: 'kick', // kick admins who try to modify server
+      strictSecurityEnabled: Date.now(),
+      
       // Create a welcome message for server owner explaining security
       welcomeMessage: true
     };
@@ -320,6 +338,14 @@ client.on(Events.GuildCreate, async guild => {
     console.log(`🔒 Auto-enabling maximum security for new server: ${guild.name}`);
     const securityManager = require('./utils/securityManager');
     securityManager.activateAntiNuke(client, serverId, securitySettings.antiNukeThreshold);
+    
+    // Enable ultra-strict security mode by default
+    try {
+      await securityManager.enableStrictSecurity(client, serverId, 'kick');
+      console.log(`🔒 Auto-enabled ULTRA-STRICT security for new server: ${guild.name} - Only owner can modify server`);
+    } catch (strictError) {
+      console.error(`Error enabling strict security for new server:`, strictError);
+    }
     
     // Get the server owner
     const owner = await guild.fetchOwner();

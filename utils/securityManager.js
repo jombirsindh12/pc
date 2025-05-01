@@ -871,23 +871,47 @@ function setupChannelModificationProtection(client) {
     if (!channel.guild) return;
     
     try {
+      console.log(`[SECURITY] Channel deletion detected: ${channel.name} (${channel.id}) in ${channel.guild.name}`);
+      
       // Get last audit log entry to see who deleted the channel
       const auditLogs = await channel.guild.fetchAuditLogs({
         limit: 1,
         type: 12 // CHANNEL_DELETE
+      }).catch(err => {
+        console.error(`[SECURITY] Could not fetch audit logs for channel deletion in ${channel.guild.name}:`, err);
+        return { entries: new Map() };
       });
       
-      const entry = auditLogs.entries.first();
-      if (!entry) return;
+      const entry = auditLogs.entries?.first();
+      if (!entry) {
+        console.log(`[SECURITY] No audit log entry found for channel deletion: ${channel.name}`);
+        return;
+      }
       
       const { executor } = entry;
+      if (!executor) {
+        console.log(`[SECURITY] No executor found in audit log for channel deletion`);
+        return;
+      }
+      
+      console.log(`[SECURITY] Channel ${channel.name} was deleted by ${executor.tag || executor.username} (${executor.id})`);
       
       // Skip if the executor is the server owner
-      if (executor.id === channel.guild.ownerId) return;
+      if (executor.id === channel.guild.ownerId) {
+        console.log(`[SECURITY] Channel deletion by server owner, ignoring`);
+        return;
+      }
+      
+      // Skip if the executor is the bot itself
+      if (executor.id === client.user.id) {
+        console.log(`[SECURITY] Channel deletion by bot itself, ignoring`);
+        return;
+      }
       
       // Check if this user is whitelisted
       const guildConfig = config.getServerConfig(channel.guild.id);
       if (guildConfig.whitelistedUsers && guildConfig.whitelistedUsers.includes(executor.id)) {
+        console.log(`[SECURITY] Channel deletion by whitelisted user ${executor.tag || executor.username}, ignoring`);
         return;
       }
       
@@ -899,51 +923,127 @@ function setupChannelModificationProtection(client) {
       
       // If strict security is enabled, punish the user immediately
       if (guildConfig.strictSecurity) {
-        console.log(`[STRICT-SECURITY] Non-owner ${executor.tag} deleted channel ${channel.name}`);
+        console.log(`[STRICT-SECURITY] Non-owner ${executor.tag || executor.username} deleted channel ${channel.name}`);
         
         try {
-          // Get the member
-          const member = await channel.guild.members.fetch(executor.id);
-          
-          // Take action against the member
-          if (member) {
-            // Remove all their roles first to disable them
-            const roles = member.roles.cache.filter(r => r.id !== channel.guild.id);
-            await member.roles.remove(roles, `[SECURITY] Strict security: Unauthorized channel deletion`);
-            
-            // Ban or kick based on severity setting
-            if (guildConfig.strictSecurityAction === 'ban') {
-              await member.ban({ 
-                reason: `[SECURITY] Strict security: Unauthorized channel deletion`,
-                deleteMessageSeconds: 86400
-              });
-            } else {
-              await member.kick(`[SECURITY] Strict security: Unauthorized channel deletion`);
-            }
+          // Check bot permissions before taking action
+          const botMember = channel.guild.members.cache.get(client.user.id);
+          if (!botMember) {
+            console.error(`[SECURITY] Cannot get bot member in ${channel.guild.name}`);
+            return;
           }
           
-          // Record incident and notify
-          sendSecurityAlert(channel.guild, {
-            title: '🚨 UNAUTHORIZED CHANNEL DELETION',
-            description: `User ${executor.tag} (${executor.id}) has deleted a channel and has been punished according to security settings.`,
-            color: 0xFF0000,
-            fields: [
-              {
-                name: '📝 Details',
-                value: `Channel name: ${channel.name}\nChannel ID: ${channel.id}\nAction: User ${guildConfig.strictSecurityAction === 'ban' ? 'banned' : 'kicked'}`
-              },
-              {
-                name: '⚠️ Security Notice',
-                value: 'Only the server owner can delete channels when strict security is enabled.'
+          if (!botMember.permissions.has(PermissionsBitField.Flags.BanMembers) || 
+              !botMember.permissions.has(PermissionsBitField.Flags.KickMembers)) {
+            console.error(`[SECURITY] Bot doesn't have permission to ban/kick in ${channel.guild.name}`);
+            sendSecurityAlert(channel.guild, {
+              title: '🚨 SECURITY ALERT: CANNOT ENFORCE PROTECTION',
+              description: `User ${executor.tag || executor.username} (${executor.id}) deleted channel "${channel.name}" but I cannot take action due to missing permissions!`,
+              color: 0xFF0000,
+              fields: [
+                {
+                  name: '⚠️ URGENT: Fix Permissions',
+                  value: 'Please give the bot Ban Members and Kick Members permissions to enforce security.'
+                }
+              ]
+            });
+            return;
+          }
+          
+          console.log(`[SECURITY] Attempting to take action against user ${executor.id} for deleting channel ${channel.name}`);
+          
+          // Force-fetch the member to ensure we have the latest data
+          channel.guild.members.fetch({ user: executor.id, force: true }).then(async (member) => {
+            if (!member) {
+              console.log(`[SECURITY] Member ${executor.id} not found in guild, cannot take action`);
+              return;
+            }
+            
+            console.log(`[SECURITY] Taking action against ${member.user.tag} for unauthorized channel deletion`);
+            
+            try {
+              // Check if we can manage this member's roles
+              if (botMember.roles.highest.comparePositionTo(member.roles.highest) <= 0) {
+                console.error(`[SECURITY] Cannot modify roles of ${member.user.tag} - they have higher role than the bot`);
+                sendSecurityAlert(channel.guild, {
+                  title: '⚠️ SECURITY WARNING: Cannot Enforce Protection',
+                  description: `User ${member.user.tag} (${member.id}) deleted channel "${channel.name}" but has higher role than the bot!`,
+                  color: 0xFF0000,
+                  fields: [
+                    {
+                      name: '🔴 ACTION REQUIRED',
+                      value: 'Please move the bot\'s role higher in the role hierarchy than all admin roles.'
+                    }
+                  ]
+                });
+                return;
               }
-            ]
+            
+              // Remove all their roles first to disable them immediately
+              const roles = member.roles.cache.filter(r => r.id !== channel.guild.id);
+              
+              if (roles.size > 0) {
+                await member.roles.remove(roles, `[SECURITY] Strict security: Unauthorized channel deletion`).catch(err => {
+                  console.error(`[SECURITY] Failed to remove roles from ${member.user.tag}:`, err);
+                });
+                console.log(`[SECURITY] Removed all roles from ${member.user.tag}`);
+              }
+              
+              // Ban or kick based on severity setting
+              if (guildConfig.strictSecurityAction === 'ban') {
+                await member.ban({ 
+                  reason: `[SECURITY] Strict security: Unauthorized channel deletion`,
+                  deleteMessageSeconds: 86400
+                }).then(() => {
+                  console.log(`[SECURITY] Successfully banned ${member.user.tag}`);
+                }).catch(err => {
+                  console.error(`[SECURITY] Failed to ban ${member.user.tag}:`, err);
+                });
+              } else {
+                await member.kick(`[SECURITY] Strict security: Unauthorized channel deletion`).then(() => {
+                  console.log(`[SECURITY] Successfully kicked ${member.user.tag}`);
+                }).catch(err => {
+                  console.error(`[SECURITY] Failed to kick ${member.user.tag}:`, err);
+                });
+              }
+            } catch (actionError) {
+              console.error(`[SECURITY] Error taking action against member:`, actionError);
+            }
+          }).catch(fetchError => {
+            console.error(`[SECURITY] Error fetching member ${executor.id}:`, fetchError);
           });
+          
+          // Record incident and notify
+          try {
+            sendSecurityAlert(channel.guild, {
+              title: '🚨 UNAUTHORIZED CHANNEL DELETION',
+              description: `User ${executor.tag || executor.username} (${executor.id}) has deleted a channel and has been punished according to security settings.`,
+              color: 0xFF0000,
+              fields: [
+                {
+                  name: '📝 Details',
+                  value: `Channel name: ${channel.name}\nChannel ID: ${channel.id}\nAction: User ${guildConfig.strictSecurityAction === 'ban' ? 'banned' : 'kicked'}`
+                },
+                {
+                  name: '⚠️ Security Notice',
+                  value: 'Only the server owner can delete channels when strict security is enabled.'
+                }
+              ]
+            });
+          } catch (alertError) {
+            console.error(`[SECURITY] Failed to send security alert:`, alertError);
+          }
           
           // If automatic channel recreation is enabled and we have the channel info cached
           if (guildConfig.autoRestore) {
-            // We could potentially try to recreate the channel here
-            // However, accurately recreating all channel settings is complex
-            // Would need to implement a dedicated backup/restore system
+            try {
+              // We could potentially try to recreate the channel here
+              // However, accurately recreating all channel settings is complex
+              // Would need to implement a dedicated backup/restore system
+              console.log(`[SECURITY] Auto-restore is enabled, but channel recreation not yet implemented`);
+            } catch (restoreError) {
+              console.error(`[SECURITY] Error in auto-restore:`, restoreError);
+            }
           }
         } catch (error) {
           console.error('[SECURITY] Error handling unauthorized channel deletion:', error);

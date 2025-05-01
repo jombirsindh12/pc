@@ -12,5 +12,66 @@
   "securityOwnerOnly": true,
   "antiNukeThreshold": 3,
   "antiNukeEnabled": true,
-  "antiNukeDisabled": false
+  "antiNukeDisabled": false,
+  "antiRaidSettings": {
+    "joinThreshold": 3,
+    "timeWindow": 8000,
+    "action": "lockdown"
+  },
+  "antiSpamSettings": {
+    "messageThreshold": 4,
+    "timeWindow": 3000,
+    "action": "mute"
+  },
+  "welcomeMessage": true,
+  "antiNukeSettings": {
+    "maxBansPerMinute": 3,
+    "maxChannelDeletionsPerMinute": 2,
+    "maxRoleDeletionsPerMinute": 2,
+    "punishmentType": "ban"
+  },
+  "antiNuke": true,
+  "autoModeration": true,
+  "punishmentType": "kick",
+  "securityIncidents": [
+    {
+      "type": "CHANNEL_DELETE",
+      "userId": "1361212350547492955",
+      "timestamp": 1746071185854,
+      "details": {
+        "channelId": "1363141245559377940",
+        "channelName": "📊 PHANTOM GAMING : 541 subs"
+      }
+    },
+    {
+      "type": "CHANNEL_DELETE",
+      "userId": "1361212350547492955",
+      "timestamp": 1746071191841,
+      "details": {
+        "channelId": "1365555322399494197",
+        "channelName": "📊 PHANTOM GAMING : 553 subs"
+      }
+    },
+    {
+      "type": "CHANNEL_DELETE",
+      "userId": "1361212350547492955",
+      "timestamp": 1746071201587,
+      "details": {
+        "channelId": "1367342453505396746",
+        "channelName": "vhj"
+      }
+    },
+    {
+      "type": "CHANNEL_DELETE",
+      "userId": "1361212350547492955",
+      "timestamp": 1746071552407,
+      "details": {
+        "channelId": "1367347846633750549",
+        "channelName": "k"
+      }
+    }
+  ],
+  "strictSecurity": true,
+  "strictSecurityAction": "kick",
+  "strictSecurityEnabled": 1746071715761
 }

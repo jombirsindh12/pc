@@ -83,5 +83,8 @@
     "timeWindow": 3000,
     "action": "mute"
   },
-  "welcomeMessage": true
+  "welcomeMessage": true,
+  "strictSecurity": true,
+  "strictSecurityAction": "kick",
+  "strictSecurityEnabled": 1746071715752
 }

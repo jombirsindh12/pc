@@ -12,5 +12,8 @@
   "securityOwnerOnly": true,
   "antiNukeThreshold": 3,
   "antiNukeEnabled": true,
-  "antiNukeDisabled": false
+  "antiNukeDisabled": false,
+  "strictSecurity": true,
+  "strictSecurityAction": "kick",
+  "strictSecurityEnabled": 1746071715760
 }
