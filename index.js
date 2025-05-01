@@ -15,73 +15,61 @@ async function initializeAllSubCountIntervals(client) {
   
   console.log('Initializing subscriber count intervals for all servers...');
   
-  // Get all server configurations
-  const allConfigs = config.loadConfig();
-  
-  // Loop through each server
-  for (const serverId in allConfigs) {
-    const serverConfig = allConfigs[serverId];
+  // Process each guild the bot is in
+  for (const guild of client.guilds.cache.values()) {
+    const serverId = guild.id;
+    // Get config for this server
+    const serverConfig = config.getServerConfig(serverId);
     
     // Only set up interval if the server has a YouTube channel and subscriber count channel
     if (serverConfig.youtubeChannelId && serverConfig.subCountChannelId) {
       try {
-        // Check if the guild is available
-        const guild = client.guilds.cache.get(serverId);
-        if (!guild) {
-          console.log(`Guild ${serverId} not found, skipping subscriber count initialization`);
-          continue;
+        // Check if the channel exists
+        const channel = await guild.channels.fetch(serverConfig.subCountChannelId).catch(() => null);
+        if (!channel) {
+          console.log(`Channel ${serverConfig.subCountChannelId} not found in guild ${serverId}, skipping`);
+          continue; // Skip to next guild
         }
         
-        // Check if the channel exists
-        try {
-          const channel = await guild.channels.fetch(serverConfig.subCountChannelId);
-          if (!channel) {
-            console.log(`Channel ${serverConfig.subCountChannelId} not found in guild ${serverId}, skipping`);
-            continue;
-          }
-          
-          // Clear any existing interval for this server
-          if (client.subCountIntervals.has(serverId)) {
-            clearInterval(client.subCountIntervals.get(serverId));
-          }
-          
-          // Set up the interval to update the subscriber count
-          const intervalId = setInterval(async () => {
-            try {
-              const currentGuild = client.guilds.cache.get(serverId);
-              if (!currentGuild) {
-                console.log(`Guild ${serverId} not found for subscriber count update`);
-                return;
-              }
-              
-              const channel = await currentGuild.channels.fetch(serverConfig.subCountChannelId);
-              if (channel) {
-                // Get channel info from YouTube
-                const youtubeAPI = require('./utils/youtubeAPI');
-                const freshInfo = await youtubeAPI.getChannelInfo(serverConfig.youtubeChannelId);
-                
-                // Get the format from config and update channel name
-                const currentConfig = config.getServerConfig(serverId);
-                const format = currentConfig.voiceChannelFormat || '📊 {channelName}: {subCount} subs';
-                const newName = format
-                  .replace('{channelName}', freshInfo.title)
-                  .replace('{subCount}', freshInfo.subscriberCount || '0');
-                  
-                await channel.setName(newName);
-                console.log(`Updated subscriber count for ${freshInfo.title} to ${freshInfo.subscriberCount}`);
-              }
-            } catch (error) {
-              console.error(`Error updating subscriber count for server ${serverId}:`, error);
-            }
-          }, (serverConfig.updateFrequencyMinutes || 60) * 60000); // Use configured update frequency or default to 60 minutes
-          
-          // Store the interval ID
-          client.subCountIntervals.set(serverId, intervalId);
-          
-          console.log(`Subscriber count interval set up for server ${serverId}`);
-        } catch (channelError) {
-          console.error(`Error fetching channel for server ${serverId}:`, channelError);
+        // Clear any existing interval for this server
+        if (client.subCountIntervals.has(serverId)) {
+          clearInterval(client.subCountIntervals.get(serverId));
         }
+        
+        // Set up the interval to update the subscriber count
+        const intervalId = setInterval(async () => {
+          try {
+            const currentGuild = client.guilds.cache.get(serverId);
+            if (!currentGuild) {
+              console.log(`Guild ${serverId} not found for subscriber count update`);
+              return;
+            }
+            
+            const channel = await currentGuild.channels.fetch(serverConfig.subCountChannelId).catch(() => null);
+            if (channel) {
+              // Get channel info from YouTube
+              const youtubeAPI = require('./utils/youtubeAPI');
+              const freshInfo = await youtubeAPI.getChannelInfo(serverConfig.youtubeChannelId);
+              
+              // Get the format from config and update channel name
+              const currentConfig = config.getServerConfig(serverId);
+              const format = currentConfig.voiceChannelFormat || '📊 {channelName}: {subCount} subs';
+              const newName = format
+                .replace('{channelName}', freshInfo.title)
+                .replace('{subCount}', freshInfo.subscriberCount || '0');
+                
+              await channel.setName(newName);
+              console.log(`Updated subscriber count for ${freshInfo.title} to ${freshInfo.subscriberCount}`);
+            }
+          } catch (error) {
+            console.error(`Error updating subscriber count for server ${serverId}:`, error);
+          }
+        }, (serverConfig.updateFrequencyMinutes || 60) * 60000); // Use configured update frequency or default to 60 minutes
+        
+        // Store the interval ID
+        client.subCountIntervals.set(serverId, intervalId);
+        
+        console.log(`Subscriber count interval set up for server ${serverId}`);
       } catch (error) {
         console.error(`Error setting up subscriber count for server ${serverId}:`, error);
       }
@@ -99,21 +87,14 @@ function initializeSecurityMonitoring(client) {
     // Load security manager
     const securityManager = require('./utils/securityManager');
     
-    // Get all server configurations
-    const allConfigs = config.loadConfig();
-    
-    // Activate security for each server that doesn't have it disabled
-    for (const serverId in allConfigs) {
-      const serverConfig = allConfigs[serverId];
+    // Process each guild the bot is in
+    for (const guild of client.guilds.cache.values()) {
+      const serverId = guild.id;
+      // Get config for this server
+      const serverConfig = config.getServerConfig(serverId);
       
       if (!serverConfig.securityDisabled) {
         try {
-          // Check if the guild is available
-          const guild = client.guilds.cache.get(serverId);
-          if (!guild) {
-            console.log(`Guild ${serverId} not found, skipping security initialization`);
-            continue;
-          }
           
           // Activate anti-nuke for this server with default threshold
           if (typeof securityManager.activateAntiNuke === 'function') {
@@ -151,8 +132,7 @@ try {
     console.log('Created temp directory');
   }
   
-  // Ensure the config directories also exist
-  config.ensureDirectories();
+  // Config directories are created by the config module
 } catch (error) {
   console.error('Error creating required directories:', error);
 }
@@ -253,17 +233,13 @@ client.once(Events.ClientReady, async () => {
     console.log('Successfully registered application (/) commands.');
     
     // Initialize verification collectors from security.js
-    if (client.commands.has('security')) {
-      const securityCommand = client.commands.get('security');
-      if (typeof securityCommand.setupAllVerificationCollectors === 'function') {
-        securityCommand.setupAllVerificationCollectors(client);
-      } else {
-        console.log('Setting up verification collectors from parent module');
-        const setupVerificationCollectors = require('./commands/security').setupAllVerificationCollectors;
-        if (typeof setupVerificationCollectors === 'function') {
-          setupVerificationCollectors(client);
-        }
-      }
+    try {
+      console.log('Setting up verification collectors from security.js');
+      // Import the setupAllVerificationCollectors function directly
+      const { setupAllVerificationCollectors } = require('./commands/security');
+      setupAllVerificationCollectors(client);
+    } catch (verificationError) {
+      console.error('Error setting up verification collectors:', verificationError);
     }
     
     // Initialize all subscriber count intervals for all servers
@@ -284,6 +260,149 @@ client.once(Events.ClientReady, async () => {
     }
   } catch (error) {
     console.error('Error registering slash commands:', error);
+  }
+});
+
+// Auto-initialize security when joining a new server
+client.on(Events.GuildCreate, async guild => {
+  try {
+    console.log(`🔐 Bot has joined a new server: ${guild.name} (${guild.id})`);
+    
+    // Get or create server configuration
+    const serverId = guild.id;
+    const serverConfig = config.getServerConfig(serverId);
+    
+    // Set default security configurations - MAXIMUM SECURITY by default
+    const securitySettings = {
+      // Set automatic security features all to TRUE
+      securityEnabled: true,
+      securityDisabled: false,
+      antiRaidEnabled: true,
+      antiRaidDisabled: false,
+      antiSpamEnabled: true, 
+      antiSpamDisabled: false,
+      antiScamEnabled: true,
+      antiScamDisabled: false,
+      securityOwnerOnly: true, // Only owner can control security
+      
+      // Anti-raid settings - very strict
+      antiRaidSettings: {
+        joinThreshold: 3, // Detect 3 quick joins
+        timeWindow: 8000, // Within 8 seconds
+        action: 'lockdown' // Auto-lockdown on raid
+      },
+      
+      // Anti-spam settings - strict
+      antiSpamSettings: {
+        messageThreshold: 4, // 4 messages
+        timeWindow: 3000, // Within 3 seconds
+        action: 'mute' // Mute spammers
+      },
+      
+      // Anti-nuke settings
+      antiNukeEnabled: true,
+      antiNukeThreshold: 2, // Very sensitive - 2 actions triggers anti-nuke
+      
+      // Create a welcome message for server owner explaining security
+      welcomeMessage: true
+    };
+    
+    // Save enhanced security configuration
+    config.updateServerConfig(serverId, securitySettings);
+    
+    // Initialize security for this server
+    console.log(`🔒 Auto-enabling maximum security for new server: ${guild.name}`);
+    const securityManager = require('./utils/securityManager');
+    securityManager.activateAntiNuke(client, serverId, securitySettings.antiNukeThreshold);
+    
+    // Get the server owner
+    const owner = await guild.fetchOwner();
+    if (owner) {
+      try {
+        // Create welcome/security info embed
+        const welcomeEmbed = {
+          title: '🔒 Maximum Security Activated',
+          description: `Thank you for adding Phantom Guard to your server! **Maximum security has been automatically enabled** to protect your server from attacks, raids, and spam.`,
+          color: 0x2ECC71, // Green
+          fields: [
+            {
+              name: '🛡️ Security Features Activated',
+              value: '• Anti-Raid Protection\n• Anti-Spam System\n• Anti-Nuke Protection\n• Anti-Scam Filter\n• Emergency Lockdown System'
+            },
+            {
+              name: '🔐 Owner-Only Security',
+              value: 'For enhanced protection, all security commands can only be used by you, the server owner. This prevents security compromise even if admin accounts are compromised.'
+            },
+            {
+              name: '⚠️ Important',
+              value: 'If you want to adjust security settings, use `/security`, `/antiraid`, `/antispam`, or `/lockdown` commands. Only you can modify these settings.'
+            }
+          ],
+          footer: {
+            text: 'Phantom Guard • Advanced Security System'
+          },
+          timestamp: new Date()
+        };
+        
+        // Send a private message to the server owner
+        await owner.send({ embeds: [welcomeEmbed] });
+        console.log(`📨 Sent security welcome message to server owner: ${owner.user.tag}`);
+      } catch (dmError) {
+        console.error(`❌ Could not send DM to server owner:`, dmError);
+        
+        // Try to find a suitable channel to send welcome message
+        try {
+          // Look for system, general, or welcome channels
+          const systemChannel = guild.systemChannel;
+          const generalChannel = guild.channels.cache.find(channel => 
+            channel.type === 0 && // Text channel
+            (channel.name.includes('general') || 
+             channel.name === 'general' || 
+             channel.name.includes('welcome') || 
+             channel.name.includes('chat'))
+          );
+          
+          const targetChannel = systemChannel || generalChannel;
+          
+          if (targetChannel) {
+            const serverEmbed = {
+              title: '🔒 Phantom Guard Security Activated',
+              description: `Thank you for adding Phantom Guard! **Maximum security has been automatically enabled** to protect your server.`,
+              color: 0x2ECC71, // Green
+              fields: [
+                {
+                  name: '🛡️ Security Features',
+                  value: 'All security features have been auto-enabled with maximum protection. Only the server owner can adjust security settings.'
+                },
+                {
+                  name: '⚙️ Commands',
+                  value: 'Use `/security`, `/antiraid`, `/antispam`, or `/lockdown` commands to manage security features.'
+                }
+              ],
+              footer: {
+                text: 'Phantom Guard • Advanced Security System'
+              }
+            };
+            
+            await targetChannel.send({ 
+              content: `<@${owner.id}> Server owner, please note:`,
+              embeds: [serverEmbed]
+            });
+          }
+        } catch (channelError) {
+          console.error(`❌ Could not send welcome message to any channel:`, channelError);
+        }
+      }
+    }
+    
+    // Initialize YouTube features if available
+    if (process.env.YOUTUBE_API_KEY) {
+      console.log(`📺 Setting up YouTube features for new server: ${guild.name}`);
+      // No need to do anything special, as these are set up on demand
+    }
+    
+  } catch (error) {
+    console.error(`❌ Error during automatic security setup for new server:`, error);
   }
 });
 

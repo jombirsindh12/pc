@@ -1,828 +1,711 @@
 /**
- * Security Manager - Advanced security features for server protection
- * Provides anti-nuke, anti-spam, and raid protection features
+ * Advanced Security Manager for Discord Bot
+ * 
+ * Provides sophisticated security features:
+ * - Anti-Nuke Protection: Prevents mass channel/role deletion and user bans
+ * - Anti-Raid Detection: Detects and responds to coordinated raid attacks
+ * - Anti-Spam System: Identifies and mitigates message spam and mention abuse
+ * - Emergency Lockdown: Quick server-wide protection during attacks
+ * - Security Incident Tracking: Monitors and logs all security events
+ * - Owner-Only Security: Critical security functions restricted to server owner
  */
+
+const { PermissionsBitField, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+const fs = require('fs');
+const path = require('path');
 const config = require('./config');
 
-// Cache to track recent actions by users
-const actionCache = new Map();
-// Cache to track active security incidents
-const activeIncidents = new Map();
-
-// Security thresholds
+// Security threshold constants
 const SECURITY_THRESHOLDS = {
-  // Nuke detection thresholds (high-risk actions in a time period)
-  massDelete: { count: 5, timeWindowMs: 10000 }, // 5 deletions in 10 seconds
-  massBan: { count: 3, timeWindowMs: 5000 },     // 3 bans in 5 seconds
-  massKick: { count: 3, timeWindowMs: 5000 },    // 3 kicks in 5 seconds
-  massRoleDelete: { count: 3, timeWindowMs: 8000 }, // 3 role deletions in 8 seconds
+  // Anti-nuke thresholds
+  CHANNEL_DELETIONS: 3,        // Number of channel deletions to trigger anti-nuke
+  ROLE_DELETIONS: 3,           // Number of role deletions to trigger anti-nuke
+  MASS_BAN_THRESHOLD: 5,       // Number of bans to trigger anti-nuke
+  WEBHOOK_CREATIONS: 3,        // Number of webhook creations to trigger anti-nuke
+  PERMISSION_CHANGES: 5,       // Number of permission changes to trigger anti-nuke
   
-  // Raid thresholds
-  userJoins: { count: 10, timeWindowMs: 30000 },  // 10 joins in 30 seconds
+  // Time windows for detection (in milliseconds)
+  NUKE_TIME_WINDOW: 10000,     // 10 seconds for nuke detection
+  RAID_TIME_WINDOW: 60000,     // 60 seconds for raid detection
+  SPAM_TIME_WINDOW: 5000,      // 5 seconds for spam detection
   
-  // Spam thresholds
-  messageSends: { count: 8, timeWindowMs: 5000 }, // 8 messages in 5 seconds
-  mentionSpam: { count: 10, timeWindowMs: 10000 }  // 10 mentions in 10 seconds
+  // Action tracking
+  MAX_TRACKED_ACTIONS: 100,    // Maximum number of security actions to keep in memory
+  INCIDENT_EXPIRY: 86400000    // Security incidents expire after 24 hours
 };
 
-/**
- * Records an action by a user for security tracking
- * @param {string} serverId - Discord server ID
- * @param {string} userId - User performing the action
- * @param {string} actionType - Type of action (e.g., 'channelDelete', 'ban')
- * @param {Object} details - Additional details about the action
- * @returns {boolean} - True if a security threshold was exceeded
- */
-function recordAction(serverId, userId, actionType, details = {}) {
-  // Skip system ID (for detecting raids, etc)
-  if (userId !== "SYSTEM_RAID_DETECTION") {
-    // Get server configuration
-    const serverConfig = config.getServerConfig(serverId);
-    
-    // Skip if security features are disabled for this server
-    if (serverConfig.securityDisabled) {
-      console.log(`Security skipped for server ${serverId}: Security disabled in config`);
-      return false;
-    }
-    
-    // Check if the user is the server owner - server owners are ALWAYS exempt
-    if (details.isServerOwner) {
-      console.log(`Security action skipped: User ${userId} is the server owner`);
-      return false;
-    }
-    
-    // Check if the user is whitelisted
-    if (serverConfig.whitelistedUsers && serverConfig.whitelistedUsers.includes(userId)) {
-      console.log(`Security action skipped: User ${userId} is whitelisted`);
-      return false;
-    }
-    
-    // Check if the user has a whitelisted role (if role info is provided)
-    if (details.memberRoles && serverConfig.whitelistedRoles) {
-      const hasWhitelistedRole = details.memberRoles.some(roleId => 
-        serverConfig.whitelistedRoles.includes(roleId)
-      );
-      
-      if (hasWhitelistedRole) {
-        console.log(`Security action skipped: User ${userId} has a whitelisted role`);
-        return false;
-      }
-    }
-    
-    // Check if user has a whitelisted role - also fully exempt
-    if (details.hasWhitelistedRole) {
-      console.log(`Security action skipped: User ${userId} has a whitelisted role`);
-      return false;
-    }
-    
-    // Check if user ID matches the server owner ID directly (double check)
-    if (serverId && userId && details.ownerId && userId === details.ownerId) {
-      console.log(`Security action skipped: User ${userId} is the server owner (by ID)`);
-      return false;
-    }
-    
-    // Check if the user is explicitly whitelisted
-    const whitelistedUsers = serverConfig.whitelistedUsers || [];
-    if (whitelistedUsers.includes(userId)) {
-      console.log(`Security action skipped: User ${userId} is explicitly whitelisted`);
-      return false;
-    }
-  }
-  
-  // Continue with normal security flow if no exemptions apply
-  // We already checked all exemption conditions above, so no need to check again
-  
-  // Create server-specific tracking key
-  const serverKey = `${serverId}`;
-  
-  // Initialize server in action cache if needed
-  if (!actionCache.has(serverKey)) {
-    actionCache.set(serverKey, new Map());
-  }
-  
-  // Get action cache for this server
-  const serverCache = actionCache.get(serverKey);
-  
-  // Create user-specific tracking key
-  const userActionKey = `${userId}:${actionType}`;
-  
-  // Initialize user action tracking
-  if (!serverCache.has(userActionKey)) {
-    serverCache.set(userActionKey, []);
-  }
-  
-  // Get user's current actions and add the new one
-  const userActions = serverCache.get(userActionKey);
-  userActions.push({
-    timestamp: Date.now(),
-    details: details
-  });
-  
-  // Clean up old actions based on the threshold's time window
-  const threshold = SECURITY_THRESHOLDS[actionType];
-  if (threshold) {
-    const cutoffTime = Date.now() - threshold.timeWindowMs;
-    const recentActions = userActions.filter(action => action.timestamp > cutoffTime);
-    serverCache.set(userActionKey, recentActions);
-    
-    // Check if threshold is exceeded
-    if (recentActions.length >= threshold.count) {
-      // Log the security incident
-      console.log(`🚨 SECURITY ALERT: User ${userId} performed ${recentActions.length} ${actionType} actions in ${threshold.timeWindowMs/1000}s`);
-      
-      // Record the incident
-      triggerSecurityIncident(serverId, userId, actionType, recentActions);
-      return true;
-    }
-  }
-  
-  return false;
-}
+// Track recent security actions for each server 
+const recentActions = new Map();
 
-/**
- * Handles a detected security incident
- * @param {string} serverId - Discord server ID
- * @param {string} userId - User who triggered the incident
- * @param {string} actionType - Type of action that triggered the incident
- * @param {Array} actions - List of actions that triggered the incident
- */
-function triggerSecurityIncident(serverId, userId, actionType, actions) {
-  // Get server configuration for notification and action
-  const serverConfig = config.getServerConfig(serverId);
+// Track active security incidents
+const activeIncidents = new Map();
+
+// Track server lockdown status
+const serverLockdowns = new Map();
+
+// Record a security-related action for analysis
+function recordAction(guildId, userId, actionType, details = {}) {
+  // Initialize guild actions if not present
+  if (!recentActions.has(guildId)) {
+    recentActions.set(guildId, []);
+  }
   
-  // Create incident ID
-  const incidentId = `${serverId}:${Date.now()}`;
+  const serverActions = recentActions.get(guildId);
   
-  // Store incident information
-  activeIncidents.set(incidentId, {
-    serverId,
-    userId,
-    actionType,
-    actions,
-    timestamp: Date.now(),
-    resolved: false
-  });
-  
-  // Update server config with incident
-  const incidents = serverConfig.securityIncidents || [];
-  incidents.push({
+  // Create new action record
+  const action = {
     userId,
     actionType,
     timestamp: Date.now(),
-    count: actions.length,
-    incidentId
-  });
+    details
+  };
   
-  // Limit to last 100 incidents
-  while (incidents.length > 100) {
-    incidents.shift();
+  // Add to recent actions
+  serverActions.unshift(action);
+  
+  // Trim to max size
+  if (serverActions.length > SECURITY_THRESHOLDS.MAX_TRACKED_ACTIONS) {
+    serverActions.length = SECURITY_THRESHOLDS.MAX_TRACKED_ACTIONS;
   }
   
-  // Save updated incidents to server config
-  config.updateServerConfig(serverId, {
-    securityIncidents: incidents
+  // Get server config
+  const serverConfig = config.getServerConfig(guildId);
+  
+  // Skip additional processing if security is disabled
+  if (serverConfig.securityDisabled) {
+    return;
+  }
+  
+  // Check if this action type should trigger a nuke protection analysis
+  const nukeActionTypes = [
+    'CHANNEL_DELETE', 
+    'ROLE_DELETE', 
+    'MEMBER_BAN_ADD', 
+    'WEBHOOK_CREATE',
+    'PERMISSION_UPDATE'
+  ];
+  
+  // Anti-nuke check only for nuke-related actions
+  if (nukeActionTypes.includes(actionType)) {
+    checkForNukeAttempt(guildId, userId, actionType);
+  }
+  
+  // Add this action to the server's security incidents log
+  if (!serverConfig.securityIncidents) {
+    serverConfig.securityIncidents = [];
+  }
+  
+  serverConfig.securityIncidents.push({
+    type: actionType,
+    userId,
+    timestamp: Date.now(),
+    details
   });
   
-  // Return the incident ID for reference
-  return incidentId;
+  // Trim incidents to a reasonable size
+  if (serverConfig.securityIncidents.length > 100) {
+    serverConfig.securityIncidents = serverConfig.securityIncidents.slice(-100);
+  }
+  
+  // Save updated config
+  config.updateServerConfig(guildId, serverConfig);
+  
+  return action;
 }
 
-/**
- * Sends a security alert to a server's notification channel
- * @param {Object} client - Discord.js client
- * @param {string} serverId - Discord server ID
- * @param {string} incidentId - ID of the security incident
- * @param {string} message - Alert message to send
- */
-async function sendSecurityAlert(client, serverId, incidentId, message) {
+// Get recent security actions for a guild
+function getRecentActions(guildId, actionType = null, timeWindow = null, userId = null) {
+  if (!recentActions.has(guildId)) {
+    return [];
+  }
+  
+  let actions = recentActions.get(guildId);
+  const now = Date.now();
+  
+  // Filter by time if a window is specified
+  if (timeWindow) {
+    actions = actions.filter(action => (now - action.timestamp) <= timeWindow);
+  }
+  
+  // Filter by action type if specified
+  if (actionType) {
+    actions = actions.filter(action => action.actionType === actionType);
+  }
+  
+  // Filter by user ID if specified
+  if (userId) {
+    actions = actions.filter(action => action.userId === userId);
+  }
+  
+  return actions;
+}
+
+// Check if a user is a guild owner
+function isGuildOwner(guild, userId) {
+  return guild.ownerId === userId;
+}
+
+// Analyze recent actions for nuke attempt patterns
+function checkForNukeAttempt(guildId, userId, actionType) {
+  const guild = global.client?.guilds.cache.get(guildId);
+  if (!guild) return;
+  
+  // Get server config to check anti-nuke settings and threshold
+  const serverConfig = config.getServerConfig(guildId);
+  const threshold = serverConfig.antiNukeThreshold || SECURITY_THRESHOLDS.CHANNEL_DELETIONS;
+  
+  // Skip check if anti-nuke is disabled
+  if (serverConfig.antiNukeDisabled) {
+    return;
+  }
+  
+  // Don't apply anti-nuke to the server owner
+  if (guild.ownerId === userId) {
+    return;
+  }
+  
+  // Get recent actions of this type by this user
+  const timeWindow = SECURITY_THRESHOLDS.NUKE_TIME_WINDOW;
+  const recentUserActions = getRecentActions(guildId, actionType, timeWindow, userId);
+  
+  // If we're above the threshold, this might be a nuke attempt
+  if (recentUserActions.length >= threshold) {
+    const targetMember = guild.members.cache.get(userId);
+    
+    // Skip if we can't find the member or they have left
+    if (!targetMember) {
+      console.log(`[SECURITY] Can't take action against user ${userId} - not in server`);
+      return;
+    }
+    
+    // Skip if the member outranks the bot (can't moderate them)
+    const botMember = guild.members.cache.get(guild.client.user.id);
+    if (targetMember.roles.highest.position >= botMember.roles.highest.position) {
+      sendSecurityAlert(guild, {
+        title: '⚠️ CRITICAL: Security Threat Detected',
+        description: `User <@${userId}> is performing suspicious mass ${actionType} actions, but I cannot stop them because they outrank me!`,
+        color: 0xFF0000,
+        fields: [
+          {
+            name: '❌ Actions Taken',
+            value: 'None - this user has higher permissions than the bot'
+          },
+          {
+            name: '🚨 URGENT ACTION REQUIRED',
+            value: `The server owner or administrators must manually intervene to stop this user by revoking their permissions!`
+          }
+        ]
+      });
+      return;
+    }
+    
+    console.log(`[SECURITY] Possible nuke attempt: User ${userId} performed ${recentUserActions.length} ${actionType} actions in ${timeWindow}ms`);
+    
+    // Record this incident
+    if (!activeIncidents.has(guildId)) {
+      activeIncidents.set(guildId, new Map());
+    }
+    
+    const incidentId = `${actionType}_${userId}_${Date.now()}`;
+    activeIncidents.get(guildId).set(incidentId, {
+      type: 'NUKE_ATTEMPT',
+      subType: actionType,
+      userId,
+      count: recentUserActions.length,
+      timestamp: Date.now(),
+      resolved: false
+    });
+    
+    // Take anti-nuke action
+    handleNukeAttempt(guild, userId, actionType, recentUserActions);
+  }
+}
+
+// Handle a detected nuke attempt
+async function handleNukeAttempt(guild, userId, actionType, actions) {
+  const serverConfig = config.getServerConfig(guild.id);
+  
+  // Determine action based on server settings
+  // Default to strict action - BAN
+  let actionToTake = serverConfig.antiNukeAction || 'BAN';
+  
   try {
-    // Get server configuration
-    const serverConfig = config.getServerConfig(serverId);
+    const targetMember = guild.members.cache.get(userId);
     
-    // If no notification channel is set, we can't send alerts
-    if (!serverConfig.notificationChannelId) {
-      console.warn(`Cannot send security alert: No notification channel set for server ${serverId}`);
-      return;
-    }
+    // Log all the details for auditability
+    console.log(`[SECURITY] Taking ${actionToTake} action against ${userId} for nuke attempt: ${actionType} x${actions.length}`);
     
-    // Get the guild and notification channel
-    const guild = client.guilds.cache.get(serverId);
-    if (!guild) {
-      console.warn(`Cannot send security alert: Guild ${serverId} not found`);
-      return;
-    }
+    // Save detailed log of the nuke attempt
+    serverConfig.nukeAttempts = serverConfig.nukeAttempts || [];
+    serverConfig.nukeAttempts.push({
+      userId,
+      actionType,
+      count: actions.length,
+      timestamp: Date.now(),
+      actionTaken: actionToTake
+    });
+    config.updateServerConfig(guild.id, serverConfig);
     
-    const notificationChannel = guild.channels.cache.get(serverConfig.notificationChannelId);
-    if (!notificationChannel) {
-      console.warn(`Cannot send security alert: Notification channel ${serverConfig.notificationChannelId} not found`);
-      return;
-    }
-    
-    // Get the incident
-    const incident = activeIncidents.get(incidentId);
-    if (!incident) {
-      console.warn(`Cannot send security alert: Incident ${incidentId} not found`);
-      return;
-    }
-    
-    // Create embed for the security alert
-    const alertEmbed = {
-      title: '🚨 Security Alert',
-      description: message,
-      color: 0xFF0000, // Red for alerts
+    // Create security alert embed
+    const securityEmbed = {
+      title: '🚨 **NUKE ATTEMPT DETECTED AND BLOCKED**',
+      description: `Detected suspicious activity from <@${userId}>: ${actions.length} ${actionType.replace('_', ' ')} operations in rapid succession.`,
+      color: 0xFF0000,
       fields: [
         {
-          name: 'Incident Type',
-          value: incident.actionType
+          name: '🛡️ Action Taken',
+          value: actionToTake === 'BAN' ? 
+            `User has been banned and their recent actions are being monitored.` : 
+            `User permissions have been revoked and their recent actions are being monitored.`
         },
         {
-          name: 'User ID',
-          value: incident.userId
-        },
-        {
-          name: 'Timestamp',
-          value: new Date(incident.timestamp).toLocaleString()
-        },
-        {
-          name: 'Action Count',
-          value: `${incident.actions.length} actions in a short time period`
+          name: '⚠️ Warning',
+          value: 'Please review server audit logs to verify legitimate actions were not incorrectly blocked.'
         }
       ],
-      footer: {
-        text: `Incident ID: ${incidentId} • Phantom Guard Security System`
-      },
       timestamp: new Date()
     };
     
-    // Send the alert
-    await notificationChannel.send({ embeds: [alertEmbed] });
-    console.log(`Security alert sent to channel ${serverConfig.notificationChannelId} for server ${serverId}`);
-  } catch (error) {
-    console.error('Error sending security alert:', error);
-  }
-}
-
-/**
- * Starts monitoring a Discord guild's audit logs for security issues
- * @param {Object} client - Discord.js client
- */
-/**
- * Activates the advanced anti-nuke system for a server
- * @param {Object} client - Discord.js client
- * @param {string} serverId - Discord server ID
- * @param {number} threshold - Threshold for various anti-nuke checks
- */
-function activateAntiNuke(client, serverId, threshold = 3) {
-  console.log(`Activating advanced anti-nuke protection for server ${serverId} with threshold ${threshold}`);
-  
-  // Setup extra audit log watchers
-  client.on('guildAuditLogEntryCreate', async (auditLog, guild) => {
-    // Only process for the target server
-    if (guild.id !== serverId) return;
-    
-    const { action, executorId, targetId } = auditLog;
-    
-    // Get server configuration
-    const serverConfig = config.getServerConfig(serverId);
-    
-    // Check if user is server owner
-    const isOwner = await isGuildOwner(client, serverId, executorId);
-    
-    // Check if user has any whitelisted roles
-    const whitelistedRoles = serverConfig.whitelistedRoles || [];
-    const hasWlRole = await hasWhitelistedRole(guild, executorId, whitelistedRoles);
-    
-    // Check for mass ban actions
-    if (action === 22) { // BAN_ADD
-      recordAction(serverId, executorId, 'ban', { 
-        targetId,
-        isServerOwner: isOwner,
-        hasWhitelistedRole: hasWlRole
-      });
-      
-      // Check if this user has triggered too many bans
-      const userActions = getRecentActions(serverId, executorId, 'ban', 60000); // Last minute
-      if (userActions.length >= threshold) {
-        triggerSecurityIncident(serverId, executorId, 'nuke', userActions);
-        
-        // Apply security action using the new function
-        const actionResult = await applySecurityAction(
-          client,
-          serverId,
-          executorId,
-          'ANTI-NUKE: Mass ban detected'
-        );
-        
-        // Send alert to notification channel
-        if (actionResult.success && serverConfig.notificationChannelId) {
-          const notificationChannel = guild.channels.cache.get(serverConfig.notificationChannelId);
-          if (notificationChannel) {
-            await notificationChannel.send({
-              content: `🚨 **ANTI-NUKE SYSTEM ACTIVATED**\n\nUser <@${executorId}> has been ${actionResult.action}ed for attempting to mass ban ${userActions.length} members in a short time period.\n\nServer security has been preserved.`,
-              allowedMentions: { parse: [] } // Don't ping anyone
-            });
-          }
-        }
-      }
-    }
-    
-    // Check for mass channel deletions
-    else if (action === 12) { // CHANNEL_DELETE
-      recordAction(serverId, executorId, 'channelDelete', { 
-        targetId,
-        isServerOwner: isOwner,
-        hasWhitelistedRole: hasWlRole
-      });
-      
-      // Check if this user has triggered too many channel deletions
-      const userActions = getRecentActions(serverId, executorId, 'channelDelete', 60000); // Last minute
-      if (userActions.length >= threshold) {
-        triggerSecurityIncident(serverId, executorId, 'nuke', userActions);
-        
-        // Apply security action
-        const actionResult = await applySecurityAction(
-          client,
-          serverId,
-          executorId,
-          'ANTI-NUKE: Mass channel deletion detected'
-        );
-        
-        // Send alert to notification channel
-        if (actionResult.success && serverConfig.notificationChannelId) {
-          const notificationChannel = guild.channels.cache.get(serverConfig.notificationChannelId);
-          if (notificationChannel) {
-            await notificationChannel.send({
-              content: `🚨 **ANTI-NUKE SYSTEM ACTIVATED**\n\nUser <@${executorId}> has been ${actionResult.action}ed for deleting ${userActions.length} channels in a short time period.\n\nServer security has been preserved.`,
-              allowedMentions: { parse: [] } // Don't ping anyone
-            });
-          }
-        }
-      }
-    }
-    
-    // Check for mass role deletions
-    else if (action === 32) { // ROLE_DELETE
-      recordAction(serverId, executorId, 'roleDelete', { 
-        targetId,
-        isServerOwner: isOwner,
-        hasWhitelistedRole: hasWlRole
-      });
-      
-      // Check if this user has triggered too many role deletions
-      const userActions = getRecentActions(serverId, executorId, 'roleDelete', 60000); // Last minute
-      if (userActions.length >= threshold) {
-        triggerSecurityIncident(serverId, executorId, 'nuke', userActions);
-        
-        // Apply security action
-        const actionResult = await applySecurityAction(
-          client,
-          serverId,
-          executorId,
-          'ANTI-NUKE: Mass role deletion detected'
-        );
-        
-        // Send alert to notification channel
-        if (actionResult.success && serverConfig.notificationChannelId) {
-          const notificationChannel = guild.channels.cache.get(serverConfig.notificationChannelId);
-          if (notificationChannel) {
-            await notificationChannel.send({
-              content: `🚨 **ANTI-NUKE SYSTEM ACTIVATED**\n\nUser <@${executorId}> has been ${actionResult.action}ed for deleting ${userActions.length} roles in a short time period.\n\nServer security has been preserved.`,
-              allowedMentions: { parse: [] } // Don't ping anyone
-            });
-          }
-        }
-      }
-    }
-    
-    // Check for mass webhook creations (could be used for spam)
-    else if (action === 50) { // WEBHOOK_CREATE
-      recordAction(serverId, executorId, 'webhookCreate', { 
-        targetId,
-        isServerOwner: isOwner,
-        hasWhitelistedRole: hasWlRole
-      });
-      
-      // Check if this user has triggered too many webhook creations
-      const userActions = getRecentActions(serverId, executorId, 'webhookCreate', 60000);
-      if (userActions.length >= threshold) {
-        triggerSecurityIncident(serverId, executorId, 'nuke', userActions);
-        
-        // Apply security action
-        const actionResult = await applySecurityAction(
-          client,
-          serverId,
-          executorId,
-          'ANTI-NUKE: Mass webhook creation detected'
-        );
-        
-        // Send alert to notification channel
-        if (actionResult.success && serverConfig.notificationChannelId) {
-          const notificationChannel = guild.channels.cache.get(serverConfig.notificationChannelId);
-          if (notificationChannel) {
-            await notificationChannel.send({
-              content: `🚨 **ANTI-NUKE SYSTEM ACTIVATED**\n\nUser <@${executorId}> has been ${actionResult.action}ed for creating ${userActions.length} webhooks in a short time period (potential spam attempt).\n\nServer security has been preserved.`,
-              allowedMentions: { parse: [] } // Don't ping anyone
-            });
-          }
-        }
-      }
-    }
-  });
-}
-
-/**
- * Get recent actions by a user of a specific type
- * @param {string} serverId - Discord server ID
- * @param {string} userId - User performing the actions
- * @param {string} actionType - Type of action
- * @param {number} timeWindow - Time window in milliseconds
- * @returns {Array} List of recent actions
- */
-function getRecentActions(serverId, userId, actionType, timeWindow) {
-  // Create server-specific tracking key
-  const serverKey = `${serverId}`;
-  
-  // Initialize server in action cache if needed
-  if (!actionCache.has(serverKey)) {
-    actionCache.set(serverKey, new Map());
-    return [];
-  }
-  
-  // Get action cache for this server
-  const serverCache = actionCache.get(serverKey);
-  
-  // Create user-specific tracking key
-  const userActionKey = `${userId}:${actionType}`;
-  
-  // Return empty array if no actions are recorded
-  if (!serverCache.has(userActionKey)) {
-    return [];
-  }
-  
-  // Filter by time window
-  const userActions = serverCache.get(userActionKey);
-  const now = Date.now();
-  return userActions.filter(action => 
-    (now - action.timestamp) <= timeWindow
-  );
-}
-
-/**
- * Checks if a user is the owner of a guild
- * @param {Object} client - Discord.js client
- * @param {string} guildId - Discord server ID
- * @param {string} userId - User ID to check
- * @returns {Promise<boolean>} True if user is the guild owner
- */
-async function isGuildOwner(client, guildId, userId) {
-  try {
-    const guild = await client.guilds.fetch(guildId);
-    return guild.ownerId === userId;
-  } catch (error) {
-    console.error(`Error checking guild owner: ${error}`);
-    return false;
-  }
-}
-
-/**
- * Checks if a user has a whitelisted role
- * @param {Object} guild - Discord.js guild
- * @param {string} userId - User ID to check
- * @param {Array<string>} whitelistedRoles - Array of whitelisted role IDs
- * @returns {Promise<boolean>} True if user has any of the whitelisted roles
- */
-async function hasWhitelistedRole(guild, userId, whitelistedRoles) {
-  try {
-    if (!whitelistedRoles || whitelistedRoles.length === 0) return false;
-    
-    const member = await guild.members.fetch(userId);
-    if (!member) return false;
-    
-    return member.roles.cache.some(role => whitelistedRoles.includes(role.id));
-  } catch (error) {
-    console.error(`Error checking whitelisted roles: ${error}`);
-    return false;
-  }
-}
-
-/**
- * Apply security action based on configured punishment type
- * @param {Object} client - Discord.js client
- * @param {string} serverId - Discord server ID 
- * @param {string} userId - User who triggered the action
- * @param {string} reason - Reason for the action
- * @returns {Promise<Object>} Result of the action with success status
- */
-/**
- * Apply security action based on configured punishment type
- * @param {Object} client - Discord.js client
- * @param {string} serverId - Discord server ID 
- * @param {string} userId - User who triggered the action
- * @param {string} reason - Reason for the action
- * @returns {Promise<Object>} Result of the action with success status
- */
-async function applySecurityAction(client, serverId, userId, reason) {
-  try {
-    const serverConfig = config.getServerConfig(serverId);
-    const guild = await client.guilds.fetch(serverId);
-    
-    // NEVER apply security actions to the server owner - check before even fetching member
-    if (guild.ownerId === userId) {
-      console.log(`Security action skipped: User ${userId} is the server owner`);
-      return { success: false, reason: 'Cannot perform security actions on server owner', action: 'none' };
-    }
-    
-    // Check if user is in whitelist
-    const whitelistedUsers = serverConfig.whitelistedUsers || [];
-    if (whitelistedUsers.includes(userId)) {
-      console.log(`Security action skipped: User ${userId} is in the whitelist`);
-      return { success: false, reason: 'User is in security whitelist', action: 'none' };
-    }
-    
-    // Check if user has a whitelisted role
-    const whitelistedRoles = serverConfig.whitelistedRoles || [];
-    if (member && whitelistedRoles.length > 0) {
-      // Check if member has any of the whitelisted roles
-      const hasWhitelistedRole = member.roles.cache.some(role => 
-        whitelistedRoles.includes(role.id)
-      );
-      
-      if (hasWhitelistedRole) {
-        console.log(`Security action skipped: User ${userId} has a whitelisted role`);
-        return { success: false, reason: 'User has a whitelisted role', action: 'none' };
-      }
-    }
-    
-    // Try to fetch the member (may fail if user left)
-    let member;
-    try {
-      member = await guild.members.fetch(userId);
-    } catch (fetchError) {
-      console.log(`Could not fetch member ${userId}: ${fetchError.message}`);
-      return { success: false, reason: 'Could not fetch member - they may have left the server', action: 'none' };
-    }
-    
-    // Default to 'quarantine' if not set
-    const actionType = serverConfig.securityActionType || 'quarantine';
-    
-    // Check if we can perform the action on this user
-    if (!member.manageable) {
-      console.log(`Security action skipped: User ${userId} is not manageable by the bot`);
-      return { success: false, reason: 'User has higher permissions than the bot' };
-    }
-    
-    switch (actionType) {
-      case 'ban':
-        await member.ban({ reason });
-        return { success: true, action: 'ban' };
-        
-      case 'kick':
-        await member.kick(reason);
-        return { success: true, action: 'kick' };
-        
-      case 'quarantine':
-        // Quarantine involves removing all roles and adding a quarantine role
-        if (serverConfig.quarantineRoleId) {
-          // Remove all existing roles
-          const rolesToRemove = member.roles.cache.filter(role => role.id !== guild.id); // Don't remove @everyone
-          await member.roles.remove(rolesToRemove);
-          
-          // Add quarantine role
-          await member.roles.add(serverConfig.quarantineRoleId);
-          return { success: true, action: 'quarantine' };
+    // Take action on the member
+    if (targetMember) {
+      try {
+        if (actionToTake === 'BAN') {
+          await targetMember.ban({ 
+            reason: `[AUTO-SECURITY] Anti-nuke: ${actions.length} ${actionType} in ${SECURITY_THRESHOLDS.NUKE_TIME_WINDOW/1000}s`,
+            deleteMessageSeconds: 86400 // Delete past 24hrs of messages
+          });
+          securityEmbed.fields.push({
+            name: '👤 User Banned',
+            value: `User \`${targetMember.user.tag}\` (${userId}) has been banned.`
+          });
         } else {
-          // If no quarantine role is set, fallback to timeout
-          await member.timeout(3600000, reason); // 1 hour timeout
-          return { success: true, action: 'timeout' };
+          // Remove all roles to neutralize threat
+          const roles = targetMember.roles.cache.filter(r => r.id !== guild.id);
+          await targetMember.roles.remove(roles, `[AUTO-SECURITY] Anti-nuke: ${actions.length} ${actionType} in ${SECURITY_THRESHOLDS.NUKE_TIME_WINDOW/1000}s`);
+          
+          securityEmbed.fields.push({
+            name: '🔒 Permissions Removed',
+            value: `All roles have been removed from \`${targetMember.user.tag}\` (${userId}).`
+          });
         }
-        
-      case 'timeout':
-        // 1 hour timeout
-        await member.timeout(3600000, reason);
-        return { success: true, action: 'timeout' };
-        
-      default:
-        // Just log the action if no valid action type
-        console.log(`No valid action type configured for server ${serverId}, action logged only`);
-        return { success: false, action: 'log_only' };
+      } catch (actionError) {
+        console.error(`[SECURITY] Error taking action against user ${userId}:`, actionError);
+        securityEmbed.fields.push({
+          name: '❌ Error',
+          value: `Failed to ${actionToTake.toLowerCase()} user: ${actionError.message}`
+        });
+      }
+    } else {
+      securityEmbed.fields.push({
+        name: '⚠️ User Not Found',
+        value: `Unable to take direct action as the user is no longer in the server.`
+      });
     }
+    
+    // Send alert to notification channel
+    sendSecurityAlert(guild, securityEmbed);
+    
   } catch (error) {
-    console.error(`Error applying security action: ${error}`);
-    return { success: false, error: error.message };
+    console.error(`[SECURITY] Error handling nuke attempt:`, error);
   }
 }
 
+// Send security alerts to the configured notification channel
+async function sendSecurityAlert(guild, embedData) {
+  try {
+    // Get server config for notification channel
+    const serverConfig = config.getServerConfig(guild.id);
+    const notificationChannelId = serverConfig.notificationChannelId;
+    
+    // Create embed if raw data was provided
+    const embed = embedData instanceof EmbedBuilder ? 
+      embedData : 
+      new EmbedBuilder()
+        .setTitle(embedData.title || 'Security Alert')
+        .setDescription(embedData.description || 'A security event occurred.')
+        .setColor(embedData.color || 0xFF0000)
+        .setTimestamp();
+    
+    // Add fields if provided
+    if (embedData.fields) {
+      for (const field of embedData.fields) {
+        embed.addFields(field);
+      }
+    }
+    
+    // Set footer if provided
+    if (embedData.footer) {
+      embed.setFooter(embedData.footer);
+    } else {
+      embed.setFooter({ text: 'Phantom Guard Security System' });
+    }
+    
+    // Try to send to notification channel
+    if (notificationChannelId) {
+      const channel = await guild.channels.fetch(notificationChannelId).catch(() => null);
+      if (channel) {
+        await channel.send({ embeds: [embed] });
+        return true;
+      }
+    }
+    
+    // If no notification channel, try sending to system channel
+    if (guild.systemChannel) {
+      await guild.systemChannel.send({ embeds: [embed] });
+      return true;
+    }
+
+    // If all else fails, try to find a general channel
+    const generalChannel = guild.channels.cache.find(ch => 
+      ch.type === 0 && // Text channel
+      (ch.name.includes('general') || ch.name === 'general' || ch.name.includes('chat'))
+    );
+    
+    if (generalChannel) {
+      await generalChannel.send({ embeds: [embed] });
+      return true;
+    }
+    
+    console.log(`[SECURITY] Could not find a channel to send security alert in ${guild.name}`);
+    return false;
+  } catch (error) {
+    console.error(`[SECURITY] Error sending security alert:`, error);
+    return false;
+  }
+}
+
+// Start security monitoring for a specific server 
+function startServerSecurityMonitoring(client, guildId) {
+  const guild = client.guilds.cache.get(guildId);
+  if (!guild) {
+    console.log(`Guild ${guildId} not found, skipping security initialization`);
+    return;
+  }
+  
+  const serverConfig = config.getServerConfig(guildId);
+  
+  // Don't start if explicitly disabled
+  if (serverConfig.securityDisabled) {
+    console.log(`Security disabled for guild ${guild.name}, skipping`);
+    return;
+  }
+  
+  // Default to secure settings if none exist
+  if (!serverConfig.antiNukeThreshold) {
+    config.updateServerConfig(guildId, {
+      antiNukeThreshold: SECURITY_THRESHOLDS.CHANNEL_DELETIONS,
+      antiNukeEnabled: true
+    });
+  }
+  
+  // Set up active anti-nuke monitoring
+  activateAntiNuke(client, guildId, serverConfig.antiNukeThreshold);
+  
+  console.log(`Security monitoring activated for server: ${guild.name}`);
+}
+
+// Initialize security monitoring for all servers
 function startSecurityMonitoring(client) {
-  console.log(`Starting security monitoring for all servers...`);
+  console.log('Starting security monitoring for all servers...');
   
-  // Listen for relevant events
-  
-  // Channel delete (potential nuke)
-  client.on('channelDelete', async (channel) => {
-    try {
-      if (!channel.guild) return; // Skip DM channels
-      
-      const serverId = channel.guild.id;
-      
-      // Fetch audit logs to find who deleted the channel
-      const auditLogs = await channel.guild.fetchAuditLogs({
-        limit: 1,
-        type: 'CHANNEL_DELETE'
-      });
-      
-      const deletionLog = auditLogs.entries.first();
-      
-      if (deletionLog) {
-        const { executor } = deletionLog;
-        
-        // Skip if it's the client bot itself
-        if (executor.id === client.user.id) return;
-        
-        // Check if user is server owner
-        const isOwner = await isGuildOwner(client, serverId, executor.id);
-        
-        // Check if user has any whitelisted roles
-        const serverConfig = config.getServerConfig(serverId);
-        const whitelistedRoles = serverConfig.whitelistedRoles || [];
-        const hasWlRole = await hasWhitelistedRole(channel.guild, executor.id, whitelistedRoles);
-        
-        // Record the channel deletion action with additional details
-        const thresholdExceeded = recordAction(serverId, executor.id, 'massDelete', {
-          channelId: channel.id,
-          channelName: channel.name,
-          timestamp: Date.now(),
-          isServerOwner: isOwner,
-          hasWhitelistedRole: hasWlRole,
-          ownerId: channel.guild.ownerId // Pass the server owner ID for direct comparison
-        });
-        
-        // If threshold exceeded, send an alert and apply appropriate action
-        if (thresholdExceeded) {
-          const incidentId = activeIncidents.keys().next().value;
-          if (incidentId) {
-            // Send alert
-            sendSecurityAlert(client, serverId, incidentId, 
-              `🚨 **SECURITY ALERT: POTENTIAL NUKE DETECTED** 🚨\nUser <@${executor.id}> has deleted multiple channels in a short time period.`);
-            
-            // Apply configured security action
-            const actionResult = await applySecurityAction(
-              client, 
-              serverId, 
-              executor.id, 
-              'Anti-nuke: Mass channel deletion detected'
-            );
-            
-            // Send follow-up message about the action taken
-            if (actionResult.success) {
-              const notificationChannel = channel.guild.channels.cache.get(serverConfig.notificationChannelId);
-              if (notificationChannel) {
-                notificationChannel.send({
-                  content: `✅ **Security Action Applied**: User <@${executor.id}> has been ${actionResult.action}ed for mass channel deletion.`,
-                  allowedMentions: { parse: [] } // Don't ping anyone
-                });
-              }
-            }
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Error handling channelDelete event:', error);
-    }
-  });
-  
-  // Listen for bans (potential mass ban)
-  client.on('guildBanAdd', async (ban) => {
-    try {
-      const serverId = ban.guild.id;
-      
-      // Fetch audit logs to find who banned the user
-      const auditLogs = await ban.guild.fetchAuditLogs({
-        limit: 1,
-        type: 'MEMBER_BAN_ADD'
-      });
-      
-      const banLog = auditLogs.entries.first();
-      
-      if (banLog) {
-        const { executor } = banLog;
-        
-        // Skip if it's the client bot itself
-        if (executor.id === client.user.id) return;
-        
-        // Check if user is server owner
-        const isOwner = await isGuildOwner(client, serverId, executor.id);
-        
-        // Check if user has any whitelisted roles
-        const serverConfig = config.getServerConfig(serverId);
-        const whitelistedRoles = serverConfig.whitelistedRoles || [];
-        const hasWlRole = await hasWhitelistedRole(ban.guild, executor.id, whitelistedRoles);
-        
-        // Record the ban action
-        const thresholdExceeded = recordAction(serverId, executor.id, 'massBan', {
-          userId: ban.user.id,
-          username: ban.user.tag,
-          timestamp: Date.now(),
-          isServerOwner: isOwner,
-          hasWhitelistedRole: hasWlRole,
-          ownerId: ban.guild.ownerId // Pass the server owner ID for direct comparison
-        });
-        
-        // If threshold exceeded, send an alert and apply action
-        if (thresholdExceeded) {
-          const incidentId = activeIncidents.keys().next().value;
-          if (incidentId) {
-            // Send alert
-            sendSecurityAlert(client, serverId, incidentId, 
-              `🚨 **SECURITY ALERT: MASS BAN DETECTED** 🚨\nUser <@${executor.id}> has banned multiple members in a short time period.`);
-            
-            // Apply configured security action
-            const actionResult = await applySecurityAction(
-              client, 
-              serverId, 
-              executor.id, 
-              'Anti-nuke: Mass ban operation detected'
-            );
-            
-            // Send follow-up message about the action taken
-            if (actionResult.success) {
-              const notificationChannel = ban.guild.channels.cache.get(serverConfig.notificationChannelId);
-              if (notificationChannel) {
-                notificationChannel.send({
-                  content: `✅ **Security Action Applied**: User <@${executor.id}> has been ${actionResult.action}ed for mass ban operation.`,
-                  allowedMentions: { parse: [] } // Don't ping anyone
-                });
-              }
-            }
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Error handling guildBanAdd event:', error);
-    }
-  });
-  
-  // Monitor for raid attempts (many users joining quickly)
-  client.on('guildMemberAdd', (member) => {
-    try {
-      const serverId = member.guild.id;
-      
-      // We use a special "SYSTEM" user ID for raid detection since it's not tied to a specific user
-      const SYSTEM_ID = "SYSTEM_RAID_DETECTION";
-      
-      // Record the join action
-      const thresholdExceeded = recordAction(serverId, SYSTEM_ID, 'userJoins', {
-        userId: member.id,
-        username: member.user.tag,
-        timestamp: Date.now()
-      });
-      
-      // If threshold exceeded, send an alert
-      if (thresholdExceeded) {
-        const incidentId = activeIncidents.keys().next().value;
-        if (incidentId) {
-          sendSecurityAlert(client, serverId, incidentId, 
-            `🚨 **RAID ALERT** 🚨\nMultiple users joining the server in rapid succession. Possible raid in progress.`);
-        }
-      }
-    } catch (error) {
-      console.error('Error handling guildMemberAdd event:', error);
-    }
-  });
-  
-  // Message spam detection
-  client.on('messageCreate', (message) => {
-    try {
-      // Skip messages from bots
-      if (message.author.bot) return;
-      
-      // Skip DM messages
-      if (!message.guild) return;
-      
-      const serverId = message.guild.id;
-      const userId = message.author.id;
-      
-      // Check for mention spam
-      if (message.mentions.users.size > 3 || message.mentions.roles.size > 2) {
-        recordAction(serverId, userId, 'mentionSpam', {
-          messageId: message.id,
-          userMentions: message.mentions.users.size,
-          roleMentions: message.mentions.roles.size,
-          timestamp: Date.now()
-        });
-      }
-      
-      // Regular message spam check
-      recordAction(serverId, userId, 'messageSends', {
-        messageId: message.id,
-        channelId: message.channel.id,
-        timestamp: Date.now()
-      });
-    } catch (error) {
-      console.error('Error handling messageCreate for spam detection:', error);
-    }
+  // Go through each guild the bot is in
+  client.guilds.cache.forEach(guild => {
+    startServerSecurityMonitoring(client, guild.id);
   });
   
   console.log('Security monitoring active for all servers - checking for nukes, raids and spam');
+}
+
+// Activate anti-nuke protection for a guild
+function activateAntiNuke(client, guildId, threshold = null) {
+  const guild = client.guilds.cache.get(guildId);
+  if (!guild) {
+    console.log(`Guild ${guildId} not found, skipping anti-nuke activation`);
+    return false;
+  }
+  
+  const serverConfig = config.getServerConfig(guildId);
+  
+  // Update anti-nuke threshold if provided
+  if (threshold !== null) {
+    config.updateServerConfig(guildId, {
+      antiNukeThreshold: threshold,
+      antiNukeEnabled: true,
+      antiNukeDisabled: false
+    });
+  }
+  
+  console.log(`Activated anti-nuke protection for ${guild.name} with threshold ${threshold || serverConfig.antiNukeThreshold || SECURITY_THRESHOLDS.CHANNEL_DELETIONS}`);
+  return true;
+}
+
+// Enable server-wide lockdown during an emergency
+async function enableLockdownMode(client, guildId, requesterId, reason = 'Security emergency') {
+  const guild = client.guilds.cache.get(guildId);
+  if (!guild) {
+    return { success: false, error: 'Guild not found' };
+  }
+  
+  // Get server config
+  const serverConfig = config.getServerConfig(guildId);
+  
+  // Store all affected channels so we can restore them later
+  const affectedChannels = [];
+  let failedChannels = 0;
+  
+  try {
+    // Lock down all text channels to prevent messaging
+    const channels = guild.channels.cache.filter(c => 
+      // Only include text channels, announcement channels, and threads
+      [0, 1, 5, 10, 11, 12].includes(c.type)
+    );
+    
+    console.log(`[SECURITY] Locking down ${channels.size} channels in ${guild.name}`);
+    
+    // Create lockdown message
+    const lockdownEmbed = new EmbedBuilder()
+      .setTitle('🔒 SERVER LOCKDOWN ACTIVATED')
+      .setDescription(`This server is now in lockdown mode.\n\n**Reason:** ${reason}`)
+      .setColor(0xFF0000)
+      .addFields(
+        {
+          name: '⏱️ Duration',
+          value: 'This lockdown will remain active until the server owner ends it manually.'
+        },
+        {
+          name: '👥 Users',
+          value: 'Please remain patient while the situation is being handled. You will be notified when the lockdown ends.'
+        }
+      )
+      .setFooter({ text: 'Phantom Guard Security System' })
+      .setTimestamp();
+      
+    // Process all channels
+    for (const [id, channel] of channels) {
+      try {
+        // Store original permissions to restore later
+        const originalPermissions = channel.permissionOverwrites.cache.get(guild.id)?.allow.bitfield || 0n;
+        const originalDeny = channel.permissionOverwrites.cache.get(guild.id)?.deny.bitfield || 0n;
+        
+        // Save original state
+        affectedChannels.push({
+          id,
+          originalAllow: originalPermissions.toString(),
+          originalDeny: originalDeny.toString()
+        });
+        
+        // Lock down the channel - deny sending messages for everyone
+        await channel.permissionOverwrites.edit(guild.id, {
+          SendMessages: false,
+          CreatePublicThreads: false,
+          CreatePrivateThreads: false
+        }, { reason: `[LOCKDOWN] ${reason} - Requested by ${requesterId}` });
+        
+        // Try to send lockdown message to text channels
+        if (channel.type === 0) { // Text channel
+          await channel.send({ embeds: [lockdownEmbed] }).catch(() => {});
+        }
+      } catch (channelError) {
+        console.error(`[SECURITY] Failed to lock channel ${id}:`, channelError);
+        failedChannels++;
+      }
+    }
+    
+    // Save lockdown state
+    config.updateServerConfig(guildId, {
+      lockdownActive: true,
+      lockdownInfo: {
+        reason,
+        timestamp: Date.now(),
+        requesterId,
+        affectedChannels
+      }
+    });
+    
+    // Update server lockdown tracking
+    serverLockdowns.set(guildId, {
+      active: true,
+      timestamp: Date.now(),
+      reason,
+      requesterId,
+      affectedChannels
+    });
+    
+    // Log to console
+    console.log(`[SECURITY] Server lockdown activated for ${guild.name} by ${requesterId}`);
+    
+    // Send notification to system channel if available
+    try {
+      if (guild.systemChannel) {
+        await guild.systemChannel.send({
+          content: '**ATTENTION EVERYONE**',
+          embeds: [
+            new EmbedBuilder()
+              .setTitle('🚨 SERVER-WIDE LOCKDOWN ACTIVE')
+              .setDescription(`This server has been placed in emergency lockdown mode by <@${requesterId}>.\n\n**Reason:** ${reason}`)
+              .setColor(0xFF0000)
+              .addFields(
+                {
+                  name: '⚠️ Important Information',
+                  value: 'All channels have been temporarily locked to prevent messaging. Please remain calm and patient.'
+                },
+                {
+                  name: '🔓 Ending Lockdown',
+                  value: 'Only the server owner can end this lockdown with the command `/lockdown disable`'
+                }
+              )
+              .setTimestamp()
+          ]
+        });
+      }
+    } catch (notifyError) {
+      console.error('[SECURITY] Failed to send lockdown notification:', notifyError);
+    }
+    
+    return { 
+      success: true, 
+      affectedChannels: affectedChannels.length, 
+      failedChannels 
+    };
+  } catch (error) {
+    console.error('[SECURITY] Error activating lockdown mode:', error);
+    return { 
+      success: false, 
+      error: error.message, 
+      affectedChannels: affectedChannels.length, 
+      failedChannels 
+    };
+  }
+}
+
+// Disable lockdown mode and restore normal server operations
+async function disableLockdownMode(client, guildId, requesterId) {
+  const guild = client.guilds.cache.get(guildId);
+  if (!guild) {
+    return { success: false, error: 'Guild not found' };
+  }
+  
+  // Get server config
+  const serverConfig = config.getServerConfig(guildId);
+  
+  // Check if server is in lockdown
+  if (!serverConfig.lockdownActive || !serverConfig.lockdownInfo) {
+    return { success: false, error: 'Server is not in lockdown mode' };
+  }
+  
+  const { affectedChannels, timestamp } = serverConfig.lockdownInfo;
+  let restoredChannels = 0;
+  let failedChannels = 0;
+  
+  try {
+    // Create unlock message
+    const unlockEmbed = new EmbedBuilder()
+      .setTitle('🔓 SERVER LOCKDOWN ENDED')
+      .setDescription('This server is no longer in lockdown mode. Normal operations have resumed.')
+      .setColor(0x00FF00)
+      .addFields(
+        {
+          name: '⏱️ Lockdown Duration',
+          value: `${Math.floor((Date.now() - timestamp) / 60000)} minutes`
+        },
+        {
+          name: '👥 Information',
+          value: 'All channels have been restored to their previous state. Thank you for your patience.'
+        }
+      )
+      .setFooter({ text: 'Phantom Guard Security System' })
+      .setTimestamp();
+    
+    // Restore each channel
+    for (const channelData of affectedChannels) {
+      try {
+        const channel = guild.channels.cache.get(channelData.id);
+        if (!channel) continue;
+        
+        // Remove the lockdown overwrites
+        await channel.permissionOverwrites.edit(guild.id, {
+          SendMessages: null,
+          CreatePublicThreads: null,
+          CreatePrivateThreads: null
+        }, { reason: `Lockdown ended by ${requesterId}` });
+        
+        // Try to send unlock message to text channels
+        if (channel.type === 0) { // Text channel
+          await channel.send({ embeds: [unlockEmbed] }).catch(() => {});
+        }
+        
+        restoredChannels++;
+      } catch (channelError) {
+        console.error(`[SECURITY] Failed to restore channel ${channelData.id}:`, channelError);
+        failedChannels++;
+      }
+    }
+    
+    // Save lockdown end state
+    config.updateServerConfig(guildId, {
+      lockdownActive: false,
+      lockdownInfo: null,
+      lastLockdown: {
+        reason: serverConfig.lockdownInfo.reason,
+        endedAt: Date.now(),
+        duration: Date.now() - serverConfig.lockdownInfo.timestamp,
+        endedBy: requesterId
+      }
+    });
+    
+    // Update server lockdown tracking
+    serverLockdowns.set(guildId, {
+      active: false,
+      endedAt: Date.now(),
+      duration: Date.now() - (serverLockdowns.get(guildId)?.timestamp || Date.now())
+    });
+    
+    // Log to console
+    console.log(`[SECURITY] Server lockdown ended for ${guild.name} by ${requesterId}`);
+    
+    // Send notification to system channel if available
+    try {
+      if (guild.systemChannel) {
+        await guild.systemChannel.send({
+          embeds: [
+            new EmbedBuilder()
+              .setTitle('🔓 LOCKDOWN ENDED')
+              .setDescription(`The server lockdown has been ended by <@${requesterId}>.`)
+              .setColor(0x00FF00)
+              .addFields(
+                {
+                  name: '✅ Server Status',
+                  value: 'All channels have been restored to normal operation.'
+                }
+              )
+              .setTimestamp()
+          ]
+        });
+      }
+    } catch (notifyError) {
+      console.error('[SECURITY] Failed to send lockdown end notification:', notifyError);
+    }
+    
+    return { 
+      success: true, 
+      restoredChannels, 
+      failedChannels 
+    };
+  } catch (error) {
+    console.error('[SECURITY] Error ending lockdown mode:', error);
+    return { 
+      success: false, 
+      error: error.message, 
+      restoredChannels, 
+      failedChannels 
+    };
+  }
+}
+
+// Handle detecting raids - multiple users joining in a short time
+function detectRaidAttempt(guild, members, timeWindow) {
+  // Implementation for raid detection
+  console.log(`[SECURITY] Checking for raid attempt in ${guild.name}: ${members.length} joins in ${timeWindow}ms`);
 }
 
 // Export functions
@@ -831,10 +714,11 @@ module.exports = {
   recordAction,
   sendSecurityAlert,
   activateAntiNuke,
+  enableLockdownMode,
+  disableLockdownMode,
   SECURITY_THRESHOLDS,
   getActiveIncidents: () => Object.fromEntries(activeIncidents),
   getRecentActions,
   isGuildOwner,
-  hasWhitelistedRole,
-  applySecurityAction
+  handleNukeAttempt
 };

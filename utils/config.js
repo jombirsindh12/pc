@@ -1,225 +1,184 @@
+/**
+ * Configuration Manager for Discord Bot
+ * 
+ * Handles per-server configuration storage and access.
+ * Configurations are stored in both memory and on disk.
+ */
+
 const fs = require('fs');
 const path = require('path');
 
-// Path to the config and server config directories
-const CONFIG_DIR = path.join(__dirname, '..', 'config');
-const GLOBAL_CONFIG_FILE = path.join(CONFIG_DIR, 'global.json');
-const SERVER_CONFIG_DIR = path.join(CONFIG_DIR, 'servers');
+// Cache server configs in memory
+const serverConfigs = new Map();
 
-// Default server configuration
+// Directory for server config files
+const configDir = path.join(process.cwd(), 'config', 'servers');
+
+// Global config file
+const globalConfigPath = path.join(process.cwd(), 'config', 'global.json');
+
+// Global config defaults
+const DEFAULT_GLOBAL_CONFIG = {
+  botName: '👑 Phantom Guard',
+  version: '1.5.0',
+  defaultPrefix: '!',
+  ownerIds: [],
+  premiumServers: []
+};
+
+// Per-server config defaults
 const DEFAULT_SERVER_CONFIG = {
   prefix: '!',
-  notificationChannelId: null,
-  verificationChannelId: null,
-  youtubeChannelId: null,
-  youtubeChannelName: null,
-  roleId: null,
-  roleName: null,
-  verifiedImages: {},  // Store verified images with hash as key and user info as value
-  premium: false,
   welcomeEnabled: false,
-  welcomeChannelId: null,
-  logChannelId: null,
-  announcerEnabled: false,
-  announcerChannelId: null,
-  gameEnabled: false,
-  giveawaysEnabled: false,
-  pollsEnabled: false,
-  gameChannelId: null,
-  embedTemplates: {},
-  antiNuke: false,
-  antiNukeThreshold: 3,
-  verificationRequired: false,
-  autoModeration: false,
-  punishmentType: 'ban',
-  whitelistedRoles: [],
-  imageVerification: true
+  securityEnabled: true, 
+  securityDisabled: false,
+  antiRaidEnabled: true,
+  antiRaidDisabled: false,
+  antiSpamEnabled: true,
+  antiSpamDisabled: false,
+  antiScamEnabled: true,
+  antiScamDisabled: false,
+  securityOwnerOnly: true, // Only owner can change security settings
+  antiNukeThreshold: 3, // Number of suspicious actions to trigger anti-nuke
+  antiNukeEnabled: true,
+  antiNukeDisabled: false
 };
 
 // Ensure config directories exist
-function ensureDirectories() {
-  if (!fs.existsSync(CONFIG_DIR)) {
-    fs.mkdirSync(CONFIG_DIR, { recursive: true });
+function ensureConfigDirs() {
+  if (!fs.existsSync(path.join(process.cwd(), 'config'))) {
+    fs.mkdirSync(path.join(process.cwd(), 'config'));
   }
   
-  if (!fs.existsSync(SERVER_CONFIG_DIR)) {
-    fs.mkdirSync(SERVER_CONFIG_DIR, { recursive: true });
+  if (!fs.existsSync(configDir)) {
+    fs.mkdirSync(configDir);
   }
 }
 
-// Function to load global configuration
-function loadConfig() {
-  ensureDirectories();
+// Load global config
+function loadGlobalConfig() {
+  ensureConfigDirs();
+  
+  let globalConfig = { ...DEFAULT_GLOBAL_CONFIG };
   
   try {
-    // Check if global config file exists
-    if (fs.existsSync(GLOBAL_CONFIG_FILE)) {
-      const data = fs.readFileSync(GLOBAL_CONFIG_FILE, 'utf8');
-      return JSON.parse(data);
+    if (fs.existsSync(globalConfigPath)) {
+      const fileData = fs.readFileSync(globalConfigPath, 'utf8');
+      const loadedConfig = JSON.parse(fileData);
+      globalConfig = { ...globalConfig, ...loadedConfig };
     } else {
-      // Create default global config if file doesn't exist
-      const defaultConfig = {
-        botName: "Phantom Guard",
-        version: "1.0.0",
-        defaultPrefix: "!",
-        ownerIds: []
-      };
-      saveConfig(defaultConfig);
-      return defaultConfig;
+      // Create default global config
+      fs.writeFileSync(globalConfigPath, JSON.stringify(globalConfig, null, 2));
+      console.log('Created default global config file');
     }
   } catch (error) {
     console.error('Error loading global config:', error);
-    
-    // Log specific error details
-    if (error.code === 'ENOENT') {
-      console.error('Config file not found at path:', GLOBAL_CONFIG_FILE);
-    } else if (error.code === 'EACCES') {
-      console.error('Permission denied when accessing config file:', GLOBAL_CONFIG_FILE);
-    } else if (error instanceof SyntaxError) {
-      console.error('Invalid JSON in config file');
-    }
-    
-    // Return default config on error
-    return {
-      botName: "Phantom Guard",
-      version: "1.0.0",
-      defaultPrefix: "!",
-      ownerIds: []
-    };
   }
+  
+  return globalConfig;
 }
 
-// Function to save global configuration
-function saveConfig(config) {
-  ensureDirectories();
+// Save global config
+function saveGlobalConfig(config) {
+  ensureConfigDirs();
   
   try {
-    fs.writeFileSync(GLOBAL_CONFIG_FILE, JSON.stringify(config, null, 2), 'utf8');
+    fs.writeFileSync(globalConfigPath, JSON.stringify(config, null, 2));
     return true;
   } catch (error) {
     console.error('Error saving global config:', error);
-    
-    // Log specific error details
-    if (error.code === 'ENOENT') {
-      console.error('Directory not found when saving config');
-    } else if (error.code === 'EACCES') {
-      console.error('Permission denied when saving config file');
-    }
-    
     return false;
   }
 }
 
-// Function to get a server's configuration
+// Get server config
 function getServerConfig(serverId) {
-  if (!serverId) {
-    console.error('getServerConfig called with invalid serverId:', serverId);
-    return { ...DEFAULT_SERVER_CONFIG };
+  // Return from cache if available
+  if (serverConfigs.has(serverId)) {
+    return serverConfigs.get(serverId);
   }
   
-  ensureDirectories();
-  
-  const serverConfigFile = path.join(SERVER_CONFIG_DIR, `${serverId}.json`);
+  // Load from disk
+  let config = { ...DEFAULT_SERVER_CONFIG };
   
   try {
-    // Check if server config file exists
-    if (fs.existsSync(serverConfigFile)) {
-      const data = fs.readFileSync(serverConfigFile, 'utf8');
-      try {
-        // Parse server config and merge with defaults to ensure all properties exist
-        const serverConfig = JSON.parse(data);
-        return { ...DEFAULT_SERVER_CONFIG, ...serverConfig };
-      } catch (parseError) {
-        console.error(`Error parsing server config for ${serverId}:`, parseError);
-        
-        // If file exists but is corrupt, create a new one with defaults
-        const newConfig = { ...DEFAULT_SERVER_CONFIG };
-        fs.writeFileSync(serverConfigFile, JSON.stringify(newConfig, null, 2), 'utf8');
-        return newConfig;
-      }
-    } else {
-      // Create new server config with defaults
-      const newConfig = { ...DEFAULT_SERVER_CONFIG };
-      fs.writeFileSync(serverConfigFile, JSON.stringify(newConfig, null, 2), 'utf8');
-      return newConfig;
+    ensureConfigDirs();
+    
+    const configPath = path.join(configDir, `${serverId}.json`);
+    
+    if (fs.existsSync(configPath)) {
+      const fileData = fs.readFileSync(configPath, 'utf8');
+      const loadedConfig = JSON.parse(fileData);
+      config = { ...config, ...loadedConfig };
     }
   } catch (error) {
-    console.error(`Error loading server config for ${serverId}:`, error);
-    
-    // Log specific error details
-    if (error.code === 'ENOENT') {
-      console.error('Server config directory not found at path:', SERVER_CONFIG_DIR);
-    } else if (error.code === 'EACCES') {
-      console.error('Permission denied when accessing server config file:', serverConfigFile);
-    }
-    
-    // Return default config on error
-    return { ...DEFAULT_SERVER_CONFIG };
+    console.error(`Error loading config for server ${serverId}:`, error);
   }
+  
+  // Cache the config
+  serverConfigs.set(serverId, config);
+  
+  return config;
 }
 
-// Function to update a server's configuration
+// Update server config
 function updateServerConfig(serverId, updates) {
-  if (!serverId) {
-    console.error('updateServerConfig called with invalid serverId:', serverId);
-    return { ...DEFAULT_SERVER_CONFIG };
-  }
+  // Get current config
+  const currentConfig = getServerConfig(serverId);
   
-  ensureDirectories();
+  // Merge updates
+  const updatedConfig = { ...currentConfig, ...updates };
   
-  const serverConfigFile = path.join(SERVER_CONFIG_DIR, `${serverId}.json`);
+  // Save to cache
+  serverConfigs.set(serverId, updatedConfig);
   
+  // Save to disk
   try {
-    // Get current config
-    let currentConfig = getServerConfig(serverId);
+    ensureConfigDirs();
     
-    // Apply updates
-    const updatedConfig = {
-      ...currentConfig,
-      ...updates
-    };
+    const configPath = path.join(configDir, `${serverId}.json`);
+    fs.writeFileSync(configPath, JSON.stringify(updatedConfig, null, 2));
     
-    // Save updated config
-    fs.writeFileSync(serverConfigFile, JSON.stringify(updatedConfig, null, 2), 'utf8');
-    
-    // Log successful update
-    console.log(`Updated configuration for server ${serverId}`);
-    
-    return updatedConfig;
+    return true;
   } catch (error) {
-    console.error(`Error updating server config for ${serverId}:`, error);
-    
-    // Log specific error details
-    if (error.code === 'ENOENT') {
-      console.error('Server config directory not found when updating');
-    } else if (error.code === 'EACCES') {
-      console.error('Permission denied when updating server config file');
-    }
-    
-    return { ...DEFAULT_SERVER_CONFIG, ...updates };
+    console.error(`Error saving config for server ${serverId}:`, error);
+    return false;
   }
 }
 
-// Function to list all configured servers
-function getAllServerIds() {
-  ensureDirectories();
-  
-  try {
-    const files = fs.readdirSync(SERVER_CONFIG_DIR);
-    return files
-      .filter(file => file.endsWith('.json'))
-      .map(file => file.replace('.json', ''));
-  } catch (error) {
-    console.error('Error listing server configs:', error);
-    return [];
-  }
+// Get premium status for a server
+function isPremiumServer(serverId) {
+  const globalConfig = loadGlobalConfig();
+  return globalConfig.premiumServers.includes(serverId);
 }
 
+// Set premium status for a server
+function setPremiumStatus(serverId, isPremium) {
+  const globalConfig = loadGlobalConfig();
+  
+  if (isPremium && !globalConfig.premiumServers.includes(serverId)) {
+    globalConfig.premiumServers.push(serverId);
+    saveGlobalConfig(globalConfig);
+    return true;
+  }
+  
+  if (!isPremium && globalConfig.premiumServers.includes(serverId)) {
+    globalConfig.premiumServers = globalConfig.premiumServers.filter(id => id !== serverId);
+    saveGlobalConfig(globalConfig);
+    return true;
+  }
+  
+  return false;
+}
+
+// Export config functions
 module.exports = {
-  loadConfig,
-  saveConfig,
   getServerConfig,
   updateServerConfig,
-  getAllServerIds,
-  ensureDirectories
+  loadGlobalConfig,
+  saveGlobalConfig,
+  isPremiumServer,
+  setPremiumStatus,
+  DEFAULT_SERVER_CONFIG,
+  DEFAULT_GLOBAL_CONFIG
 };

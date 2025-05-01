@@ -6,19 +6,20 @@ const activeCollectors = new Collection();
 
 // Function to set up verification collectors for all servers
 function setupAllVerificationCollectors(client) {
-  // Get all server configs
-  const allConfigs = config.loadConfig();
+  console.log('Setting up verification collectors for all servers');
   
-  for (const serverId in allConfigs) {
-    const serverConfig = allConfigs[serverId];
+  // Process each guild the bot is in
+  client.guilds.cache.forEach(guild => {
+    const serverId = guild.id;
+    const serverConfig = config.getServerConfig(serverId);
     
     // If this server has reaction verification set up
     if (serverConfig.reactionVerification && serverConfig.reactionVerification.enabled) {
       setupVerificationCollector(client, serverId);
     }
-  }
+  });
   
-  console.log('Setting up verification collectors for all servers');
+  console.log('Verification collectors setup complete');
 }
 
 // Function to set up verification collectors for a specific server
@@ -280,6 +281,35 @@ module.exports = {
     const isSlashCommand = !!interaction;
     const serverId = isSlashCommand ? interaction.guild.id : message.guild.id;
     const serverConfig = config.getServerConfig(serverId);
+    
+    // Get guild object
+    const guild = isSlashCommand ? interaction.guild : message.guild;
+    
+    // Get member object
+    const member = isSlashCommand ? interaction.member : message.member;
+    
+    // DEFAULT TO SECURITY OWNER ONLY
+    // Update server config if securityOwnerOnly flag doesn't exist
+    if (serverConfig.securityOwnerOnly === undefined) {
+      config.updateServerConfig(serverId, {
+        securityOwnerOnly: true
+      });
+    }
+    
+    // Check if the user is the server owner
+    const isServerOwner = guild.ownerId === member.id;
+    
+    // Only allow server owner to use security commands
+    if (!isServerOwner) {
+      if (isSlashCommand) {
+        return interaction.reply({ 
+          content: '❌ Only the server owner can use security features! This is a new security measure to prevent admin abuse.', 
+          ephemeral: true 
+        });
+      } else {
+        return message.reply('❌ Only the server owner can use security features! This is a new security measure to prevent admin abuse.');
+      }
+    }
     
     // Get action from args or options
     let action;

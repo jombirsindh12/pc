@@ -1,0 +1,16 @@
+{
+  "prefix": "!",
+  "welcomeEnabled": false,
+  "securityEnabled": true,
+  "securityDisabled": false,
+  "antiRaidEnabled": true,
+  "antiRaidDisabled": false,
+  "antiSpamEnabled": true,
+  "antiSpamDisabled": false,
+  "antiScamEnabled": true,
+  "antiScamDisabled": false,
+  "securityOwnerOnly": true,
+  "antiNukeThreshold": 3,
+  "antiNukeEnabled": true,
+  "antiNukeDisabled": false
+}
