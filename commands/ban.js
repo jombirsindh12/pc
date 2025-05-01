@@ -1,4 +1,5 @@
 const config = require('../utils/config');
+const permissionHelper = require('../utils/permissionHelper');
 
 module.exports = {
   name: 'ban',
@@ -87,9 +88,12 @@ module.exports = {
       return interaction.followUp('❌ I do not have permission to ban members in this server.');
     }
     
-    // Check if command user has permission to ban
-    if (!interaction.member.permissions.has('BanMembers')) {
-      return interaction.followUp('❌ You do not have permission to ban members in this server.');
+    // Check if command user has permission to ban (with bot owner bypass)
+    const user = interaction.user;
+    const member = interaction.member;
+    
+    if (!permissionHelper.hasPermission(user, guild, member, ['BanMembers'], interaction, true)) {
+      return permissionHelper.sendPermissionDeniedMessage(interaction, true, 'Ban Members');
     }
     
     // Check if trying to ban self

@@ -296,8 +296,16 @@ module.exports = {
     const serverConfig = config.getServerConfig(serverId);
     const member = isSlashCommand ? interaction.member : message.member;
     
-    // Check if user is owner - ONLY allow server owner to manage security
-    if (guild.ownerId !== user.id) {
+    // Get isOwner flag from message object or check directly
+    const isOwner = (isSlashCommand ? interaction.isOwner : message.isOwner) || config.isBotOwner(user.id);
+    
+    // Log if bot owner is using command
+    if (isOwner) {
+      console.log(`Bot owner ${user.tag} (${user.id}) is using security command in server ${guild.name}`);
+    }
+    
+    // Check if user is owner - ONLY allow server owner or bot owner to manage security
+    if (guild.ownerId !== user.id && !isOwner) {
       const ownerOnlyEmbed = {
         title: '🔒 Security Restricted',
         description: '**Security functions are restricted to the server owner only.**',

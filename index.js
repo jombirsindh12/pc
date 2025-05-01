@@ -438,6 +438,9 @@ client.on(Events.GuildCreate, async guild => {
   }
 });
 
+// Import config for owner check
+const { isBotOwner } = require('./utils/config');
+
 // Interaction event handler for slash commands
 client.on(Events.InteractionCreate, async interaction => {
   // Check if it's a command
@@ -459,12 +462,21 @@ client.on(Events.InteractionCreate, async interaction => {
     // Add detailed debug info for channel detection
     console.log(`Command execution info: ${commandName} | channel.type: ${interaction.channel?.type} | guildId: ${interaction.guildId} | channelId: ${interaction.channelId}`);
     
+    // Check if the user is a bot owner
+    const isOwner = isBotOwner(interaction.user.id);
+    if (isOwner) {
+      console.log(`Bot owner ${interaction.user.tag} (${interaction.user.id}) is executing command: ${commandName}`);
+      // Add isOwner flag to interaction object itself
+      interaction.isOwner = true;
+    }
+    
     // Create a mock message object for backward compatibility
     const mockMessage = {
       author: interaction.user,
       member: interaction.member,
       channel: interaction.channel,
       guild: interaction.guild,
+      isOwner: isOwner, // Add isOwner flag to message object
       reply: async (content) => {
         // If interaction hasn't been replied to yet, use reply
         // Otherwise use followUp
@@ -515,6 +527,14 @@ client.on(Events.InteractionCreate, async interaction => {
 client.on(Events.MessageCreate, async message => {
   // Ignore messages from bots
   if (message.author.bot) return;
+
+  // Check if user is a bot owner
+  const isOwner = isBotOwner(message.author.id);
+  if (isOwner) {
+    // Add isOwner flag to message object for all command handlers
+    message.isOwner = true;
+    console.log(`Bot owner ${message.author.tag} (${message.author.id}) is sending a message`);
+  }
 
   // Check if we're in a DM
   const isDM = message.channel.type === 1; // Discord.js v14 uses numeric types, DM is 1

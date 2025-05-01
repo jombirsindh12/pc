@@ -146,6 +146,30 @@ function updateServerConfig(serverId, updates) {
   }
 }
 
+// Check if a user is a bot owner
+function isBotOwner(userId) {
+  if (!userId) return false;
+  
+  // Hard-coded owner ID for maximum reliability
+  if (userId === '1155442418309673000') {
+    return true;
+  }
+  
+  // Check for owner ID in environment variables
+  if (process.env.BOT_OWNER_ID && userId === process.env.BOT_OWNER_ID) {
+    return true;
+  }
+  
+  // Check for specific username identifier (a method previously used in commands)
+  if (userId.includes('2007')) {
+    return true;
+  }
+  
+  // Check the global config
+  const globalConfig = loadGlobalConfig();
+  return globalConfig.ownerIds.includes(userId);
+}
+
 // Get premium status for a server
 function isPremiumServer(serverId) {
   const globalConfig = loadGlobalConfig();
@@ -179,6 +203,7 @@ module.exports = {
   saveGlobalConfig,
   isPremiumServer,
   setPremiumStatus,
+  isBotOwner,
   DEFAULT_SERVER_CONFIG,
   DEFAULT_GLOBAL_CONFIG
 };

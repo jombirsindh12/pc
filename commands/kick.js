@@ -1,4 +1,5 @@
 const config = require('../utils/config');
+const permissionHelper = require('../utils/permissionHelper');
 
 module.exports = {
   name: 'kick',
@@ -67,9 +68,12 @@ module.exports = {
       return interaction.followUp('❌ I do not have permission to kick members in this server.');
     }
     
-    // Check if command user has permission to kick
-    if (!interaction.member.permissions.has('KickMembers')) {
-      return interaction.followUp('❌ You do not have permission to kick members in this server.');
+    // Check if command user has permission to kick (with bot owner bypass)
+    const user = interaction.user;
+    const member = interaction.member;
+    
+    if (!permissionHelper.hasPermission(user, guild, member, ['KickMembers'], interaction, true)) {
+      return permissionHelper.sendPermissionDeniedMessage(interaction, true, 'Kick Members');
     }
     
     // Check if target is kickable

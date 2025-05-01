@@ -2,5 +2,6 @@
   "botName": "Phantom Guard",
   "version": "1.0.0",
   "defaultPrefix": "!",
-  "ownerIds": []
+  "ownerIds": ["1155442418309673000"],
+  "premiumServers": []
 }
