@@ -36,8 +36,8 @@ async function initializeAllSubCountIntervals(client) {
           clearInterval(client.subCountIntervals.get(serverId));
         }
         
-        // Set up the interval to update the subscriber count
-        const intervalId = setInterval(async () => {
+        // Function to update subscriber count
+        const updateSubscriberCount = async () => {
           try {
             const currentGuild = client.guilds.cache.get(serverId);
             if (!currentGuild) {
@@ -64,7 +64,13 @@ async function initializeAllSubCountIntervals(client) {
           } catch (error) {
             console.error(`Error updating subscriber count for server ${serverId}:`, error);
           }
-        }, (serverConfig.updateFrequencyMinutes || 60) * 60000); // Use configured update frequency or default to 60 minutes
+        };
+        
+        // Update immediately when bot starts
+        updateSubscriberCount();
+        
+        // Set up the interval to update the subscriber count regularly
+        const intervalId = setInterval(updateSubscriberCount, (serverConfig.updateFrequencyMinutes || 60) * 60000); // Use configured update frequency or default to 60 minutes
         
         // Store the interval ID
         client.subCountIntervals.set(serverId, intervalId);

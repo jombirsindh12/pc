@@ -174,8 +174,8 @@ module.exports = {
         clearInterval(client.subCountIntervals.get(serverId));
       }
 
-      // Set a new interval to update every hour
-      const intervalId = setInterval(async () => {
+      // Function to update subscriber count
+      const updateSubscriberCount = async () => {
         try {
           const currentGuild = client.guilds.cache.get(serverId);
           if (!currentGuild) {
@@ -197,11 +197,15 @@ module.exports = {
           }
         } catch (error) {
           console.error('Error updating subscriber count channel:', error);
-          // If there's an error, stop the interval
-          clearInterval(intervalId);
-          client.subCountIntervals.delete(serverId);
         }
-      }, (serverConfig.updateFrequencyMinutes || 60) * 60000); // Use configured update frequency or default to 60 minutes
+      };
+      
+      // Update immediately when the command is run
+      updateSubscriberCount();
+      
+      // Set a new interval to update regularly
+      const intervalId = setInterval(updateSubscriberCount, 
+        (serverConfig.updateFrequencyMinutes || 60) * 60000); // Use configured update frequency or default to 60 minutes
 
       // Store the interval ID
       client.subCountIntervals.set(serverId, intervalId);

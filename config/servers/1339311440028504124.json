@@ -15,8 +15,453 @@
   "antiNukeDisabled": false,
   "strictSecurity": true,
   "strictSecurityAction": "kick",
-  "strictSecurityEnabled": 1746081465325,
+  "strictSecurityEnabled": 1746082964157,
   "antiNuke": true,
   "verificationRequired": true,
-  "autoModeration": true
+  "autoModeration": true,
+  "securityIncidents": [
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "1125449347451068437",
+      "timestamp": 1746081606772,
+      "details": {
+        "channelId": "1365379822142099567",
+        "oldName": "rules",
+        "newName": "rules"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "1125449347451068437",
+      "timestamp": 1746081607801,
+      "details": {
+        "channelId": "1339311440426700855",
+        "oldName": "📹videos",
+        "newName": "📹videos"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "1125449347451068437",
+      "timestamp": 1746081608890,
+      "details": {
+        "channelId": "1339311440707981328",
+        "oldName": "🎮⥐godly-gamers",
+        "newName": "🎮⥐godly-gamers"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "1125449347451068437",
+      "timestamp": 1746081609860,
+      "details": {
+        "channelId": "1339333571927871508",
+        "oldName": "📁⇷files",
+        "newName": "📁⇷files"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "1125449347451068437",
+      "timestamp": 1746081610615,
+      "details": {
+        "channelId": "1339311441236459657",
+        "oldName": "💬⇷general",
+        "newName": "💬⇷general"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "1125449347451068437",
+      "timestamp": 1746081611399,
+      "details": {
+        "channelId": "1339320804583800924",
+        "oldName": "✅⤬verify",
+        "newName": "✅⤬verify"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "1125449347451068437",
+      "timestamp": 1746081612284,
+      "details": {
+        "channelId": "1366114044754268190",
+        "oldName": "tts",
+        "newName": "tts"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "1125449347451068437",
+      "timestamp": 1746081613148,
+      "details": {
+        "channelId": "1339311440426700857",
+        "oldName": "🎮events",
+        "newName": "🎮events"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "1125449347451068437",
+      "timestamp": 1746081613985,
+      "details": {
+        "channelId": "1355291320431804517",
+        "oldName": "🤖⇷fluxer-commands",
+        "newName": "🤖⇷fluxer-commands"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "1125449347451068437",
+      "timestamp": 1746081614877,
+      "details": {
+        "channelId": "1365379822142099570",
+        "oldName": "moderator-only",
+        "newName": "moderator-only"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "1125449347451068437",
+      "timestamp": 1746081615801,
+      "details": {
+        "channelId": "1339311440426700852",
+        "oldName": "📜rules",
+        "newName": "📜rules"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "1125449347451068437",
+      "timestamp": 1746081616634,
+      "details": {
+        "channelId": "1339311440707981324",
+        "oldName": "🦜⥐spam",
+        "newName": "🦜⥐spam"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "1125449347451068437",
+      "timestamp": 1746081617490,
+      "details": {
+        "channelId": "1363792046594330817",
+        "oldName": "📹screenshots-of-wrong-pass-panel-users",
+        "newName": "📹screenshots-of-wrong-pass-panel-users"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "1125449347451068437",
+      "timestamp": 1746081619266,
+      "details": {
+        "channelId": "1339311440426700856",
+        "oldName": "🎉giveaways",
+        "newName": "🎉giveaways"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "1125449347451068437",
+      "timestamp": 1746081620071,
+      "details": {
+        "channelId": "1339311440426700860",
+        "oldName": "🌎⥐internationnal",
+        "newName": "🌎⥐internationnal"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "1125449347451068437",
+      "timestamp": 1746081620989,
+      "details": {
+        "channelId": "1339311440426700854",
+        "oldName": "📢announcements",
+        "newName": "📢announcements"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "1125449347451068437",
+      "timestamp": 1746081621758,
+      "details": {
+        "channelId": "1339311440426700853",
+        "oldName": "📌feedback",
+        "newName": "📌feedback"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "1125449347451068437",
+      "timestamp": 1746081622604,
+      "details": {
+        "channelId": "1367188466898571284",
+        "oldName": "ff-like",
+        "newName": "ff-like"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "1125449347451068437",
+      "timestamp": 1746081624002,
+      "details": {
+        "channelId": "1339311440426700859",
+        "oldName": "💬⥐general",
+        "newName": "💬⥐general"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "1125449347451068437",
+      "timestamp": 1746081624818,
+      "details": {
+        "channelId": "1339311440707981327",
+        "oldName": "🎮⥐legendary-gamers",
+        "newName": "🎮⥐legendary-gamers"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "1125449347451068437",
+      "timestamp": 1746081625801,
+      "details": {
+        "channelId": "1339311440045015237",
+        "oldName": "changelog",
+        "newName": "changelog"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "1125449347451068437",
+      "timestamp": 1746081626600,
+      "details": {
+        "channelId": "1339311440707981323",
+        "oldName": "📷⥐off-topic",
+        "newName": "📷⥐off-topic"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "1125449347451068437",
+      "timestamp": 1746081627503,
+      "details": {
+        "channelId": "1339311440426700851",
+        "oldName": "👋welcome",
+        "newName": "👋welcome"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "1125449347451068437",
+      "timestamp": 1746081628704,
+      "details": {
+        "channelId": "1339311440707981326",
+        "oldName": "🎮⥐epic-gamers",
+        "newName": "🎮⥐epic-gamers"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "1125449347451068437",
+      "timestamp": 1746081629590,
+      "details": {
+        "channelId": "1339311440707981325",
+        "oldName": "🎮⥐pro-gamers",
+        "newName": "🎮⥐pro-gamers"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "1125449347451068437",
+      "timestamp": 1746081630475,
+      "details": {
+        "channelId": "1339311440707981322",
+        "oldName": "🤖⥐commands",
+        "newName": "🤖⥐commands"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "1125449347451068437",
+      "timestamp": 1746081631383,
+      "details": {
+        "channelId": "1339311441236459659",
+        "oldName": "📃⇷logs",
+        "newName": "📃⇷logs"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "1125449347451068437",
+      "timestamp": 1746081632388,
+      "details": {
+        "channelId": "1339311441236459658",
+        "oldName": "🤖⇷commands",
+        "newName": "🤖⇷commands"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "1125449347451068437",
+      "timestamp": 1746081633231,
+      "details": {
+        "channelId": "1367188492110528735",
+        "oldName": "ff-info",
+        "newName": "ff-info"
+      }
+    }
+  ],
+  "lockdownActive": true,
+  "lockdownInfo": {
+    "reason": "Security emergency",
+    "timestamp": 1746081633341,
+    "requesterId": "1155442418309673000",
+    "affectedChannels": [
+      {
+        "id": "1365379822142099567",
+        "originalAllow": "0",
+        "originalDeny": "2048"
+      },
+      {
+        "id": "1339311440426700855",
+        "originalAllow": "0",
+        "originalDeny": "871889745"
+      },
+      {
+        "id": "1339311440707981328",
+        "originalAllow": "1024",
+        "originalDeny": "871889745"
+      },
+      {
+        "id": "1339333571927871508",
+        "originalAllow": "0",
+        "originalDeny": "871890769"
+      },
+      {
+        "id": "1339311441236459657",
+        "originalAllow": "0",
+        "originalDeny": "871890769"
+      },
+      {
+        "id": "1339320804583800924",
+        "originalAllow": "66560",
+        "originalDeny": "806811729"
+      },
+      {
+        "id": "1366114044754268190",
+        "originalAllow": "0",
+        "originalDeny": "871890769"
+      },
+      {
+        "id": "1339311440426700857",
+        "originalAllow": "0",
+        "originalDeny": "871889745"
+      },
+      {
+        "id": "1355291320431804517",
+        "originalAllow": "0",
+        "originalDeny": "871890769"
+      },
+      {
+        "id": "1365379822142099570",
+        "originalAllow": "0",
+        "originalDeny": "1024"
+      },
+      {
+        "id": "1339311440426700852",
+        "originalAllow": "1024",
+        "originalDeny": "871889745"
+      },
+      {
+        "id": "1339311440707981324",
+        "originalAllow": "1024",
+        "originalDeny": "871889745"
+      },
+      {
+        "id": "1363792046594330817",
+        "originalAllow": "0",
+        "originalDeny": "871889745"
+      },
+      {
+        "id": "1339311440426700856",
+        "originalAllow": "0",
+        "originalDeny": "871889745"
+      },
+      {
+        "id": "1339311440426700860",
+        "originalAllow": "66561",
+        "originalDeny": "871369488"
+      },
+      {
+        "id": "1339311440426700854",
+        "originalAllow": "1024",
+        "originalDeny": "871889745"
+      },
+      {
+        "id": "1339311440426700853",
+        "originalAllow": "33856",
+        "originalDeny": "871856913"
+      },
+      {
+        "id": "1367188466898571284",
+        "originalAllow": "0",
+        "originalDeny": "871890769"
+      },
+      {
+        "id": "1339311440426700859",
+        "originalAllow": "1795488261602385",
+        "originalDeny": "66061056"
+      },
+      {
+        "id": "1339311440707981327",
+        "originalAllow": "1024",
+        "originalDeny": "871889745"
+      },
+      {
+        "id": "1339311440045015237",
+        "originalAllow": "0",
+        "originalDeny": "0"
+      },
+      {
+        "id": "1339311440707981323",
+        "originalAllow": "1024",
+        "originalDeny": "871889745"
+      },
+      {
+        "id": "1339311440426700851",
+        "originalAllow": "1024",
+        "originalDeny": "871889745"
+      },
+      {
+        "id": "1339311440707981326",
+        "originalAllow": "1024",
+        "originalDeny": "871889745"
+      },
+      {
+        "id": "1339311440707981325",
+        "originalAllow": "1024",
+        "originalDeny": "871889745"
+      },
+      {
+        "id": "1339311440707981322",
+        "originalAllow": "1024",
+        "originalDeny": "871889745"
+      },
+      {
+        "id": "1339311441236459659",
+        "originalAllow": "0",
+        "originalDeny": "871890769"
+      },
+      {
+        "id": "1339311441236459658",
+        "originalAllow": "0",
+        "originalDeny": "871890769"
+      },
+      {
+        "id": "1367188492110528735",
+        "originalAllow": "0",
+        "originalDeny": "871890769"
+      }
+    ]
+  }
 }
