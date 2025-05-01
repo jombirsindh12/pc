@@ -72,5 +72,16 @@
     "maxRoleDeletionsPerMinute": 2,
     "punishmentType": "ban"
   },
-  "subCountChannelId": "1367178439295242385"
+  "subCountChannelId": "1367178439295242385",
+  "antiRaidSettings": {
+    "joinThreshold": 3,
+    "timeWindow": 8000,
+    "action": "lockdown"
+  },
+  "antiSpamSettings": {
+    "messageThreshold": 4,
+    "timeWindow": 3000,
+    "action": "mute"
+  },
+  "welcomeMessage": true
 }

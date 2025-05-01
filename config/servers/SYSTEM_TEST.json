@@ -1,5 +1,18 @@
 {
   "prefix": "!",
+  "welcomeEnabled": false,
+  "securityEnabled": true,
+  "securityDisabled": false,
+  "antiRaidEnabled": true,
+  "antiRaidDisabled": false,
+  "antiSpamEnabled": true,
+  "antiSpamDisabled": false,
+  "antiScamEnabled": true,
+  "antiScamDisabled": false,
+  "securityOwnerOnly": true,
+  "antiNukeThreshold": 3,
+  "antiNukeEnabled": true,
+  "antiNukeDisabled": false,
   "notificationChannelId": null,
   "verificationChannelId": null,
   "youtubeChannelId": null,
@@ -8,7 +21,6 @@
   "roleName": null,
   "verifiedImages": {},
   "premium": false,
-  "welcomeEnabled": false,
   "welcomeChannelId": null,
   "logChannelId": null,
   "announcerEnabled": false,
@@ -19,10 +31,29 @@
   "gameChannelId": null,
   "embedTemplates": {},
   "antiNuke": false,
-  "antiNukeThreshold": 3,
   "verificationRequired": false,
   "autoModeration": false,
   "punishmentType": "ban",
   "whitelistedRoles": [],
-  "imageVerification": true
+  "imageVerification": true,
+  "securityIncidents": [
+    {
+      "type": "systemTest",
+      "userId": "SYSTEM_TEST_USER",
+      "timestamp": 1746069295195,
+      "details": {
+        "isTest": true,
+        "isServerOwner": true
+      }
+    },
+    {
+      "type": "systemTest",
+      "userId": "SYSTEM_TEST_USER",
+      "timestamp": 1746069442881,
+      "details": {
+        "isTest": true,
+        "isServerOwner": true
+      }
+    }
+  ]
 }

@@ -1,5 +1,6 @@
 const config = require('../utils/config');
 const { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, Collection } = require('discord.js');
+const securityManager = require('../utils/securityManager');
 
 // Store active verification collectors
 const activeCollectors = new Collection();
@@ -200,7 +201,7 @@ async function setupVerificationCollector(client, serverId) {
   }
 }
 
-// Export the functions so they can be accessed from index.js
+// Export the module
 module.exports = {
   setupAllVerificationCollectors,
   setupVerificationCollector,
@@ -245,8 +246,18 @@ module.exports = {
         {
           name: 'anti_scam',
           value: 'anti_scam'
+        },
+        {
+          name: 'strict_security',
+          value: 'strict_security'
         }
       ]
+    },
+    {
+      name: 'option',
+      type: 3, // STRING type
+      description: 'Additional option for the selected action (e.g., "enable" or "disable" for strict_security)',
+      required: false
     },
     {
       name: 'channel',
@@ -277,16 +288,34 @@ module.exports = {
   requiresAdmin: true, // Only admins can use this command
   
   async execute(message, args, client, interaction = null) {
-    // Use interaction if available (slash command), otherwise use message (legacy)
-    const isSlashCommand = !!interaction;
-    const serverId = isSlashCommand ? interaction.guild.id : message.guild.id;
-    const serverConfig = config.getServerConfig(serverId);
-    
-    // Get guild object
+    const isSlashCommand = interaction ? true : false;
+    const channel = isSlashCommand ? interaction.channel : message.channel;
+    const user = isSlashCommand ? interaction.user : message.author;
     const guild = isSlashCommand ? interaction.guild : message.guild;
-    
-    // Get member object
+    const serverId = guild.id;
+    const serverConfig = config.getServerConfig(serverId);
     const member = isSlashCommand ? interaction.member : message.member;
+    
+    // Check if user is owner - ONLY allow server owner to manage security
+    if (guild.ownerId !== user.id) {
+      const ownerOnlyEmbed = {
+        title: '🔒 Security Restricted',
+        description: '**Security functions are restricted to the server owner only.**',
+        color: 0xFF0000,
+        fields: [
+          {
+            name: '⚠️ Access Denied',
+            value: 'To prevent security compromise, only the server owner can manage security settings.'
+          }
+        ]
+      };
+      
+      if (isSlashCommand) {
+        return interaction.reply({ embeds: [ownerOnlyEmbed], ephemeral: true });
+      } else {
+        return message.reply({ embeds: [ownerOnlyEmbed] });
+      }
+    }
     
     // DEFAULT TO SECURITY OWNER ONLY
     // Update server config if securityOwnerOnly flag doesn't exist
@@ -294,21 +323,6 @@ module.exports = {
       config.updateServerConfig(serverId, {
         securityOwnerOnly: true
       });
-    }
-    
-    // Check if the user is the server owner
-    const isServerOwner = guild.ownerId === member.id;
-    
-    // Only allow server owner to use security commands
-    if (!isServerOwner) {
-      if (isSlashCommand) {
-        return interaction.reply({ 
-          content: '❌ Only the server owner can use security features! This is a new security measure to prevent admin abuse.', 
-          ephemeral: true 
-        });
-      } else {
-        return message.reply('❌ Only the server owner can use security features! This is a new security measure to prevent admin abuse.');
-      }
     }
     
     // Get action from args or options
@@ -319,9 +333,160 @@ module.exports = {
       action = args[0]?.toLowerCase(); 
       
       // Check if a valid action was provided
-      if (!action || !['enable', 'disable', 'status'].includes(action)) {
-        return message.reply('❌ Please specify a valid action: `enable`, `disable`, or `status`');
+      if (!action || !['enable', 'disable', 'status', 'strict_security'].includes(action)) {
+        return message.reply('❌ Please specify a valid action: `enable`, `disable`, `status`, or `strict_security`');
       }
+    }
+    
+    // Handle strict security mode
+    if (action === 'strict_security') {
+      // Get the option (enable/disable) 
+      let strictOption;
+      if (isSlashCommand) {
+        strictOption = interaction.options.getString('option') || 'status'; // Default to status if not provided
+      } else {
+        strictOption = args[1]?.toLowerCase() || 'status';
+      }
+      
+      if (!['enable', 'disable', 'status'].includes(strictOption)) {
+        const helpMsg = '❌ Please specify a valid option for strict security: `enable`, `disable`, or `status`';
+        if (isSlashCommand) {
+          return interaction.reply({ content: helpMsg, ephemeral: true });
+        } else {
+          return message.reply(helpMsg);
+        }
+      }
+      
+      // Create embed for strict security
+      const strictSecurityEmbed = new EmbedBuilder()
+        .setTitle('🔒 Ultra-Strict Security Mode')
+        .setColor(0xFF0000)
+        .setFooter({ text: 'Phantom Guard Security System • Owner-Only Protection' })
+        .setTimestamp();
+      
+      // Handle the different options
+      if (strictOption === 'enable') {
+        // Enable strict security with the securityManager
+        try {
+          // Defer the reply as this may take a moment
+          if (isSlashCommand) {
+            await interaction.deferReply();
+          } else {
+            await message.channel.sendTyping();
+          }
+          
+          // Enable strict security (default to kick action)
+          const result = await securityManager.enableStrictSecurity(client, serverId, 'kick');
+          
+          if (result.success) {
+            strictSecurityEmbed
+              .setDescription('✅ **Ultra-Strict Security Mode Enabled**\n\nOnly the server owner can now make structural changes to the server.')
+              .addFields(
+                {
+                  name: '🛡️ Protected Actions',
+                  value: '• Channel creation, modification, or deletion\n• Server name or icon changes\n• Role changes\n• Permission modifications'
+                },
+                {
+                  name: '⚠️ Warning',
+                  value: 'Any server administrator who attempts to perform these actions will be immediately kicked from the server. Use `/security strict_security disable` to turn this off.'
+                }
+              );
+          } else {
+            strictSecurityEmbed
+              .setDescription('❌ **Error:** Failed to enable Ultra-Strict Security Mode')
+              .setColor(0xFF0000)
+              .addFields({
+                name: '📝 Details',
+                value: result.error || 'Unknown error occurred'
+              });
+          }
+        } catch (error) {
+          console.error('Error enabling strict security:', error);
+          strictSecurityEmbed
+            .setDescription('❌ **Error:** Failed to enable Ultra-Strict Security Mode')
+            .setColor(0xFF0000)
+            .addFields({
+              name: '📝 Error Details',
+              value: error.message || 'Unknown error occurred'
+            });
+        }
+      } else if (strictOption === 'disable') {
+        try {
+          // Defer the reply as this may take a moment
+          if (isSlashCommand) {
+            await interaction.deferReply();
+          } else {
+            await message.channel.sendTyping();
+          }
+          
+          // Disable strict security
+          const result = await securityManager.disableStrictSecurity(client, serverId);
+          
+          if (result.success) {
+            strictSecurityEmbed
+              .setDescription('✅ **Ultra-Strict Security Mode Disabled**\n\nServer administrators can now make structural changes to the server.')
+              .setColor(0x00FF00)
+              .addFields(
+                {
+                  name: '📝 Information',
+                  value: 'Normal anti-nuke security protection remains in place to prevent mass destructive actions.'
+                }
+              );
+          } else {
+            strictSecurityEmbed
+              .setDescription('❌ **Error:** Failed to disable Ultra-Strict Security Mode')
+              .setColor(0xFF0000)
+              .addFields({
+                name: '📝 Details',
+                value: result.error || 'Unknown error occurred'
+              });
+          }
+        } catch (error) {
+          console.error('Error disabling strict security:', error);
+          strictSecurityEmbed
+            .setDescription('❌ **Error:** Failed to disable Ultra-Strict Security Mode')
+            .setColor(0xFF0000)
+            .addFields({
+              name: '📝 Error Details',
+              value: error.message || 'Unknown error occurred'
+            });
+        }
+      } else { // status
+        // Get current status
+        const isStrictEnabled = serverConfig.strictSecurity || false;
+        
+        strictSecurityEmbed
+          .setDescription(`**Ultra-Strict Security Mode: ${isStrictEnabled ? 'Enabled ✅' : 'Disabled ❌'}**`)
+          .setColor(isStrictEnabled ? 0xFF0000 : 0x00FF00)
+          .addFields(
+            {
+              name: '📝 Information',
+              value: isStrictEnabled ? 
+                'Ultra-Strict Security Mode is currently active. Only the server owner can make structural changes to the server.' :
+                'Ultra-Strict Security Mode is currently disabled. Server administrators can make structural changes to the server.'
+            },
+            {
+              name: '⚙️ Configuration',
+              value: isStrictEnabled ?
+                `• Mode: ${serverConfig.strictSecurityAction === 'ban' ? 'Ban violators' : 'Kick violators'}\n` +
+                `• Enabled: <t:${Math.floor(serverConfig.strictSecurityEnabled / 1000)}:R>` :
+                'Use `/security strict_security enable` to activate this feature.'
+            }
+          );
+      }
+      
+      // Send the response
+      if (isSlashCommand) {
+        if (interaction.deferred) {
+          await interaction.followUp({ embeds: [strictSecurityEmbed] });
+        } else {
+          await interaction.reply({ embeds: [strictSecurityEmbed] });
+        }
+      } else {
+        await message.reply({ embeds: [strictSecurityEmbed] });
+      }
+      
+      return;
     }
     
     // Create embeds for showing security status
@@ -382,6 +547,7 @@ module.exports = {
       case 'status':
         // Show current status
         const securityStatus = serverConfig.securityDisabled ? 'Disabled ❌' : 'Enabled ✅';
+        const strictSecurityStatus = serverConfig.strictSecurity ? 'Enabled ✅' : 'Disabled ❌';
         
         securityEmbed.description = `**Security Status: ${securityStatus}**\n\nPhantom Guard's advanced security system helps protect your server from various threats.`;
         securityEmbed.color = serverConfig.securityDisabled ? 0xFF0000 : 0x00FF00;
@@ -393,7 +559,8 @@ module.exports = {
                    '• Anti-Ban: Prevent mass user bans\n' +
                    '• Anti-Raid: Detect multiple users joining rapidly\n' +
                    '• Spam Detection: Monitor for spam and mention abuse\n' +
-                   '• Scam Protection: Detect and block potential scam links'
+                   '• Scam Protection: Detect and block potential scam links\n' +
+                   `• Ultra-Strict Security: ${strictSecurityStatus}`
           },
           {
             name: '📊 Recent Incidents',
@@ -409,348 +576,13 @@ module.exports = {
           }
         );
         break;
-        
-      case 'dashboard':
-        // Create an interactive security dashboard
-        if (!isSlashCommand) {
-          return message.reply('❌ Dashboard requires the slash command: `/security dashboard`');
-        }
-        
-        // Defer reply as we'll show a comprehensive dashboard
-        await interaction.deferReply();
-        
-        try {
-          // Get various stats from the server
-          const guild = interaction.guild;
-          const memberCount = guild.memberCount;
-          const onlineCount = guild.members.cache.filter(m => m.presence && m.presence.status !== 'offline').size;
-          const botCount = guild.members.cache.filter(m => m.user.bot).size;
-          
-          // Get verification stats
-          const verifiedMembers = serverConfig.buttonVerifications?.length || 0;
-          
-          // Get security incident stats
-          const securityIncidents = serverConfig.securityIncidents || [];
-          const totalIncidents = securityIncidents.length;
-          
-          // Count different types of incidents
-          const nukeAttempts = securityIncidents.filter(i => i.type === 'nuke').length;
-          const raidAttempts = securityIncidents.filter(i => i.type === 'raid').length;
-          const spamAttempts = securityIncidents.filter(i => i.type === 'spam').length;
-          
-          // Create dashboard embed
-          const dashboardEmbed = new EmbedBuilder()
-            .setTitle('🛡️ Security Dashboard')
-            .setDescription(`Security overview for **${guild.name}**`)
-            .setColor(0x3366FF)
-            .setThumbnail(guild.iconURL({ dynamic: true }) || null)
-            .addFields(
-              {
-                name: '📊 Server Statistics',
-                value: `• Total Members: ${memberCount}\n` +
-                       `• Online Members: ${onlineCount}\n` +
-                       `• Bots: ${botCount}\n` +
-                       `• Verified Users: ${verifiedMembers}`
-              },
-              {
-                name: '🔒 Security Status',
-                value: `• Overall Status: ${serverConfig.securityDisabled ? 'Disabled ❌' : 'Enabled ✅'}\n` +
-                       `• Anti-Raid: ${serverConfig.antiRaidDisabled ? 'Disabled ❌' : 'Enabled ✅'}\n` +
-                       `• Anti-Spam: ${serverConfig.antiSpamDisabled ? 'Disabled ❌' : 'Enabled ✅'}\n` +
-                       `• Anti-Scam: ${serverConfig.antiScamDisabled ? 'Disabled ❌' : 'Enabled ✅'}`
-              },
-              {
-                name: '⚠️ Security Incidents',
-                value: totalIncidents > 0 ? 
-                      `• Total Incidents: ${totalIncidents}\n` +
-                      `• Nuke Attempts: ${nukeAttempts}\n` +
-                      `• Raid Attempts: ${raidAttempts}\n` +
-                      `• Spam Incidents: ${spamAttempts}` :
-                      'No security incidents detected yet'
-              },
-              {
-                name: '🔧 Configuration',
-                value: `• Notification Channel: ${serverConfig.notificationChannelId ? `<#${serverConfig.notificationChannelId}>` : 'Not set'}\n` +
-                       `• Verification: ${serverConfig.reactionVerification?.enabled ? 'Enabled ✅' : 'Disabled ❌'}\n` +
-                       `• Verified Role: ${serverConfig.reactionVerification?.roleName || 'Not set'}\n` +
-                       `• Unverified Role: ${serverConfig.reactionVerification?.unverifiedRoleName || 'Not set'}`
-              }
-            )
-            .setFooter({ text: 'Phantom Guard Security System • Dashboard' })
-            .setTimestamp();
-          
-          // Send the dashboard
-          await interaction.followUp({ embeds: [dashboardEmbed] });
-          return;
-        } catch (error) {
-          console.error('Error showing security dashboard:', error);
-          await interaction.followUp({
-            content: `❌ Error displaying security dashboard: ${error.message}`,
-            ephemeral: true
-          });
-          return;
-        }
-        break;
-      
-      case 'anti_raid':
-        // Configure anti-raid measures
-        if (!isSlashCommand) {
-          return message.reply('❌ Anti-raid configuration requires the slash command: `/security anti_raid`');
-        }
-        
-        // Toggle anti-raid
-        const antiRaidCurrent = serverConfig.antiRaidDisabled || false;
-        config.updateServerConfig(serverId, {
-          antiRaidDisabled: !antiRaidCurrent,
-          antiRaidSettings: {
-            joinThreshold: 5,  // 5 joins
-            timeWindow: 10000, // 10 seconds
-            action: 'lockdown' // lockdown server temporarily
-          }
-        });
-        
-        // Create anti-raid embed
-        const antiRaidEmbed = new EmbedBuilder()
-          .setTitle('🛡️ Anti-Raid Protection')
-          .setDescription(`Anti-raid protection has been ${antiRaidCurrent ? 'enabled ✅' : 'disabled ❌'}`)
-          .setColor(antiRaidCurrent ? 0x00FF00 : 0xFF0000)
-          .addFields(
-            {
-              name: '⚙️ Settings',
-              value: `• Action: Lockdown server temporarily\n` +
-                     `• Threshold: 5 joins within 10 seconds\n` +
-                     `• Notification: Server owner and notification channel`
-            },
-            {
-              name: '📝 Description',
-              value: 'Anti-raid protection detects when multiple users join your server within a short time frame. ' +
-                    'When triggered, it can temporarily lock down the server to prevent potential damage.'
-            }
-          )
-          .setFooter({ text: 'Phantom Guard Security System • Anti-Raid' })
-          .setTimestamp();
-        
-        await interaction.reply({ embeds: [antiRaidEmbed] });
-        return;
-        break;
-      
-      case 'anti_spam':
-        // Configure anti-spam measures
-        if (!isSlashCommand) {
-          return message.reply('❌ Anti-spam configuration requires the slash command: `/security anti_spam`');
-        }
-        
-        // Toggle anti-spam
-        const antiSpamCurrent = serverConfig.antiSpamDisabled || false;
-        config.updateServerConfig(serverId, {
-          antiSpamDisabled: !antiSpamCurrent,
-          antiSpamSettings: {
-            messageThreshold: 5,  // 5 messages
-            timeWindow: 5000,     // 5 seconds
-            action: 'warn'        // warn, then mute
-          }
-        });
-        
-        // Create anti-spam embed
-        const antiSpamEmbed = new EmbedBuilder()
-          .setTitle('🛡️ Anti-Spam Protection')
-          .setDescription(`Anti-spam protection has been ${antiSpamCurrent ? 'enabled ✅' : 'disabled ❌'}`)
-          .setColor(antiSpamCurrent ? 0x00FF00 : 0xFF0000)
-          .addFields(
-            {
-              name: '⚙️ Settings',
-              value: `• Action: Warn user, then mute if continued\n` +
-                     `• Threshold: 5 messages within 5 seconds\n` +
-                     `• Repeat Offenders: Temporarily muted`
-            },
-            {
-              name: '📝 Description',
-              value: 'Anti-spam protection detects when users send many messages in a short time frame. ' +
-                    'This helps keep your chat clean and prevents spam attacks.'
-            }
-          )
-          .setFooter({ text: 'Phantom Guard Security System • Anti-Spam' })
-          .setTimestamp();
-        
-        await interaction.reply({ embeds: [antiSpamEmbed] });
-        return;
-        break;
-        
-      case 'anti_scam':
-        // Configure anti-scam measures
-        if (!isSlashCommand) {
-          return message.reply('❌ Anti-scam configuration requires the slash command: `/security anti_scam`');
-        }
-        
-        // Toggle anti-scam
-        const antiScamCurrent = serverConfig.antiScamDisabled || false;
-        config.updateServerConfig(serverId, {
-          antiScamDisabled: !antiScamCurrent,
-          antiScamSettings: {
-            deleteMessage: true,
-            warnUser: true,
-            action: 'delete'  // delete, warn, or mute
-          }
-        });
-        
-        // Create anti-scam embed
-        const antiScamEmbed = new EmbedBuilder()
-          .setTitle('🛡️ Anti-Scam Protection')
-          .setDescription(`Anti-scam protection has been ${antiScamCurrent ? 'enabled ✅' : 'disabled ❌'}`)
-          .setColor(antiScamCurrent ? 0x00FF00 : 0xFF0000)
-          .addFields(
-            {
-              name: '⚙️ Settings',
-              value: `• Action: Delete suspicious messages\n` +
-                     `• Detection: Discord nitro scams, phishing links\n` +
-                     `• Notification: Warn users about deleted content`
-            },
-            {
-              name: '📝 Description',
-              value: 'Anti-scam protection detects suspicious links and common scam patterns. ' +
-                    'This helps protect your members from phishing attacks and Discord scams.'
-            }
-          )
-          .setFooter({ text: 'Phantom Guard Security System • Anti-Scam' })
-          .setTimestamp();
-        
-        await interaction.reply({ embeds: [antiScamEmbed] });
-        return;
-        break;
-      
-      case 'setup_verification':
-        if (!isSlashCommand) {
-          return message.reply('❌ Reaction verification setup requires the slash command: `/security setup_verification`');
-        }
-        
-        // Get channel and roles from options
-        const channel = interaction.options.getChannel('channel');
-        const role = interaction.options.getRole('role');
-        const unverifiedRole = interaction.options.getRole('unverified_role');
-        const customMessage = interaction.options.getString('message');
-        
-        // Check if channel and role are provided
-        if (!channel) {
-          return interaction.reply({
-            content: '❌ You must specify a channel for verification.',
-            ephemeral: true
-          });
-        }
-        
-        if (!role) {
-          return interaction.reply({
-            content: '❌ You must specify a role to assign upon verification.',
-            ephemeral: true
-          });
-        }
-        
-        // Check if channel is a text channel
-        if (channel.type !== 0) { // 0 is GUILD_TEXT
-          return interaction.reply({
-            content: '❌ The verification channel must be a text channel.',
-            ephemeral: true
-          });
-        }
-        
-        // Defer reply as we'll be setting up a verification message
-        await interaction.deferReply();
-        
-        try {
-          // Default verification message
-          const defaultMessage = 
-            "# 🔐 Server Verification\n\n" +
-            "To gain access to this server, please react with ✅ to verify yourself.\n\n" +
-            "This helps us protect our community from bots and spam accounts.\n\n" +
-            "After verification, you'll be granted the verified role and access to all channels.";
-          
-          // Create verification embed
-          const verifyEmbed = new EmbedBuilder()
-            .setTitle('🔐 Verification Required')
-            .setDescription(customMessage || defaultMessage)
-            .setColor(0x5865F2) // Discord Blurple
-            .addFields(
-              { name: 'Instructions', value: 'Click the ✅ button below to verify yourself.' },
-              { name: 'Role', value: `You will receive the ${role.name} role upon verification.` }
-            )
-            .setFooter({ text: 'Phantom Guard Security System • Verification' })
-            .setTimestamp();
-          
-          // Create verify button
-          const verifyButton = new ButtonBuilder()
-            .setCustomId(`verify_react_${serverId}`)
-            .setLabel('Verify')
-            .setStyle(ButtonStyle.Success)
-            .setEmoji('✅');
-            
-          const row = new ActionRowBuilder().addComponents(verifyButton);
-          
-          // Send verification message to the channel
-          const verifyMsg = await channel.send({
-            embeds: [verifyEmbed],
-            components: [row]
-          });
-          
-          // Store verification settings in server config with unverified role if provided
-          const verificationConfig = {
-            reactionVerification: {
-              enabled: true,
-              channelId: channel.id,
-              messageId: verifyMsg.id,
-              roleId: role.id,
-              roleName: role.name
-            }
-          };
-          
-          // Add unverified role if provided
-          if (unverifiedRole) {
-            verificationConfig.reactionVerification.unverifiedRoleId = unverifiedRole.id;
-            verificationConfig.reactionVerification.unverifiedRoleName = unverifiedRole.name;
-            
-            // Add field to embed about unverified role
-            verifyEmbed.addFields({
-              name: 'Unverified Role',
-              value: `New members will receive the ${unverifiedRole.name} role until they verify.`
-            });
-            
-            // Update the message with the new embed
-            await verifyMsg.edit({
-              embeds: [verifyEmbed],
-              components: [row]
-            });
-          }
-          
-          config.updateServerConfig(serverId, verificationConfig);
-          
-          // Set up button collector for verification
-          setupVerificationCollector(client, serverId);
-          
-          // Reply with success message
-          await interaction.followUp({
-            content: `✅ Reaction verification has been set up in ${channel}!\n\nUsers can now click the verify button to receive the ${role.name} role.`,
-            ephemeral: false
-          });
-          
-          return; // Exit to prevent sending securityEmbed
-        } catch (error) {
-          console.error('Error setting up verification:', error);
-          await interaction.followUp({
-            content: `❌ Error setting up verification: ${error.message}`,
-            ephemeral: true
-          });
-          return;
-        }
-        break;
     }
     
-    // Send the message via slash command or regular command
+    // Send the response
     if (isSlashCommand) {
-      if (interaction.deferred) {
-        interaction.followUp({ embeds: [securityEmbed] });
-      } else {
-        interaction.reply({ embeds: [securityEmbed] });
-      }
+      await interaction.reply({ embeds: [securityEmbed] });
     } else {
-      message.channel.send({ embeds: [securityEmbed] });
+      await message.reply({ embeds: [securityEmbed] });
     }
-  },
+  }
 };

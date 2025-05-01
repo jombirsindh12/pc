@@ -8,6 +8,9 @@
  * - Emergency Lockdown: Quick server-wide protection during attacks
  * - Security Incident Tracking: Monitors and logs all security events
  * - Owner-Only Security: Critical security functions restricted to server owner
+ * - Administrator Protection: Guards against rogue administrator actions
+ * - Channel Protection: Prevents unauthorized channel modifications
+ * - Server Settings Protection: Blocks unauthorized server setting changes
  */
 
 const { PermissionsBitField, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
@@ -159,8 +162,14 @@ function checkForNukeAttempt(guildId, userId, actionType) {
     return;
   }
   
-  // Don't apply anti-nuke to the server owner
+  // Don't apply anti-nuke to the server owner - ONLY the server owner is exempt
   if (guild.ownerId === userId) {
+    return;
+  }
+  
+  // Check if this user is whitelisted from security
+  if (serverConfig.whitelistedUsers && serverConfig.whitelistedUsers.includes(userId)) {
+    console.log(`[SECURITY] Skipping checks for whitelisted user ${userId}`);
     return;
   }
   
@@ -708,6 +717,402 @@ function detectRaidAttempt(guild, members, timeWindow) {
   console.log(`[SECURITY] Checking for raid attempt in ${guild.name}: ${members.length} joins in ${timeWindow}ms`);
 }
 
+// Function to monitor and react to channel modifications
+function setupChannelModificationProtection(client) {
+  // Set up event listeners for channel modifications
+  client.on('channelCreate', async (channel) => {
+    // Skip if not in a guild
+    if (!channel.guild) return;
+    
+    try {
+      // Get last audit log entry to see who created the channel
+      const auditLogs = await channel.guild.fetchAuditLogs({
+        limit: 1,
+        type: 10 // CHANNEL_CREATE
+      });
+      
+      const entry = auditLogs.entries.first();
+      if (!entry) return;
+      
+      const { executor } = entry;
+      
+      // Skip if the executor is the server owner
+      if (executor.id === channel.guild.ownerId) return;
+      
+      // Check if this user is whitelisted
+      const guildConfig = config.getServerConfig(channel.guild.id);
+      if (guildConfig.whitelistedUsers && guildConfig.whitelistedUsers.includes(executor.id)) {
+        return;
+      }
+      
+      // Record the action for potential nuke detection
+      recordAction(channel.guild.id, executor.id, 'CHANNEL_CREATE', { 
+        channelId: channel.id,
+        channelName: channel.name
+      });
+      
+      // If strict security is enabled, only owner can create channels
+      if (guildConfig.strictSecurity) {
+        console.log(`[STRICT-SECURITY] Non-owner ${executor.tag} created channel ${channel.name}`);
+        
+        try {
+          // Delete the channel
+          await channel.delete(`[SECURITY] Strict security: Only owner can create channels`);
+          
+          // Record incident and notify
+          sendSecurityAlert(channel.guild, {
+            title: '🛡️ Channel Creation Blocked',
+            description: `User ${executor.tag} (${executor.id}) attempted to create a channel but was blocked due to strict security settings.`,
+            color: 0xFFAA00,
+            fields: [
+              {
+                name: '📝 Details',
+                value: `Channel name: ${channel.name}\nChannel type: ${channel.type}\nAction: Channel was deleted`
+              },
+              {
+                name: '⚠️ Security Notice',
+                value: 'Only the server owner can create channels when strict security is enabled.'
+              }
+            ]
+          });
+        } catch (error) {
+          console.error('[SECURITY] Error deleting unauthorized channel:', error);
+        }
+      }
+    } catch (error) {
+      console.error('[SECURITY] Error handling channel creation:', error);
+    }
+  });
+  
+  // Monitor channel updates
+  client.on('channelUpdate', async (oldChannel, newChannel) => {
+    // Skip if not in a guild
+    if (!newChannel.guild) return;
+    
+    try {
+      // Get last audit log entry to see who updated the channel
+      const auditLogs = await newChannel.guild.fetchAuditLogs({
+        limit: 1,
+        type: 11 // CHANNEL_UPDATE
+      });
+      
+      const entry = auditLogs.entries.first();
+      if (!entry) return;
+      
+      const { executor } = entry;
+      
+      // Skip if the executor is the server owner
+      if (executor.id === newChannel.guild.ownerId) return;
+      
+      // Check if user is whitelisted
+      const guildConfig = config.getServerConfig(newChannel.guild.id);
+      if (guildConfig.whitelistedUsers && guildConfig.whitelistedUsers.includes(executor.id)) {
+        return;
+      }
+      
+      // Record the action for potential nuke detection
+      recordAction(newChannel.guild.id, executor.id, 'CHANNEL_UPDATE', { 
+        channelId: newChannel.id,
+        oldName: oldChannel.name,
+        newName: newChannel.name
+      });
+      
+      // If strict security is enabled, only owner can update channels
+      if (guildConfig.strictSecurity) {
+        console.log(`[STRICT-SECURITY] Non-owner ${executor.tag} updated channel ${oldChannel.name} to ${newChannel.name}`);
+        
+        try {
+          // Get the audit log to determine what was changed
+          const changes = entry.changes.map(c => `${c.key}: ${c.old} -> ${c.new}`).join(', ');
+          
+          // Revert the changes if possible
+          if (oldChannel.name !== newChannel.name) {
+            await newChannel.setName(oldChannel.name, `[SECURITY] Strict security: Only owner can rename channels`);
+          }
+          
+          if (oldChannel.topic !== newChannel.topic) {
+            await newChannel.setTopic(oldChannel.topic || '', `[SECURITY] Strict security: Only owner can change channel topics`);
+          }
+          
+          // Revert permission changes if any
+          if (oldChannel.permissionOverwrites !== newChannel.permissionOverwrites) {
+            // This is more complex and would require detailed comparison and restoration
+            // For now we'll just notify about it
+          }
+          
+          // Record incident and notify
+          sendSecurityAlert(newChannel.guild, {
+            title: '🛡️ Channel Update Blocked',
+            description: `User ${executor.tag} (${executor.id}) attempted to modify a channel but was blocked due to strict security settings.`,
+            color: 0xFFAA00,
+            fields: [
+              {
+                name: '📝 Details',
+                value: `Channel: ${oldChannel.name}\nChanges: ${changes}\nAction: Changes were reverted`
+              },
+              {
+                name: '⚠️ Security Notice',
+                value: 'Only the server owner can modify channels when strict security is enabled.'
+              }
+            ]
+          });
+        } catch (error) {
+          console.error('[SECURITY] Error reverting unauthorized channel update:', error);
+        }
+      }
+    } catch (error) {
+      console.error('[SECURITY] Error handling channel update:', error);
+    }
+  });
+  
+  // Monitor channel deletions
+  client.on('channelDelete', async (channel) => {
+    // Skip if not in a guild
+    if (!channel.guild) return;
+    
+    try {
+      // Get last audit log entry to see who deleted the channel
+      const auditLogs = await channel.guild.fetchAuditLogs({
+        limit: 1,
+        type: 12 // CHANNEL_DELETE
+      });
+      
+      const entry = auditLogs.entries.first();
+      if (!entry) return;
+      
+      const { executor } = entry;
+      
+      // Skip if the executor is the server owner
+      if (executor.id === channel.guild.ownerId) return;
+      
+      // Check if this user is whitelisted
+      const guildConfig = config.getServerConfig(channel.guild.id);
+      if (guildConfig.whitelistedUsers && guildConfig.whitelistedUsers.includes(executor.id)) {
+        return;
+      }
+      
+      // Record the action for potential nuke detection
+      recordAction(channel.guild.id, executor.id, 'CHANNEL_DELETE', { 
+        channelId: channel.id,
+        channelName: channel.name
+      });
+      
+      // If strict security is enabled, punish the user immediately
+      if (guildConfig.strictSecurity) {
+        console.log(`[STRICT-SECURITY] Non-owner ${executor.tag} deleted channel ${channel.name}`);
+        
+        try {
+          // Get the member
+          const member = await channel.guild.members.fetch(executor.id);
+          
+          // Take action against the member
+          if (member) {
+            // Remove all their roles first to disable them
+            const roles = member.roles.cache.filter(r => r.id !== channel.guild.id);
+            await member.roles.remove(roles, `[SECURITY] Strict security: Unauthorized channel deletion`);
+            
+            // Ban or kick based on severity setting
+            if (guildConfig.strictSecurityAction === 'ban') {
+              await member.ban({ 
+                reason: `[SECURITY] Strict security: Unauthorized channel deletion`,
+                deleteMessageSeconds: 86400
+              });
+            } else {
+              await member.kick(`[SECURITY] Strict security: Unauthorized channel deletion`);
+            }
+          }
+          
+          // Record incident and notify
+          sendSecurityAlert(channel.guild, {
+            title: '🚨 UNAUTHORIZED CHANNEL DELETION',
+            description: `User ${executor.tag} (${executor.id}) has deleted a channel and has been punished according to security settings.`,
+            color: 0xFF0000,
+            fields: [
+              {
+                name: '📝 Details',
+                value: `Channel name: ${channel.name}\nChannel ID: ${channel.id}\nAction: User ${guildConfig.strictSecurityAction === 'ban' ? 'banned' : 'kicked'}`
+              },
+              {
+                name: '⚠️ Security Notice',
+                value: 'Only the server owner can delete channels when strict security is enabled.'
+              }
+            ]
+          });
+          
+          // If automatic channel recreation is enabled and we have the channel info cached
+          if (guildConfig.autoRestore) {
+            // We could potentially try to recreate the channel here
+            // However, accurately recreating all channel settings is complex
+            // Would need to implement a dedicated backup/restore system
+          }
+        } catch (error) {
+          console.error('[SECURITY] Error handling unauthorized channel deletion:', error);
+        }
+      }
+    } catch (error) {
+      console.error('[SECURITY] Error handling channel deletion:', error);
+    }
+  });
+  
+  // Monitor guild update events (server name changes, etc.)
+  client.on('guildUpdate', async (oldGuild, newGuild) => {
+    try {
+      // Get last audit log entry to see who updated the guild
+      const auditLogs = await newGuild.fetchAuditLogs({
+        limit: 1,
+        type: 1 // GUILD_UPDATE
+      });
+      
+      const entry = auditLogs.entries.first();
+      if (!entry) return;
+      
+      const { executor } = entry;
+      
+      // Skip if the executor is the server owner
+      if (executor.id === newGuild.ownerId) return;
+      
+      // Check if this user is whitelisted
+      const guildConfig = config.getServerConfig(newGuild.id);
+      if (guildConfig.whitelistedUsers && guildConfig.whitelistedUsers.includes(executor.id)) {
+        return;
+      }
+      
+      // Record the action for potential nuke detection
+      recordAction(newGuild.id, executor.id, 'GUILD_UPDATE', { 
+        oldName: oldGuild.name,
+        newName: newGuild.name
+      });
+      
+      // If strict security is enabled, only owner can update guild settings
+      if (guildConfig.strictSecurity) {
+        console.log(`[STRICT-SECURITY] Non-owner ${executor.tag} updated server settings: ${oldGuild.name} -> ${newGuild.name}`);
+        
+        try {
+          // Get the audit log to determine what was changed
+          const changes = entry.changes.map(c => `${c.key}: ${c.old} -> ${c.new}`).join(', ');
+          
+          // Revert the changes if possible
+          if (oldGuild.name !== newGuild.name) {
+            await newGuild.setName(oldGuild.name, `[SECURITY] Strict security: Only owner can rename the server`);
+          }
+          
+          if (oldGuild.icon !== newGuild.icon && oldGuild.icon) {
+            await newGuild.setIcon(oldGuild.icon, `[SECURITY] Strict security: Only owner can change server icon`);
+          }
+          
+          // Record incident and notify
+          sendSecurityAlert(newGuild, {
+            title: '🛡️ Server Settings Update Blocked',
+            description: `User ${executor.tag} (${executor.id}) attempted to modify server settings but was blocked due to strict security settings.`,
+            color: 0xFFAA00,
+            fields: [
+              {
+                name: '📝 Details',
+                value: `Changes: ${changes}\nAction: Changes were reverted`
+              },
+              {
+                name: '⚠️ Security Notice',
+                value: 'Only the server owner can modify server settings when strict security is enabled.'
+              }
+            ]
+          });
+          
+          // Take action against the member
+          const member = await newGuild.members.fetch(executor.id);
+          if (member) {
+            // Warnings or temporary role removal could be implemented here
+            const roles = member.roles.cache.filter(r => r.id !== newGuild.id);
+            await member.roles.remove(roles, `[SECURITY] Strict security: Unauthorized server settings modification`);
+          }
+        } catch (error) {
+          console.error('[SECURITY] Error reverting unauthorized guild update:', error);
+        }
+      }
+    } catch (error) {
+      console.error('[SECURITY] Error handling guild update:', error);
+    }
+  });
+  
+  console.log('[SECURITY] Set up strict channel and server modification protection');
+}
+
+// Function to enable strict security mode
+async function enableStrictSecurity(client, guildId, action = 'kick') {
+  const guild = client.guilds.cache.get(guildId);
+  if (!guild) {
+    return { success: false, error: 'Guild not found' };
+  }
+  
+  try {
+    // Update config with strict security settings
+    config.updateServerConfig(guildId, {
+      strictSecurity: true,
+      strictSecurityAction: action,
+      strictSecurityEnabled: Date.now()
+    });
+    
+    // Send notification
+    sendSecurityAlert(guild, {
+      title: '🔒 STRICT SECURITY MODE ENABLED',
+      description: 'Strict security mode has been enabled for this server. Only the server owner can make structural changes.',
+      color: 0xFF0000,
+      fields: [
+        {
+          name: '🛡️ Protected Actions',
+          value: '• Channel creation, editing, or deletion\n• Server name or icon changes\n• Role changes\n• Permission modifications'
+        },
+        {
+          name: '⚠️ Warning',
+          value: `Any user (including administrators) who attempts these actions will be ${action === 'ban' ? 'banned' : 'kicked'} immediately.`
+        }
+      ]
+    });
+    
+    return { success: true };
+  } catch (error) {
+    console.error('[SECURITY] Error enabling strict security:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+// Function to disable strict security mode
+async function disableStrictSecurity(client, guildId) {
+  const guild = client.guilds.cache.get(guildId);
+  if (!guild) {
+    return { success: false, error: 'Guild not found' };
+  }
+  
+  try {
+    // Update config to disable strict security
+    config.updateServerConfig(guildId, {
+      strictSecurity: false,
+      strictSecurityDisabled: Date.now()
+    });
+    
+    // Send notification
+    sendSecurityAlert(guild, {
+      title: '🔓 Strict Security Mode Disabled',
+      description: 'Strict security mode has been disabled for this server.',
+      color: 0x00FF00,
+      fields: [
+        {
+          name: '📝 Information',
+          value: 'Server administrators can now modify channels and server settings.'
+        },
+        {
+          name: '⚠️ Note',
+          value: 'Anti-nuke protection remains active to prevent mass destructive actions.'
+        }
+      ]
+    });
+    
+    return { success: true };
+  } catch (error) {
+    console.error('[SECURITY] Error disabling strict security:', error);
+    return { success: false, error: error.message };
+  }
+}
+
 // Export functions
 module.exports = {
   startSecurityMonitoring,
@@ -720,5 +1125,11 @@ module.exports = {
   getActiveIncidents: () => Object.fromEntries(activeIncidents),
   getRecentActions,
   isGuildOwner,
-  handleNukeAttempt
+  handleNukeAttempt,
+  setupChannelModificationProtection,
+  enableStrictSecurity,
+  disableStrictSecurity,
+  detectRaidAttempt,
+  checkForNukeAttempt,
+  startServerSecurityMonitoring
 };

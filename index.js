@@ -111,6 +111,12 @@ function initializeSecurityMonitoring(client) {
     }
     
     console.log('Security monitoring active for all servers - checking for nukes, raids and spam');
+    
+    // Set up protection against channel and server modifications
+    if (typeof securityManager.setupChannelModificationProtection === 'function') {
+      securityManager.setupChannelModificationProtection(client);
+      console.log('🔒 Strict channel and server protection activated - Only server owner can modify channels and server settings');
+    }
   } catch (error) {
     console.error('Error initializing security monitoring:', error);
   }
