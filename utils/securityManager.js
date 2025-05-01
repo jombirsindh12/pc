@@ -272,7 +272,9 @@ async function handleNukeAttempt(guild, userId, actionType, actions) {
           value: 'Please review server audit logs to verify legitimate actions were not incorrectly blocked.'
         }
       ],
-      timestamp: new Date()
+      timestamp: new Date(),
+      // Add reason for the user notification
+      userReason: `You performed ${actions.length} ${actionType.replace('_', ' ')} operations in rapid succession, which was detected as a potential nuke attempt. This is a serious security violation.`
     };
     
     // Take action on the member
@@ -311,8 +313,8 @@ async function handleNukeAttempt(guild, userId, actionType, actions) {
       });
     }
     
-    // Send alert to notification channel
-    sendSecurityAlert(guild, securityEmbed);
+    // Send alert to notification channel and DM both server owner and violator
+    sendSecurityAlert(guild, securityEmbed, userId);
     
   } catch (error) {
     console.error(`[SECURITY] Error handling nuke attempt:`, error);
@@ -320,7 +322,7 @@ async function handleNukeAttempt(guild, userId, actionType, actions) {
 }
 
 // Send security alerts to the configured notification channel
-async function sendSecurityAlert(guild, embedData) {
+async function sendSecurityAlert(guild, embedData, targetUserId = null) {
   try {
     // Get server config for notification channel
     const serverConfig = config.getServerConfig(guild.id);
@@ -349,34 +351,121 @@ async function sendSecurityAlert(guild, embedData) {
       embed.setFooter({ text: 'Phantom Guard Security System' });
     }
     
+    // Always send to server owner as DM
+    try {
+      const owner = await guild.fetchOwner();
+      if (owner) {
+        // Create owner-specific embed with additional info
+        const ownerEmbed = new EmbedBuilder()
+          .setTitle(`🔒 ${embedData.title || 'Security Alert'}`)
+          .setDescription(embedData.description || 'A security event occurred.')
+          .setColor(embedData.color || 0xFF0000)
+          .setTimestamp();
+        
+        // Add fields with enhanced information for owner
+        if (embedData.fields) {
+          for (const field of embedData.fields) {
+            ownerEmbed.addFields(field);
+          }
+        }
+        
+        // Add server information field
+        ownerEmbed.addFields({
+          name: '🏠 Server Information',
+          value: `Server: ${guild.name}\nServer ID: ${guild.id}\nAction taken automatically by Phantom Guard security system`
+        });
+        
+        // Set footer
+        ownerEmbed.setFooter({ text: 'Phantom Guard Security System - Owner Alert' });
+        
+        // Send to owner
+        await owner.send({ 
+          content: `📢 **SECURITY NOTIFICATION**: A security event has occurred in your server "${guild.name}"`,
+          embeds: [ownerEmbed] 
+        }).catch(err => {
+          console.log(`[SECURITY] Could not send DM to owner, likely has DMs disabled: ${err.message}`);
+        });
+        
+        console.log(`[SECURITY] Sent security alert to server owner: ${owner.user.tag}`);
+      }
+    } catch (ownerError) {
+      console.error(`[SECURITY] Error sending security alert to owner:`, ownerError);
+    }
+    
+    // If a target user ID is provided, also send them a DM
+    if (targetUserId) {
+      try {
+        // Fetch the target user and send them a DM
+        const targetUser = await guild.members.fetch(targetUserId).catch(() => null);
+        if (targetUser) {
+          // Create user-specific embed explaining action taken against them
+          const userEmbed = new EmbedBuilder()
+            .setTitle(`⚠️ Security Action Notification`)
+            .setDescription(`A security action has been taken against you in the server "${guild.name}".`)
+            .setColor(0xFF0000)
+            .setTimestamp()
+            .addFields(
+              {
+                name: '📝 Reason',
+                value: embedData.userReason || 'You performed an action that violated the server\'s strict security policy.'
+              },
+              {
+                name: '🔒 Security Policy',
+                value: 'This server has strict security enabled. Only the server owner can modify server structure and settings.'
+              },
+              {
+                name: '❓ Appeal',
+                value: 'If you believe this was in error, please contact the server owner.'
+              }
+            )
+            .setFooter({ text: 'Phantom Guard Security System' });
+          
+          // Send to the target user
+          await targetUser.send({ embeds: [userEmbed] }).catch(err => {
+            console.log(`[SECURITY] Could not send DM to target user, likely has DMs disabled: ${err.message}`);
+          });
+          
+          console.log(`[SECURITY] Sent security notification to target user: ${targetUser.user.tag}`);
+        }
+      } catch (targetError) {
+        console.error(`[SECURITY] Error sending notification to target user:`, targetError);
+      }
+    }
+    
     // Try to send to notification channel
+    let serverNotified = false;
     if (notificationChannelId) {
       const channel = await guild.channels.fetch(notificationChannelId).catch(() => null);
       if (channel) {
         await channel.send({ embeds: [embed] });
-        return true;
+        serverNotified = true;
       }
     }
     
     // If no notification channel, try sending to system channel
-    if (guild.systemChannel) {
+    if (!serverNotified && guild.systemChannel) {
       await guild.systemChannel.send({ embeds: [embed] });
-      return true;
+      serverNotified = true;
     }
 
     // If all else fails, try to find a general channel
-    const generalChannel = guild.channels.cache.find(ch => 
-      ch.type === 0 && // Text channel
-      (ch.name.includes('general') || ch.name === 'general' || ch.name.includes('chat'))
-    );
-    
-    if (generalChannel) {
-      await generalChannel.send({ embeds: [embed] });
-      return true;
+    if (!serverNotified) {
+      const generalChannel = guild.channels.cache.find(ch => 
+        ch.type === 0 && // Text channel
+        (ch.name.includes('general') || ch.name === 'general' || ch.name.includes('chat'))
+      );
+      
+      if (generalChannel) {
+        await generalChannel.send({ embeds: [embed] });
+        serverNotified = true;
+      }
     }
     
-    console.log(`[SECURITY] Could not find a channel to send security alert in ${guild.name}`);
-    return false;
+    if (!serverNotified) {
+      console.log(`[SECURITY] Could not find a channel to send security alert in ${guild.name}`);
+    }
+    
+    return serverNotified;
   } catch (error) {
     console.error(`[SECURITY] Error sending security alert:`, error);
     return false;
@@ -1013,7 +1102,7 @@ function setupChannelModificationProtection(client) {
             console.error(`[SECURITY] Error fetching member ${executor.id}:`, fetchError);
           });
           
-          // Record incident and notify
+          // Record incident and notify both server and the user who performed the action
           try {
             sendSecurityAlert(channel.guild, {
               title: '🚨 UNAUTHORIZED CHANNEL DELETION',
@@ -1028,8 +1117,10 @@ function setupChannelModificationProtection(client) {
                   name: '⚠️ Security Notice',
                   value: 'Only the server owner can delete channels when strict security is enabled.'
                 }
-              ]
-            });
+              ],
+              // Add reason for the user who will receive DM
+              userReason: `You attempted to delete the channel "${channel.name}", which is not allowed under this server's strict security policy. Only the server owner can delete channels.`
+            }, executor.id); // Pass the executor ID so they get a DM
           } catch (alertError) {
             console.error(`[SECURITY] Failed to send security alert:`, alertError);
           }
@@ -1100,7 +1191,7 @@ function setupChannelModificationProtection(client) {
             await newGuild.setIcon(oldGuild.icon, `[SECURITY] Strict security: Only owner can change server icon`);
           }
           
-          // Record incident and notify
+          // Record incident and notify both server and user
           sendSecurityAlert(newGuild, {
             title: '🛡️ Server Settings Update Blocked',
             description: `User ${executor.tag} (${executor.id}) attempted to modify server settings but was blocked due to strict security settings.`,
@@ -1114,8 +1205,10 @@ function setupChannelModificationProtection(client) {
                 name: '⚠️ Security Notice',
                 value: 'Only the server owner can modify server settings when strict security is enabled.'
               }
-            ]
-          });
+            ],
+            // Add reason for the user who will receive DM
+            userReason: `You attempted to modify server settings (${changes}), which is not allowed under this server's strict security policy. Only the server owner can change server settings.`
+          }, executor.id); // Pass the executor ID so they get a DM
           
           // Take action against the member
           const member = await newGuild.members.fetch(executor.id);

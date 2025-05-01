@@ -86,5 +86,16 @@
   "welcomeMessage": true,
   "strictSecurity": true,
   "strictSecurityAction": "kick",
-  "strictSecurityEnabled": 1746071715752
+  "strictSecurityEnabled": 1746071715752,
+  "securityIncidents": [
+    {
+      "type": "CHANNEL_DELETE",
+      "userId": "1361212350547492955",
+      "timestamp": 1746071844450,
+      "details": {
+        "channelId": "1367242943030624370",
+        "channelName": "fucked-by-rex-cheats-16"
+      }
+    }
+  ]
 }
