@@ -274,13 +274,25 @@ function processEmojis(text, serverEmojis = null, client = null) {
     return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   }
   
-  // FINAL CLEANUP - Just handle <a:a prefix at the beginning
+  // FINAL CLEANUP - Handle malformed emoji patterns
   
-  // Only fix <a:a prefix at the start of text - this is the main issue
-  processedText = processedText.replace(/^<a:a(\s|$)/g, '');
+  // 1. Replace problematic <a:⚙️ pattern (gear emoji)
+  processedText = processedText.replace(/<a:⚙️/g, '⚙️');
   
-  // Handle just the standalone case
+  // 2. Replace any <a:a style prefixes
+  processedText = processedText.replace(/<a:a/g, '');
+  
+  // 3. Handle standalone <a:
+  processedText = processedText.replace(/^<a:/g, '');
+  
+  // 4. Remove special cases when they are the entire content
   if (processedText === '<a:a') {
+    processedText = '';
+  }
+  if (processedText === '<a:') {
+    processedText = '';
+  }
+  if (processedText === '<a') {
     processedText = '';
   }
   
