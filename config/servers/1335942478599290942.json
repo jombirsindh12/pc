@@ -25,7 +25,7 @@
   },
   "strictSecurity": true,
   "strictSecurityAction": "kick",
-  "strictSecurityEnabled": 1746089504293,
+  "strictSecurityEnabled": 1746607155052,
   "welcomeMessage": true,
   "youtubeChannelId": "UCTqVAZM7HsFoz7xrpRMoADg",
   "youtubeChannelName": "PHANTOM GAMING ",
@@ -366,6 +366,165 @@
         "oldName": "✿│ ᴀʟʟ ᴍᴇᴍʙᴇʀꜱ: 1029",
         "newName": "✿│ ᴀʟʟ ᴍᴇᴍʙᴇʀꜱ: 1028"
       }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "491769129318088714",
+      "timestamp": 1746595032502,
+      "details": {
+        "channelId": "1367397856079511594",
+        "oldName": "📊 PHANTOM GAMING : 563 subs",
+        "newName": "📊 PHANTOM GAMING : 563 subs"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "491769129318088714",
+      "timestamp": 1746595186607,
+      "details": {
+        "channelId": "1352486908797648979",
+        "oldName": "ᴏꜰꜰʟɪɴᴇ : 987",
+        "newName": "ᴏꜰꜰʟɪɴᴇ : 986"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "491769129318088714",
+      "timestamp": 1746595783514,
+      "details": {
+        "channelId": "1352602799745269905",
+        "oldName": "Online: 24",
+        "newName": "Online: 20"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "491769129318088714",
+      "timestamp": 1746595801059,
+      "details": {
+        "channelId": "1352486001830006807",
+        "oldName": "✿│ ᴀʟʟ ᴍᴇᴍʙᴇʀꜱ: 1026",
+        "newName": "✿│ ᴀʟʟ ᴍᴇᴍʙᴇʀꜱ: 1027"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "491769129318088714",
+      "timestamp": 1746596341790,
+      "details": {
+        "channelId": "1352602799745269905",
+        "oldName": "Online: 24",
+        "newName": "Online: 22"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "491769129318088714",
+      "timestamp": 1746596342201,
+      "details": {
+        "channelId": "1352486908797648979",
+        "oldName": "ᴏꜰꜰʟɪɴᴇ : 990",
+        "newName": "ᴏꜰꜰʟɪɴᴇ : 988"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "491769129318088714",
+      "timestamp": 1746605752179,
+      "details": {
+        "channelId": "1367397856079511594",
+        "oldName": "📊 PHANTOM GAMING : 563 subs",
+        "newName": "📊 PHANTOM GAMING : 563 subs"
+      }
+    },
+    {
+      "type": "CHANNEL_CREATE",
+      "userId": "1354382980600037426",
+      "timestamp": 1746605914685,
+      "details": {
+        "channelId": "1369589212684357662",
+        "channelName": "ticket-mohitbhai2007"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "491769129318088714",
+      "timestamp": 1746605946586,
+      "details": {
+        "channelId": "1369589302987591762",
+        "oldName": "ticket-mohitbhai2007",
+        "newName": "ticket-mohitbhai2007"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "491769129318088714",
+      "timestamp": 1746606052120,
+      "details": {
+        "channelId": "1367397856079511594",
+        "oldName": "📊 PHANTOM GAMING : 563 subs",
+        "newName": "📊 PHANTOM GAMING : 563 subs"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "491769129318088714",
+      "timestamp": 1746606352090,
+      "details": {
+        "channelId": "1367397856079511594",
+        "oldName": "📊 PHANTOM GAMING : 563 subs",
+        "newName": "📊 PHANTOM GAMING : 563 subs"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "491769129318088714",
+      "timestamp": 1746606652066,
+      "details": {
+        "channelId": "1367397856079511594",
+        "oldName": "📊 PHANTOM GAMING : 563 subs",
+        "newName": "📊 PHANTOM GAMING : 563 subs"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "491769129318088714",
+      "timestamp": 1746606952193,
+      "details": {
+        "channelId": "1367397856079511594",
+        "oldName": "📊 PHANTOM GAMING : 563 subs",
+        "newName": "📊 PHANTOM GAMING : 563 subs"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "491769129318088714",
+      "timestamp": 1746607111704,
+      "details": {
+        "channelId": "1367397856079511594",
+        "oldName": "📊 PHANTOM GAMING : 563 subs",
+        "newName": "📊 PHANTOM GAMING : 563 subs"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "491769129318088714",
+      "timestamp": 1746607126715,
+      "details": {
+        "channelId": "1367397856079511594",
+        "oldName": "📊 PHANTOM GAMING : 563 subs",
+        "newName": "📊 PHANTOM GAMING : 563 subs"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "491769129318088714",
+      "timestamp": 1746607156312,
+      "details": {
+        "channelId": "1367397856079511594",
+        "oldName": "📊 PHANTOM GAMING : 563 subs",
+        "newName": "📊 PHANTOM GAMING : 563 subs"
+      }
     }
   ],
   "whitelistedRoles": [
@@ -374,7 +533,8 @@
   "whitelistedUsers": [
     "1361975326418141215",
     "458276816071950337",
-    "1155442418309673000"
+    "1155442418309673000",
+    "1354382980600037426"
   ],
   "verificationChannelId": "1352277893698420736",
   "roleId": "1352280579667656704",
@@ -391,10 +551,12 @@
   "welcomeSettings": {
     "enabled": true,
     "channelId": "1337418792690782219",
-    "message": "<a:lol:1301275117434966016> Hey**{mention}**,Do Check Out The Server.<a:lol:1301275117434966016>\n\n<a:arrow_heartright:1017682681024229377>🔹 **Read the Rules** → #📜・ʀᴜʟᴇs(Follow the guidelines & stay safe!)<a:greenbolt:1215595223477125120>\n<a:arrow_heartright:1017682681024229377>🔹 **Get Free Panel** → #📜・ʀᴜʟᴇs(React Fast For Next Free Panel!)<a:greenbolt:1215595223477125120>\n<a:arrow_heartright:1017682681024229377>🔹 **Stay Updated** → #📊・ᴀɴɴᴏᴜɴᴄᴇᴍᴇɴᴛs(Get the latest news & announcements!)<a:greenbolt:1215595223477125120>\n<a:arrow_heartright:1017682681024229377>🔹 **Need Help?** → #❓・sᴜᴘᴘᴏʀᴛ(Facing issues? Get support here!)<a:greenbolt:1215595223477125120>\n<a:arrow_heartright:1017682681024229377>🔹 **Chat & Chill** → #🌐・ɢᴇɴᴇʀᴀʟ-ᴄʜᴀᴛ(Meet new people & have fun!)<a:greenbolt:1215595223477125120>\n<a:arrow_heartright:1017682681024229377>🔹 **Buy a Panel** → #💸・ᴘʀɪᴄᴇ-ʟɪsᴛ(For premium purchases & services!)<a:greenbolt:1215595223477125120>\n\n**<:gem:💎> Exclusive Giveaways – Stay active for surprise rewards!**\n\n<a:1z_love:1350454898698178622> **Enjoy your stay & have fun!** <a:1z_love:1350454898698178622>",
-    "title": "<a:redcrown:1025355756511432776>𝐖𝐄𝐋𝐂𝐎𝐌𝐄 𝐓𝐎 𝐏𝐇𝐀𝐍𝐓𝐎𝐌 𝐂𝐇𝐄𝐀𝐓𝐒 <a:redcrown:1025355756511432776>",
+    "message": "💫│𝓓𝓸𝓷'𝓽 𝓕𝓸𝓻𝓰𝓮𝓽 𝓣𝓸 𝓒𝓱𝓮𝓬𝓴 𝓡𝓾𝓵𝓮𝓼 ⁠: <#1337154892531372103> 💫│𝓕𝓻𝓮𝓮 𝓟𝓪𝓷𝓮𝓵 ⁠: <#1335942478599290945> 💫│𝓒𝓱𝓪𝓽 ⁠: <#1337156587663396965> 💫│𝓢𝓽𝓸𝓻𝓮 # ⁠: <#1343977544390672405>",
+    "title": "💫│𝓦𝓮𝓵𝓬𝓸𝓶𝓮 @user! 𝓽𝓸 𝓟𝓱𝓪𝓽𝓸𝓶 𝓒𝓱𝓮𝓪𝓽𝓼",
     "color": "5865F2",
     "roleId": null,
-    "roleName": null
+    "roleName": null,
+    "imageUrl": null,
+    "backgroundUrl": null
   }
 }

@@ -283,6 +283,17 @@ client.once(Events.ClientReady, async () => {
     } catch (backupError) {
       console.error('Error initializing backup system:', backupError);
     }
+    
+    // Initialize the server stats system
+    try {
+      const serverStats = require('./commands/serverstats');
+      if (typeof serverStats.setupStatsUpdateInterval === 'function') {
+        console.log('Setting up server stats monitoring system');
+        serverStats.setupStatsUpdateInterval(client);
+      }
+    } catch (statsError) {
+      console.error('Error initializing server stats system:', statsError);
+    }
   } catch (error) {
     console.error('Error registering slash commands:', error);
   }
@@ -372,6 +383,10 @@ client.on(Events.GuildCreate, async guild => {
               value: 'For enhanced protection, all security commands can only be used by you, the server owner. This prevents security compromise even if admin accounts are compromised.'
             },
             {
+              name: '📊 Server Statistics',
+              value: 'Use `/serverstats setup` to create voice channels that display server stats like member counts, online users, and role counts - similar to Statbot.'
+            },
+            {
               name: '⚠️ Important',
               value: 'If you want to adjust security settings, use `/security`, `/antiraid`, `/antispam`, or `/lockdown` commands. Only you can modify these settings.'
             }
@@ -413,8 +428,12 @@ client.on(Events.GuildCreate, async guild => {
                   value: 'All security features have been auto-enabled with maximum protection. Only the server owner can adjust security settings.'
                 },
                 {
-                  name: '⚙️ Commands',
-                  value: 'Use `/security`, `/antiraid`, `/antispam`, or `/lockdown` commands to manage security features.'
+                  name: '📊 Server Statistics',
+                  value: 'Use `/serverstats setup` to create voice channels that show member counts, online users, and role counts.'
+                },
+                {
+                  name: '⚙️ Key Commands',
+                  value: 'Use `/security`, `/antiraid`, `/antispam`, `/serverstats`, or `/lockdown` commands to manage features.'
                 }
               ],
               footer: {

@@ -84,6 +84,15 @@ module.exports = {
              `\`/voice message\` - Send a voice message\n`+
              `\`/voice announce\` - Toggle join/leave announcements`
     });
+    
+    // Server Stats Features
+    helpEmbed.fields.push({
+      name: '📊 Server Statistics',
+      value: `\`/serverstats setup\` - Create voice channels showing server stats\n`+
+             `\`/serverstats role\` - Create a counter for members with a specific role\n`+
+             `\`/serverstats custom\` - Create custom stat counters (online, bots, etc.)\n`+
+             `\`/serverstats update\` - Manually update all stat channels`
+    });
 
     // Web Dashboard
     helpEmbed.fields.push({
@@ -153,6 +162,24 @@ module.exports = {
         }
       } else {
         configField.value += '• Subscriber Count: Not set\n';
+      }
+      
+      // Show server stats info if enabled
+      if (serverConfig.statsConfig?.enabled) {
+        configField.value += `• Server Stats: Enabled\n`;
+        
+        // Show category if set
+        if (serverConfig.statsConfig.categoryId) {
+          configField.value += `• Stats Category: <#${serverConfig.statsConfig.categoryId}>\n`;
+        }
+        
+        // Show number of stat channels
+        const statChannelCount = Object.keys(serverConfig.statsConfig.channels || {}).length;
+        if (statChannelCount > 0) {
+          configField.value += `• Stat Channels: ${statChannelCount} channels\n`;
+        }
+      } else {
+        configField.value += '• Server Stats: Not set\n';
       }
       
       helpEmbed.fields.push(configField);

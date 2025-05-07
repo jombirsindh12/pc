@@ -31,6 +31,18 @@ module.exports = {
       required: false
     },
     {
+      name: 'image',
+      type: 3, // STRING type
+      description: 'URL of an image to show in welcome message (supports PNG, JPG, GIF)',
+      required: false
+    },
+    {
+      name: 'background',
+      type: 3, // STRING type
+      description: 'URL of a background image for the welcome message',
+      required: false
+    },
+    {
       name: 'role',
       type: 8, // ROLE type
       description: 'Role to give new members automatically',
@@ -54,6 +66,7 @@ module.exports = {
     
     // Get parameters
     let channel, welcomeMessage, welcomeTitle, welcomeColor, welcomeRole, disable;
+    let welcomeImage, welcomeBackground;
     
     if (isSlashCommand) {
       channel = interaction.options.getChannel('channel');
@@ -62,6 +75,10 @@ module.exports = {
       welcomeColor = interaction.options.getString('color');
       welcomeRole = interaction.options.getRole('role');
       disable = interaction.options.getBoolean('disable');
+      
+      // Get new image and background options
+      welcomeImage = interaction.options.getString('image');
+      welcomeBackground = interaction.options.getString('background');
       
       // Defer reply
       await interaction.deferReply();
@@ -104,7 +121,9 @@ module.exports = {
       title: welcomeTitle,
       color: welcomeColor || '5865F2',
       roleId: welcomeRole?.id || null,
-      roleName: welcomeRole?.name || null
+      roleName: welcomeRole?.name || null,
+      imageUrl: welcomeImage || null,
+      backgroundUrl: welcomeBackground || null
     };
     
     // Update server config
@@ -143,6 +162,34 @@ module.exports = {
         name: 'Auto-Role',
         value: `New members will automatically receive the <@&${welcomeRole.id}> role.`
       });
+    }
+    
+    // Add image info if provided
+    if (welcomeImage) {
+      embed.fields.push({
+        name: '🖼️ Welcome Image',
+        value: 'A custom image will be shown in welcome messages.'
+      });
+    } else {
+      embed.fields.push({
+        name: '🖼️ Welcome Image',
+        value: "Member's profile picture will be displayed as the main image in welcome messages."
+      });
+    }
+    
+    // Add background info if provided
+    if (welcomeBackground) {
+      if (welcomeImage) {
+        embed.fields.push({
+          name: '🌄 Background Image',
+          value: 'A custom background image is configured for welcome messages (shown as link).'
+        });
+      } else {
+        embed.fields.push({
+          name: '🌄 Background Image',
+          value: 'A custom background image will be shown instead of profile picture.'
+        });
+      }
     }
     
     // Send success message
@@ -199,11 +246,39 @@ module.exports = {
       timestamp: new Date()
     };
     
-    // Add server icon if available
+    // Add server icon if available (as thumbnail)
     if (interaction.guild.iconURL()) {
       exampleEmbed.thumbnail = {
         url: interaction.guild.iconURL({ dynamic: true })
       };
+    }
+    
+    // Add image if provided
+    if (welcomeImage) {
+      exampleEmbed.image = {
+        url: welcomeImage
+      };
+    } 
+    // If no custom image is set, use the user's profile picture as the main image
+    else {
+      exampleEmbed.image = {
+        url: interaction.user.displayAvatarURL({ dynamic: true, size: 512 })
+      };
+    }
+    
+    // Handle background for example embed
+    if (welcomeBackground) {
+      // If we have a custom image, we can't show both - Discord limitation
+      if (welcomeImage) {
+        // If we already have a main image, we can add the background URL to the description
+        exampleEmbed.description += `\n\n[Click for welcome background](${welcomeBackground})`;
+      } 
+      // If we're using profile picture as image, prioritize background image if available
+      else {
+        exampleEmbed.image = {
+          url: welcomeBackground
+        };
+      }
     }
     
     // Send example
@@ -299,6 +374,34 @@ function setupWelcomeHandler(client) {
     welcomeEmbed.footer = {
       text: `Member #${member.guild.memberCount}`
     };
+    
+    // Add image if configured
+    if (welcomeSettings.imageUrl) {
+      welcomeEmbed.image = {
+        url: welcomeSettings.imageUrl
+      };
+    } 
+    // If no custom image is set, use the member's profile picture as the main image
+    else {
+      welcomeEmbed.image = {
+        url: member.user.displayAvatarURL({ dynamic: true, size: 512 })
+      };
+    }
+    
+    // Handle background (if it's a background URL)
+    if (welcomeSettings.backgroundUrl) {
+      // If we have a custom image, we can't show both - Discord limitation
+      if (welcomeSettings.imageUrl) {
+        // If we already have a main image, we can add the background URL to the description
+        welcomeEmbed.description += `\n\n[Click for welcome background](${welcomeSettings.backgroundUrl})`;
+      } 
+      // If we're using profile picture as image, prioritize background image if available
+      else {
+        welcomeEmbed.image = {
+          url: welcomeSettings.backgroundUrl
+        };
+      }
+    }
     
     // Send welcome message
     try {
