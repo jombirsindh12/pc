@@ -20,7 +20,8 @@ module.exports = {
         .addChannelOption(option => 
           option.setName('category')
             .setDescription('Category to create stats channels in')
-            .setRequired(true))
+            .setRequired(true)
+            .addChannelTypes(4)) // 4 is GUILD_CATEGORY
         .addStringOption(option =>
           option.setName('prefix')
             .setDescription('Prefix for stat channel names (default: "📊")')
@@ -122,8 +123,8 @@ async function setupStatsChannels(interaction, client) {
   const serverId = interaction.guild.id;
   
   // Validate that the selected channel is a category
-  if (category.type !== 4) { // 4 is the type for GUILD_CATEGORY
-    return interaction.followUp('❌ Please select a category channel where stats channels will be created.');
+  if (category.type !== 4 && category.type !== "GUILD_CATEGORY" && category.type !== "category") { // Support different ways category type might be represented
+    return interaction.followUp('❌ Please select a category channel where stats channels will be created. The channel you selected is not a category.');
   }
   
   try {

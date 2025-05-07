@@ -25,7 +25,7 @@
   },
   "strictSecurity": true,
   "strictSecurityAction": "kick",
-  "strictSecurityEnabled": 1746608369028,
+  "strictSecurityEnabled": 1746609350763,
   "welcomeMessage": true,
   "youtubeChannelId": "UCTqVAZM7HsFoz7xrpRMoADg",
   "youtubeChannelName": "PHANTOM GAMING ",
@@ -625,6 +625,26 @@
         "oldName": "📊 PHANTOM GAMING : 563 subs",
         "newName": "📊 PHANTOM GAMING : 563 subs"
       }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "491769129318088714",
+      "timestamp": 1746608670521,
+      "details": {
+        "channelId": "1367397856079511594",
+        "oldName": "📊 PHANTOM GAMING : 563 subs",
+        "newName": "📊 PHANTOM GAMING : 563 subs"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "491769129318088714",
+      "timestamp": 1746608747764,
+      "details": {
+        "channelId": "1367397856079511594",
+        "oldName": "📊 PHANTOM GAMING : 563 subs",
+        "newName": "📊 PHANTOM GAMING : 563 subs"
+      }
     }
   ],
   "whitelistedRoles": [
@@ -668,5 +688,27 @@
       "imageHash": "d1c7be692f93f30e0be266b25f6ea588",
       "guildId": "1335942478599290942"
     }
+  },
+  "statsConfig": {
+    "enabled": true,
+    "channels": {
+      "role_1369529962679369758": {
+        "id": "1369600166457380885",
+        "format": "📊 {role}: {count}",
+        "roleId": "1369529962679369758"
+      },
+      "online": {
+        "id": "1369600331859759145",
+        "format": "🟢 Online: {count}",
+        "type": "online"
+      },
+      "humans": {
+        "id": "1369600439045324802",
+        "format": "👤 Humans: {count}",
+        "type": "humans"
+      }
+    },
+    "updateInterval": 5,
+    "lastUpdate": 1746608868062
   }
 }

@@ -202,9 +202,14 @@ module.exports = {
       .replace('{server}', interaction.guild.name)
       .replace('{mention}', `<@${interaction.user.id}>`); // Add support for {mention} as an alternative
     
+    // Preserve multiple spaces by replacing them with HTML entities that Discord will render
+    const spacesPreserved = processedDescription.replace(/  +/g, match => {
+      return ' ' + '&nbsp;'.repeat(match.length - 1);
+    });
+    
     // Process emoji codes to Discord emoji format
     // Instead of our previous complex logic, we'll use our new emoji processor
-    let formattedDescription = processEmojis(processedDescription, interaction.guild.emojis.cache);
+    let formattedDescription = processEmojis(spacesPreserved, interaction.guild.emojis.cache);
     
     // Special direct replacements for known custom emojis
     formattedDescription = formattedDescription
@@ -317,8 +322,13 @@ function setupWelcomeHandler(client) {
       .replace('{server}', member.guild.name)
       .replace('{mention}', `<@${member.id}>`); // Add support for {mention} as alternative
       
+    // Preserve multiple spaces by replacing them with HTML entities that Discord will render
+    const spacesPreserved = processedDescription.replace(/  +/g, match => {
+      return ' ' + '&nbsp;'.repeat(match.length - 1);
+    });
+    
     // Process emoji codes to Discord emoji format using new processor
-    let formattedDescription = processEmojis(processedDescription, member.guild.emojis.cache);
+    let formattedDescription = processEmojis(spacesPreserved, member.guild.emojis.cache);
     
     // Special direct replacements for known custom emojis
     formattedDescription = formattedDescription
