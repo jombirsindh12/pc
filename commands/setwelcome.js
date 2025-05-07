@@ -664,6 +664,11 @@ function sendDMToNewMember(member, message) {
       .replace(/{user\.name}/g, member.user.username)
       .replace(/{server\.memberCount}/g, member.guild.memberCount.toString())
       .replace(/{year}/g, new Date().getFullYear().toString());
+    
+    // Preserve multiple spaces by replacing them with Unicode spaces that Discord will render
+    const formattedText = processedMessage.replace(/  +/g, match => {
+      return ' ' + '\u2000'.repeat(match.length - 1);  // Use Unicode spaces (En Quad) instead of regular spaces
+    });
       
     // Convert emoji codes to actual emojis
     const standardEmojis = {
@@ -680,14 +685,39 @@ function sendDMToNewMember(member, message) {
       ':speech_balloon:': '💬',
       ':shopping_cart:': '🛒',
       ':clock2:': '🕒',
+      ':star:': '⭐',
+      ':fire:': '🔥',
+      ':tada:': '🎉',
+      ':clap:': '👏',
+      ':wave:': '👋',
+      ':partying_face:': '🥳',
+      ':gift:': '🎁',
+      ':trophy:': '🏆',
+      ':medal:': '🏅',
+      ':money_with_wings:': '💸',
+      ':100:': '💯',
     };
     
-    let finalMessage = processedMessage;
+    let finalMessage = formattedText;
     Object.keys(standardEmojis).forEach(code => {
       finalMessage = finalMessage.replace(new RegExp(code, 'g'), standardEmojis[code]);
     });
     
+    // Add emoji replacements for animated emojis
+    finalMessage = finalMessage
+      .replace(/:redcrown:/g, '<a:redcrown:1025355756511432776>')
+      .replace(/:arrow_heartright:/g, '<a:arrow_heartright:1017682681024229377>')
+      .replace(/:greenbolt:/g, '<a:greenbolt:1215595223477125120>')
+      .replace(/:1z_love:/g, '<a:1z_love:1216659232003457065>')
+      .replace(/:lol:/g, '<a:lol:1301275117434966016>');
+    
+    // Fix any formatting issues with animated emojis
+    finalMessage = finalMessage
+      .replace(/<a<<a:/g, '<a:')  // Fix double animated prefix
+      .replace(/>>(\d+)/g, ':$1>'); // Fix closing format
+    
     // Send the DM
+    console.log(`Sending formatted DM to ${member.user.tag}`);
     return member.send(finalMessage);
   } catch (error) {
     console.error(`Error sending DM to ${member.user.tag}:`, error);
