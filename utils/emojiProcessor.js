@@ -405,20 +405,30 @@ function processEmojis(messageText, serverEmojis = null, client = null) {
   processedText = processedText.replace(/:(\d+)>:(\d+)>/g, ':$1>');
   processedText = processedText.replace(/:(\d+)>(\d+)>/g, ':$1>');
   
-  // STEP 10: Direct replacement for GTALoading in specific formats to ensure it works
-  processedText = processedText.replace(/:GTALoading:/g, '<a:GTALoading:1337142161673814057>');
-  processedText = processedText.replace(/<<a:GTALoading:>>/g, '<a:GTALoading:1337142161673814057>');
-  processedText = processedText.replace(/{sticker:GTALoading}/g, '<a:GTALoading:1337142161673814057>');
+  // STEP 10: Fix all GTALoading emoji formats to prevent nested replacements
+  // First temporarily replace all correct instances of GTALoading to prevent double replacement
+  const correctGtaEmoji = '<a:GTALoading:1337142161673814057>';
+  const tempGtaMarker = '##GTA_EMOJI_PLACEHOLDER##';
   
-  // STEP 11: Fix over-replacement issue (where the emoji might get replaced multiple times)
-  processedText = processedText.replace(/<a:(<a:GTALoading:1337142161673814057>):1337142161673814057>/g, 
-                                      '<a:GTALoading:1337142161673814057>');
-  processedText = processedText.replace(/<a:<a:GTALoading:1337142161673814057>/g, 
-                                      '<a:GTALoading:1337142161673814057>');
-                                      
-  // Fix other common syntax issues
-  processedText = processedText.replace(/<a:GTALoading:1337142161673814057>:1337142161673814057>/g, 
-                                      '<a:GTALoading:1337142161673814057>');
+  // Replace all correct instances with a temporary marker
+  processedText = processedText.replace(new RegExp(correctGtaEmoji, 'g'), tempGtaMarker);
+  
+  // Now apply replacements for all input formats
+  processedText = processedText.replace(/:GTALoading:/g, correctGtaEmoji);
+  processedText = processedText.replace(/\{sticker:GTALoading\}/g, correctGtaEmoji);
+  processedText = processedText.replace(/<<a:GTALoading:>>/g, correctGtaEmoji);
+  
+  // Important: We can't just replace all instances of "GTALoading" as that's too broad
+  // Instead, find specific patterns that are likely to be emoji references
+  processedText = processedText.replace(/\bGTALoading\b/g, correctGtaEmoji); // Word boundary match
+  
+  // Fix broken formats that might have been created
+  processedText = processedText.replace(/<a:<a:GTALoading:1337142161673814057>/g, correctGtaEmoji);
+  processedText = processedText.replace(/<a:GTALoading:1337142161673814057>:1337142161673814057>/g, correctGtaEmoji);
+  processedText = processedText.replace(/<a:(<a:GTALoading:1337142161673814057>):1337142161673814057>/g, correctGtaEmoji);
+  
+  // Restore our placeholders
+  processedText = processedText.replace(new RegExp(tempGtaMarker, 'g'), correctGtaEmoji);
                                       
   // STEP 12: Prevent double-formatting of already formatted emojis
   // Convert double << or >> in emoji code to correct format
