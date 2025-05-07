@@ -120,10 +120,11 @@ module.exports = {
     processedTitle = processSticker(processedTitle);
     processedDescription = processSticker(processedDescription);
     
-    // Process emoji codes using our enhanced emoji processor
+    // Process emoji codes using our enhanced emoji processor (now with Nitro support)
     const serverEmojis = isSlashCommand ? interaction.guild.emojis.cache : message.guild.emojis.cache;
-    processedTitle = processEmojis(processedTitle, serverEmojis);
-    processedDescription = processEmojis(processedDescription, serverEmojis);
+    const discordClient = client; // Pass client for accessing all server emojis (Nitro support)
+    processedTitle = processEmojis(processedTitle, serverEmojis, discordClient);
+    processedDescription = processEmojis(processedDescription, serverEmojis, discordClient);
     
     // Create the embed with processed content
     const embed = {
@@ -142,8 +143,8 @@ module.exports = {
     }
     
     if (footerText) {
-      // Process emojis in footer text too
-      const processedFooter = processEmojis(processSticker(footerText), serverEmojis);
+      // Process emojis in footer text too (with Nitro support)
+      const processedFooter = processEmojis(processSticker(footerText), serverEmojis, discordClient);
       embed.footer = { text: processedFooter };
     }
     

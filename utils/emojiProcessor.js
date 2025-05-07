@@ -169,19 +169,43 @@ const animatedEmojis = {
 /**
  * Process emoji codes in a message string to Discord format
  * Enhanced to match Discord's textbox emoji processing
+ * Now supports all server emojis including Nitro emojis
  * 
  * @param {string} messageText - The message text to process
  * @param {Collection} serverEmojis - Collection of server emojis from guild.emojis.cache
+ * @param {Client} client - Discord client for accessing global emojis across all servers
  * @returns {string} - The processed message with emojis in Discord format
  */
-function processEmojis(messageText, serverEmojis = null) {
+function processEmojis(messageText, serverEmojis = null, client = null) {
   if (!messageText) return messageText;
   
   let processedText = messageText;
   
+  // Create a map of all available emojis from all servers the bot is in (for Nitro emojis)
+  let allEmojis = new Map();
+  if (client && client.guilds && client.guilds.cache) {
+    client.guilds.cache.forEach(guild => {
+      guild.emojis.cache.forEach(emoji => {
+        // Don't override if we already have this emoji name (prioritize current server)
+        if (!allEmojis.has(emoji.name)) {
+          allEmojis.set(emoji.name, emoji);
+        }
+      });
+    });
+    
+    // Log available emojis for debugging
+    console.log(`Loaded ${allEmojis.size} unique emojis from all servers the bot is in`);
+  }
+  
   // STEP 1: Pre-process common sticker formats (both {sticker:name} and [sticker:name])
   // Process sticker format {sticker:name}
   processedText = processedText.replace(/{sticker:([a-zA-Z0-9_]+)}/g, (match, name) => {
+    // First check if this is a known server emoji
+    if (allEmojis.has(name)) {
+      const emoji = allEmojis.get(name);
+      return emoji.animated ? `<a:${emoji.name}:${emoji.id}>` : `<:${emoji.name}:${emoji.id}>`;
+    }
+    
     // Check if we have this sticker in our animated emojis collection
     const stickerCode = `:${name}:`;
     const foundEmoji = Object.keys(animatedEmojis).find(key => key === stickerCode);
@@ -197,6 +221,12 @@ function processEmojis(messageText, serverEmojis = null) {
   
   // Process sticker format [sticker:name]
   processedText = processedText.replace(/\[sticker:([a-zA-Z0-9_]+)\]/g, (match, name) => {
+    // First check if this is a known server emoji
+    if (allEmojis.has(name)) {
+      const emoji = allEmojis.get(name);
+      return emoji.animated ? `<a:${emoji.name}:${emoji.id}>` : `<:${emoji.name}:${emoji.id}>`;
+    }
+    
     // Check if we have this sticker in our animated emojis collection
     const stickerCode = `:${name}:`;
     const foundEmoji = Object.keys(animatedEmojis).find(key => key === stickerCode);
@@ -226,7 +256,8 @@ function processEmojis(messageText, serverEmojis = null) {
     processedText = processedText.replace(new RegExp(code, 'g'), unicodeEmojis[code]);
   });
   
-  // STEP 5: Process server-specific emojis if provided
+  // STEP 5: Process server-specific emojis 
+  // First current server (if provided)
   if (serverEmojis) {
     serverEmojis.forEach(emoji => {
       const emojiCode = `:${emoji.name}:`;
@@ -236,6 +267,22 @@ function processEmojis(messageText, serverEmojis = null) {
       
       // Skip if it looks like it might already have an ID attached
       if (processedText.includes(`<:${emoji.name}:`) || processedText.includes(`<a:${emoji.name}:`)) return;
+      
+      // Replace all instances
+      processedText = processedText.replace(new RegExp(emojiCode, 'g'), emojiFormat);
+    });
+  }
+  
+  // Then from all other servers (Nitro emojis)
+  if (allEmojis.size > 0) {
+    allEmojis.forEach((emoji, name) => {
+      const emojiCode = `:${name}:`;
+      const emojiFormat = emoji.animated 
+        ? `<a:${name}:${emoji.id}>` 
+        : `<:${name}:${emoji.id}>`;
+      
+      // Skip if it looks like it might already have an ID attached
+      if (processedText.includes(`<:${name}:`) || processedText.includes(`<a:${name}:`)) return;
       
       // Replace all instances
       processedText = processedText.replace(new RegExp(emojiCode, 'g'), emojiFormat);
