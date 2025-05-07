@@ -109,7 +109,9 @@ async function setupInviteTracking(interaction, client) {
     serverConfig.inviteSettings.logChannelId = logChannel.id;
     serverConfig.inviteSettings.welcomeMessage = welcomeMessage;
     serverConfig.inviteSettings.enabled = true;
-    config.saveServerConfig(serverId, serverConfig);
+    config.updateServerConfig(serverId, {
+      inviteSettings: serverConfig.inviteSettings
+    });
     
     // Save to database
     await inviteTracker.updateServerInviteSettings(serverId, {
@@ -301,7 +303,9 @@ async function toggleInviteTracking(interaction, client) {
     
     // Update config
     serverConfig.inviteSettings.enabled = enabled;
-    config.saveServerConfig(serverId, serverConfig);
+    config.updateServerConfig(serverId, {
+      inviteSettings: serverConfig.inviteSettings
+    });
     
     // Update database
     await inviteTracker.updateServerInviteSettings(serverId, {

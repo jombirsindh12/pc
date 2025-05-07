@@ -25,7 +25,7 @@
   },
   "strictSecurity": true,
   "strictSecurityAction": "kick",
-  "strictSecurityEnabled": 1746615957452,
+  "strictSecurityEnabled": 1746617247598,
   "welcomeMessage": true,
   "youtubeChannelId": "UCTqVAZM7HsFoz7xrpRMoADg",
   "youtubeChannelName": "PHANTOM GAMING ",
@@ -728,6 +728,11 @@
       }
     },
     "updateInterval": 5,
-    "lastUpdate": 1746615730764
+    "lastUpdate": 1746617110716
+  },
+  "inviteSettings": {
+    "logChannelId": "1337139875660697630",
+    "welcomeMessage": "👋 Welcome {user} to {server}!\n\n🎯 You were invited by **{inviter}**\n💫 They have invited **{invites}** members",
+    "enabled": true
   }
 }

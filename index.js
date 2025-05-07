@@ -288,6 +288,26 @@ client.once(Events.ClientReady, async () => {
       console.error('Error setting up verification collectors:', verificationError);
     }
     
+    // Initialize welcome message handler
+    try {
+      console.log('Setting up welcome message handler...');
+      const { setupWelcomeHandler } = require('./commands/setwelcome');
+      setupWelcomeHandler(client);
+      console.log('Welcome message handler initialized successfully');
+    } catch (welcomeError) {
+      console.error('Error setting up welcome message handler:', welcomeError);
+    }
+    
+    // Initialize DM message handler
+    try {
+      console.log('Setting up DM message handler...');
+      const { setupDMHandler } = require('./commands/setdm');
+      setupDMHandler(client);
+      console.log('DM message handler initialized successfully');
+    } catch (dmError) {
+      console.error('Error setting up DM message handler:', dmError);
+    }
+    
     // Initialize all subscriber count intervals for all servers
     initializeAllSubCountIntervals(client);
     

@@ -403,18 +403,28 @@ module.exports = {
 // Setup welcome event handler
 function setupWelcomeHandler(client) {
   const config = require('../utils/config');
+  console.log("Welcome handler function running...");
   
   client.on('guildMemberAdd', async member => {
+    console.log(`New member joined: ${member.user.tag} (${member.id}) in server: ${member.guild.name}`);
     const serverId = member.guild.id;
     const serverConfig = config.getServerConfig(serverId);
     
     // Check if welcome messages are enabled
-    if (!serverConfig.welcomeSettings?.enabled || !serverConfig.welcomeSettings?.channelId) return;
+    if (!serverConfig.welcomeSettings?.enabled || !serverConfig.welcomeSettings?.channelId) {
+      console.log(`Welcome messages disabled or no channel set for server ${serverId}`);
+      return;
+    }
+    
+    console.log(`Processing welcome message for ${member.user.tag} in ${member.guild.name}`);
     
     // Get welcome channel
     const welcomeChannelId = serverConfig.welcomeSettings.channelId;
     const welcomeChannel = member.guild.channels.cache.get(welcomeChannelId);
-    if (!welcomeChannel) return;
+    if (!welcomeChannel) {
+      console.log(`Welcome channel ${welcomeChannelId} not found in guild ${serverId}`);
+      return;
+    }
     
     // Get welcome settings
     const welcomeSettings = serverConfig.welcomeSettings;
@@ -641,3 +651,50 @@ function setupWelcomeHandler(client) {
   
   console.log('Welcome event handler has been set up');
 }
+
+// Add DM message handler function
+function sendDMToNewMember(member, message) {
+  try {
+    // Replace variables in the message
+    const processedMessage = message
+      .replace(/{user}/g, `<@${member.id}>`)
+      .replace(/{mention}/g, `<@${member.id}>`)
+      .replace(/{server}/g, member.guild.name)
+      .replace(/{user\.tag}/g, member.user.tag)
+      .replace(/{user\.name}/g, member.user.username)
+      .replace(/{server\.memberCount}/g, member.guild.memberCount.toString())
+      .replace(/{year}/g, new Date().getFullYear().toString());
+      
+    // Convert emoji codes to actual emojis
+    const standardEmojis = {
+      ':gem:': '💎',
+      ':small_blue_diamond:': '🔹',
+      ':large_blue_diamond:': '🔷',
+      ':crown:': '👑',
+      ':heart:': '❤️',
+      ':dizzy:': '💫',
+      ':sparkles:': '✨',
+      ':rocket:': '🚀',
+      ':shield:': '🛡️',
+      ':scroll:': '📜',
+      ':speech_balloon:': '💬',
+      ':shopping_cart:': '🛒',
+      ':clock2:': '🕒',
+    };
+    
+    let finalMessage = processedMessage;
+    Object.keys(standardEmojis).forEach(code => {
+      finalMessage = finalMessage.replace(new RegExp(code, 'g'), standardEmojis[code]);
+    });
+    
+    // Send the DM
+    return member.send(finalMessage);
+  } catch (error) {
+    console.error(`Error sending DM to ${member.user.tag}:`, error);
+    return Promise.reject(error);
+  }
+}
+
+// Export the functions
+module.exports.setupWelcomeHandler = setupWelcomeHandler;
+module.exports.sendDMToNewMember = sendDMToNewMember;
