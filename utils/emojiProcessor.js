@@ -50,7 +50,7 @@ const animatedEmojis = {
 };
 
 /**
- * Simple, reliable emoji processor - complete rewrite for better reliability
+ * Completely rewritten emoji processor using a more reliable approach
  * @param {string} text - The text to process
  * @param {Collection} serverEmojis - Server emojis collection
  * @param {Client} client - Discord client for Nitro support
@@ -58,19 +58,6 @@ const animatedEmojis = {
  */
 function processEmojis(text, serverEmojis = null, client = null) {
   if (!text) return text;
-  
-  // FIRST: Check if the text is just a broken emoji tag and remove it completely
-  if (/^<a:a<a:a>/i.test(text)) {
-    return '';
-  }
-  
-  if (/^<a:a[\w\s]*$/i.test(text)) {
-    return '';
-  }
-  
-  // Strip ALL broken emoji formats that start with <a:a
-  text = text.replace(/<a:a<a:[\w]+:(\d+)>/g, '<a:GTALoading:1337142161673814057>');
-  text = text.replace(/<a:a<a:/g, '<a:GTALoading:1337142161673814057');
   
   let processedText = text;
   
@@ -287,26 +274,13 @@ function processEmojis(text, serverEmojis = null, client = null) {
     return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   }
   
-  // FINAL CLEANUP - Handle <a:a prefix and similar broken fragments
+  // FINAL CLEANUP - Just handle <a:a prefix at the beginning
   
-  // Fix common broken prefix patterns at start
-  processedText = processedText.replace(/^<a:a /g, ''); // <a:a at start
-  processedText = processedText.replace(/^<a:a$/g, '');
-  processedText = processedText.replace(/^<a:a>$/g, '');
+  // Only fix <a:a prefix at the start of text - this is the main issue
+  processedText = processedText.replace(/^<a:a(\s|$)/g, '');
   
-  // Fix <a: prefix only when it appears at the beginning without a valid emoji
-  processedText = processedText.replace(/^<a: /g, '');
-  processedText = processedText.replace(/^<a:$/g, '');
-  processedText = processedText.replace(/^<a:>$/g, '');
-  
-  // Remove isolated fragments at start
+  // Handle just the standalone case
   if (processedText === '<a:a') {
-    processedText = '';
-  }
-  if (processedText === '<a:') {
-    processedText = '';
-  }
-  if (processedText === '<a') {
     processedText = '';
   }
   

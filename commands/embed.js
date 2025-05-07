@@ -137,15 +137,6 @@ module.exports = {
     const discordClient = useNitroEmoji ? client : null;
     console.log(`Embed command: Using ${useNitroEmoji ? 'ALL servers' : 'ONLY current server'} for emoji processing`);
     
-    // Manual cleanup of <a: and <a:a prefixes before sending to emoji processor
-    // Handle <a:a pattern
-    processedTitle = processedTitle.replace(/^<a:a/g, '');
-    processedDescription = processedDescription.replace(/^<a:a/g, '');
-    
-    // Handle <a: pattern (without the second 'a')
-    processedTitle = processedTitle.replace(/^<a:/g, '');
-    processedDescription = processedDescription.replace(/^<a:/g, '');
-    
     // Now run the regular emoji processor (which handles GTALoading and other emojis)
     processedTitle = processEmojis(processedTitle, serverEmojis, discordClient);
     processedDescription = processEmojis(processedDescription, serverEmojis, discordClient);
@@ -167,13 +158,8 @@ module.exports = {
     }
     
     if (footerText) {
-      // Clean up any broken emoji tags in footer first
-      let cleanFooter = processSticker(footerText);
-      cleanFooter = cleanFooter.replace(/^<a:a/g, '');
-      cleanFooter = cleanFooter.replace(/^<a:/g, '');
-      
-      // Process emojis in footer text too (with Nitro support)
-      const processedFooter = processEmojis(cleanFooter, serverEmojis, discordClient);
+        // Process emojis in footer text too (with Nitro support)
+      const processedFooter = processEmojis(processSticker(footerText), serverEmojis, discordClient);
       embed.footer = { text: processedFooter };
     }
     
