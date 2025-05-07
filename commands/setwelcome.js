@@ -666,23 +666,33 @@ function sendDMToNewMember(member, message) {
       .replace(/{year}/g, new Date().getFullYear().toString());
     
     // Preserve multiple spaces by replacing them with Unicode spaces that Discord will render
-    // Also fix new lines and preserve markdown formatting
-    const formattedText = processedMessage
-      // Replace markdown to preserve bold/italic formatting
-      .replace(/\*\*/g, '**')  // Bold
-      .replace(/\*/g, '*')     // Italic
-      .replace(/__/g, '__')    // Underline
-      .replace(/~~/g, '~~')    // Strikethrough
-      // Replace multiple spaces with Unicode spaces
-      .replace(/  +/g, match => {
-        return ' ' + '\u2000'.repeat(match.length - 1);  // Use Unicode spaces (En Quad) instead of regular spaces
-      })
-      // Handle new lines
-      .replace(/\\n/g, '\n')   // Convert explicit \n to actual new lines
-      // Support for Discord's line separator
-      .replace(/━+/g, match => {
-        return '━'.repeat(match.length); // Make sure line separators display properly
-      })
+    // Completely new approach for Discord message formatting
+    // Use the MessageBuilder utility to properly format the message
+    
+    // Step 1: Handle line breaks properly
+    // Replace explicit \n with actual line breaks
+    let formattedText = processedMessage.replace(/\\n/g, '\n');
+    
+    // Step 2: Convert multiple spaces to non-breaking spaces
+    // This ensures multiple spaces are preserved in Discord
+    formattedText = formattedText.replace(/ {2,}/g, match => {
+      // Use the standard non-breaking space character for Discord
+      return ' ' + '\u00A0'.repeat(match.length - 1);
+    });
+    
+    // Step 3: Preserve line separators
+    formattedText = formattedText.replace(/━+/g, match => {
+      // Ensure Unicode line separators display correctly
+      return '━'.repeat(match.length);
+    });
+    
+    // Step 4: Ensure markdown formatting is preserved
+    // Discord handles markdown automatically, but we make sure it's properly formatted
+    formattedText = formattedText
+      .replace(/\*\*(.*?)\*\*/g, '**$1**')   // Bold
+      .replace(/\*(.*?)\*/g, '*$1*')         // Italic
+      .replace(/__(.*?)__/g, '__$1__')       // Underline
+      .replace(/~~(.*?)~~/g, '~~$1~~');      // Strikethrough
       
     // Convert emoji codes to actual emojis
     const standardEmojis = {

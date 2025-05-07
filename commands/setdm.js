@@ -61,15 +61,35 @@ module.exports = {
           dmSettings: serverConfig.dmSettings
         });
         
-        // Create embed
-        // Format message preview with code block to preserve formatting
-        const messagePreview = '```' + dmMessage.substring(0, 980) + (dmMessage.length > 980 ? '...' : '') + '```';
+        // Create embed with enhanced preview
+        // Format message preview with code block to preserve exact formatting
+        let messagePreview = '';
+        
+        if (dmMessage.length <= 980) {
+          messagePreview = '```' + dmMessage + '```';
+        } else {
+          // For longer messages, show the first 900 characters and last 80 characters with an ellipsis in between
+          const firstPart = dmMessage.substring(0, 900);
+          const lastPart = dmMessage.substring(dmMessage.length - 80);
+          messagePreview = '```' + firstPart + '\n\n[...]\n\n' + lastPart + '```';
+        }
+        
+        // Add helpful tips about formatting
+        const formattingTips = [
+          '**Formatting Information:**',
+          '• New lines will be preserved exactly as written',
+          '• Multiple spaces will be preserved',
+          '• **Bold**, *italic*, and __underline__ formatting will work',
+          '• Emoji codes like :smile: will be converted to actual emojis',
+          '• Line separators (━━━━) will display properly'
+        ].join('\n');
         
         const embed = new EmbedBuilder()
-          .setTitle('📨 DM Message Settings')
-          .setDescription(`DM messages for new members have been ${enabled ? 'enabled' : 'disabled'}.`)
+          .setTitle('📨 DM Message Settings Updated')
+          .setDescription(`DM messages for new members have been ${enabled ? '**enabled**' : '**disabled**'}.`)
           .addFields(
-            { name: '💬 Message Preview (Formatting preserved in actual DM)', value: messagePreview, inline: false }
+            { name: '💬 Message Preview (Exact formatting will be preserved in the actual DM)', value: messagePreview, inline: false },
+            { name: '📝 Formatting Tips', value: formattingTips, inline: false }
           )
           .setColor('#5865F2')
           .setTimestamp();
