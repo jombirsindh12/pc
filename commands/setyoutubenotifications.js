@@ -89,11 +89,8 @@ module.exports = {
       if (!serverConfig || !serverConfig.youtubeChannelId) {
         return await sendReply('❌ No YouTube channel has been set up. Please use `/setyoutubechannel` first.');
       }
-
-      // Check if notification channel is set up
-      if (!serverConfig || !serverConfig.notificationChannelId) {
-        return await sendReply('❌ No notification channel has been set up. Please use `/setnotificationchannel` first.');
-      }
+      
+      // We don't need to check for notification channel since we'll use the current channel
       
       // Get the current notification settings or set defaults
       const notificationSettings = serverConfig.youtubeNotificationSettings || {
@@ -185,7 +182,9 @@ module.exports = {
           },
           {
             name: 'Notification Channel',
-            value: `<#${serverConfig.notificationChannelId}>`,
+            value: isSlashCommand 
+              ? `<#${interaction.channelId}> (this channel)` 
+              : `<#${message.channel.id}> (this channel)`,
             inline: true
           }
         )
@@ -221,24 +220,29 @@ module.exports = {
             scheduledStreams: selectedValues.includes('scheduledStreams')
           };
           
-          // Update server config with new settings and ensure all notifications go to the same channel
+          // Update server config with new settings and send notifications to the current channel
           const youtubeSettings = serverConfig.youtubeSettings || {};
-          const notificationChannelId = serverConfig.notificationChannelId;
           
-          // Update server config - set all notification channel IDs to the same channel
+          // Use the channel where the command was executed
+          const currentChannelId = isSlashCommand 
+            ? interaction.channelId 
+            : message.channel.id;
+          
+          // Update server config - set all notification channel IDs to the current channel
           config.updateServerConfig(serverId, { 
             youtubeNotificationSettings: updatedSettings,
             youtubeSettings: {
               ...youtubeSettings,
-              notificationChannelId: notificationChannelId,
-              videoNotificationChannelId: notificationChannelId,
-              shortsNotificationChannelId: notificationChannelId,
-              livestreamNotificationChannelId: notificationChannelId
+              enabled: true,
+              notificationChannelId: currentChannelId,
+              videoNotificationChannelId: currentChannelId,
+              shortsNotificationChannelId: currentChannelId,
+              livestreamNotificationChannelId: currentChannelId
             }
           });
           
           console.log(`[YouTube Notification] Updated settings for server ${serverId}:`);
-          console.log(`- Using channel ID ${notificationChannelId} for all YouTube content types`);
+          console.log(`- Using channel ID ${currentChannelId} for all YouTube content types`);
           
           // Update the embed
           const updatedEmbed = EmbedBuilder.from(settingsMessage.embeds[0])
@@ -303,16 +307,21 @@ module.exports = {
           // Defer the update to avoid interaction timeout
           await i.deferUpdate();
           
-          // Get the notification channel
+          // Get the notification channel (use current channel)
           const guild = client.guilds.cache.get(serverId);
           if (!guild) {
             return await i.followUp({ content: '❌ Error: Could not find server.', ephemeral: true });
           }
           
-          const notificationChannel = guild.channels.cache.get(serverConfig.notificationChannelId);
+          // Use the channel where the command is being executed for the test
+          const currentChannelId = isSlashCommand 
+            ? interaction.channelId 
+            : message.channel.id;
+          
+          const notificationChannel = guild.channels.cache.get(currentChannelId);
           if (!notificationChannel) {
             return await i.followUp({ 
-              content: '❌ Error: Could not find notification channel. Please set it up using `/setnotificationchannel`.', 
+              content: '❌ Error: Could not find the current channel for testing.', 
               ephemeral: true 
             });
           }

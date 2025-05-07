@@ -117,6 +117,7 @@ const animatedEmojis = {
   ':nitro_boost:': { name: 'nitro_boost', id: '1067854919261257822' },
   ':loading:': { name: 'loading', id: '1089242072111329411' },
   ':discordloading:': { name: 'discordloading', id: '1076876224242495588' },
+  ':GTALoading:': { name: 'GTALoading', id: '1339535063494246430' },
   
   // Nitro exclusive animated sticker emojis
   ':ablobcathyperkitty:': { name: 'ablobcathyperkitty', id: '1129181853050503198' },
@@ -303,11 +304,34 @@ function processEmojis(messageText, serverEmojis = null, client = null) {
     return `<:${name}:${id}>`;
   });
   
+  // Handle special format: <<a:name:>> and <<:name:>> - try to find emoji by name
+  processedText = processedText.replace(/<<(a?):([a-zA-Z0-9_]+):>>/g, (match, animated, name) => {
+    // Check if we can find this emoji in our collection
+    if (allEmojis && allEmojis.has(name)) {
+      const emoji = allEmojis.get(name);
+      return emoji.animated ? `<a:${name}:${emoji.id}>` : `<:${name}:${emoji.id}>`;
+    }
+    
+    // Check built-in animated emojis
+    const stickerCode = `:${name}:`;
+    const foundEmoji = Object.keys(animatedEmojis).find(key => key === stickerCode);
+    if (foundEmoji) {
+      const emoji = animatedEmojis[foundEmoji];
+      return `<a:${emoji.name}:${emoji.id}>`;
+    }
+    
+    // If not found, return the original match
+    console.log(`Could not find emoji for: ${match}`);
+    return match;
+  });
+  
   // Special handling for specific emoji IDs that are commonly used
   const specificEmojiIds = {
     ':emoji_1743942949268:': '<:emoji:1743942949268>',
     ':emoji:1743942949268:': '<:emoji:1743942949268>',
-    ':emoji_1743942949269:': '<:emoji:1743942949269>'
+    ':emoji_1743942949269:': '<:emoji:1743942949269>',
+    ':GTALoading:': '<a:GTALoading:1339535063494246430>',
+    '<<a:GTALoading:>>': '<a:GTALoading:1339535063494246430>'
   };
   
   Object.keys(specificEmojiIds).forEach(emojiCode => {

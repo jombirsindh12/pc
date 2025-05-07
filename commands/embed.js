@@ -1,9 +1,10 @@
 const config = require('../utils/config');
 const { processEmojis, animatedEmojis } = require('../utils/emojiProcessor');
+const { ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle } = require('discord.js');
 
 module.exports = {
   name: 'embed',
-  description: 'Create a custom embed message',
+  description: 'Create a custom embed message with Nitro emoji support',
   usage: '/embed',
   guildOnly: true, // This command can only be used in servers
   options: [
@@ -47,6 +48,12 @@ module.exports = {
       name: 'save',
       type: 3, // STRING type
       description: 'Save this embed as a template with this name',
+      required: false
+    },
+    {
+      name: 'use_nitro_emoji',
+      type: 5, // BOOLEAN type
+      description: 'Use Nitro emojis from all servers bot is in (default: true)',
       required: false
     }
   ],
@@ -112,6 +119,9 @@ module.exports = {
       return result;
     };
     
+    // Check if Nitro emoji should be used (default to true)
+    const useNitroEmoji = interaction.options.getBoolean('use_nitro_emoji') ?? true;
+    
     // Pre-process stickers and emojis in the title and description
     let processedTitle = title;
     let processedDescription = description;
@@ -120,9 +130,13 @@ module.exports = {
     processedTitle = processSticker(processedTitle);
     processedDescription = processSticker(processedDescription);
     
-    // Process emoji codes using our enhanced emoji processor (now with Nitro support)
+    // Process emoji codes using our enhanced emoji processor
     const serverEmojis = isSlashCommand ? interaction.guild.emojis.cache : message.guild.emojis.cache;
-    const discordClient = client; // Pass client for accessing all server emojis (Nitro support)
+    
+    // Only pass client if Nitro emoji support is requested
+    const discordClient = useNitroEmoji ? client : null;
+    console.log(`Embed command: Using ${useNitroEmoji ? 'ALL servers' : 'ONLY current server'} for emoji processing`);
+    
     processedTitle = processEmojis(processedTitle, serverEmojis, discordClient);
     processedDescription = processEmojis(processedDescription, serverEmojis, discordClient);
     
@@ -207,7 +221,8 @@ module.exports = {
                      '• `[sticker:name]` - Example: `[sticker:heart_blast]`\n' +
                      '• Standard emoji codes like `:fire:` are also supported\n' +
                      '• Custom server emojis like `:emoji_12345678:` now work\n' +
-                     '• Utility emojis like `:utility_verify:` and `:UtilityVerifyBlue:` work\n\n' +
+                     '• Server emoji IDs can be used directly with `:name:id`\n' +
+                     '• Nitro emojis from all servers the bot is in are ' + (useNitroEmoji ? '**enabled**' : 'available (use `use_nitro_emoji: true`)') + '\n\n' +
                      '**Discord supports all these formats in your embeds now!**',
         color: 0x00FF00, // Green
         fields: []
@@ -235,6 +250,148 @@ module.exports = {
       } else {
         await message.reply(errorMessage);
       }
+    }
+    
+    // Add a collector for emoji picking - this will allow users to add more emojis easily
+    try {
+      // Add an emoji picker button at the end of the confirmation message
+      const emojiPickerRow = new ActionRowBuilder()
+        .addComponents(
+          new ButtonBuilder()
+            .setCustomId('emoji_list_button')
+            .setLabel('Show Available Emojis')
+            .setStyle(ButtonStyle.Secondary)
+            .setEmoji('📋'),
+          new ButtonBuilder()
+            .setCustomId('create_new_embed')
+            .setLabel('Create New Embed')
+            .setStyle(ButtonStyle.Primary)
+            .setEmoji('✏️')
+        );
+      
+      // Send the emoji picker button
+      const pickerMessage = await interaction.followUp({ 
+        content: 'Want to see what emojis are available to use?',
+        components: [emojiPickerRow],
+        ephemeral: true 
+      });
+      
+      // Set up collector for the emoji list button
+      const filter = i => i.user.id === interaction.user.id && 
+                           (i.customId === 'emoji_list_button' || i.customId === 'create_new_embed');
+      
+      const collector = pickerMessage.createMessageComponentCollector({ 
+        filter, 
+        time: 300000 // 5 minute timeout
+      });
+      
+      collector.on('collect', async i => {
+        if (i.customId === 'emoji_list_button') {
+          // Collect emojis from all servers
+          const allEmojis = new Map();
+          let emojiCount = 0;
+          
+          client.guilds.cache.forEach(guild => {
+            guild.emojis.cache.forEach(emoji => {
+              emojiCount++;
+              if (!allEmojis.has(emoji.name)) {
+                allEmojis.set(emoji.name, emoji);
+              }
+            });
+          });
+          
+          // Create a list of available emojis
+          let emojiList = '';
+          let count = 0;
+          
+          allEmojis.forEach((emoji, name) => {
+            // Only show first 50 to avoid message length limits
+            if (count < 50) {
+              const emojiString = emoji.animated ? `<a:${name}:${emoji.id}>` : `<:${name}:${emoji.id}>`;
+              emojiList += `${emojiString} - \`:${name}:\`\n`;
+              count++;
+            }
+          });
+          
+          // If there are too many, show a count
+          if (emojiCount > 50) {
+            emojiList += `\n...and ${emojiCount - 50} more emojis available`;
+          }
+          
+          // Create a list of built-in animated emojis
+          let animatedEmojiList = '';
+          count = 0;
+          
+          for (const [code, data] of Object.entries(animatedEmojis)) {
+            if (count < 10) {
+              animatedEmojiList += `<a:${data.name}:${data.id}> - \`${code}\` or \`{sticker:${data.name}}\`\n`;
+              count++;
+            } else {
+              break;
+            }
+          }
+          
+          // Send the emoji list
+          await i.reply({
+            embeds: [{
+              title: '🎭 Available Emojis for Embeds',
+              description: 'Here are some emojis you can use in your embeds:\n\n' +
+                          '**Server Emojis (use `:name:` format)**\n' + 
+                          emojiList + '\n\n' +
+                          '**Animated Stickers (use `{sticker:name}` format)**\n' +
+                          animatedEmojiList + '\n\n' +
+                          'You can also use any standard Discord emoji code like `:smile:` or `:heart:` 💖',
+              color: 0xFF9900,
+              footer: {
+                text: `Total emojis available: ${emojiCount} | Powered by Nitro Emoji Support`
+              }
+            }],
+            ephemeral: true
+          });
+        } else if (i.customId === 'create_new_embed') {
+          // Show a modal for quick embed creation
+          const modal = new ModalBuilder()
+            .setCustomId('quick_embed_modal')
+            .setTitle('Create Quick Embed');
+            
+          // Add title input component
+          const titleInput = new TextInputBuilder()
+            .setCustomId('modal_title')
+            .setLabel('Embed Title')
+            .setStyle(TextInputStyle.Short)
+            .setRequired(true)
+            .setPlaceholder('Enter a title for your embed');
+            
+          // Add description input component
+          const descriptionInput = new TextInputBuilder()
+            .setCustomId('modal_description')
+            .setLabel('Embed Description')
+            .setStyle(TextInputStyle.Paragraph)
+            .setRequired(true)
+            .setPlaceholder('Enter a description (supports emojis like :fire: and {sticker:name})');
+            
+          // Add color input component  
+          const colorInput = new TextInputBuilder()
+            .setCustomId('modal_color')
+            .setLabel('Color (hex code)')
+            .setStyle(TextInputStyle.Short)
+            .setRequired(false)
+            .setPlaceholder('#5865F2');
+          
+          // Create action rows with the inputs
+          const titleRow = new ActionRowBuilder().addComponents(titleInput);
+          const descriptionRow = new ActionRowBuilder().addComponents(descriptionInput);
+          const colorRow = new ActionRowBuilder().addComponents(colorInput);
+          
+          // Add the components to the modal
+          modal.addComponents(titleRow, descriptionRow, colorRow);
+          
+          // Show the modal to the user
+          await i.showModal(modal);
+        }
+      });
+    } catch (error) {
+      console.error('Error setting up emoji picker:', error);
     }
   },
 };
