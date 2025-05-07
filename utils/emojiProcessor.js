@@ -50,7 +50,8 @@ const animatedEmojis = {
 };
 
 /**
- * Completely rewritten emoji processor with minimal approach
+ * Very simple emoji processor with direct string manipulation
+ * This version is designed to specifically target common problems
  * @param {string} text - The text to process
  * @param {Collection} serverEmojis - Server emojis collection
  * @param {Client} client - Discord client for Nitro support
@@ -59,25 +60,39 @@ const animatedEmojis = {
 function processEmojis(text, serverEmojis = null, client = null) {
   if (!text) return text;
   
-  // Remove problematic prefixes at the beginning of the text
-  if (text.startsWith('<a:a')) {
-    text = text.substring(4);
-  } else if (text.startsWith('<a:')) {
-    // Special handling for gear emoji
-    if (text.startsWith('<a:⚙️')) {
-      text = '⚙️' + text.substring(5);
-    }
-  }
+  // Direct string replacement when we know exactly what's wrong
+  // IMPORTANT: Clean all problematic patterns first
+  
+  // Fix 1: Remove <a:a patterns (primary problem)
+  text = text.replace(/<a:a/g, '');
+  
+  // Fix 2: Fix emoji patterns that show ID numbers
+  text = text.replace(/<a:([a-zA-Z0-9_]+):(\d+)>:(\d+)>/g, '<a:$1:$2>');
+  text = text.replace(/<a:([a-zA-Z0-9_]+):(\d+)>(\d+)>/g, '<a:$1:$2>');
+  
+  // Fix 3: Replace gear emoji specially
+  text = text.replace(/<a:⚙️/g, '⚙️');
+  
+  // Fix 4: Additional pattern fix for issue shown in screenshot
+  text = text.replace(/<a:a([_a-zA-Z0-9]+)>/g, '');
   
   let processedText = text;
   
+  // Now proceed with normal emoji processing
   // STEP 1: Process predefined Unicode emojis (simple text replacement)
   for (const [code, unicode] of Object.entries(unicodeEmojis)) {
     processedText = processedText.replace(new RegExp(escapeRegExp(code), 'g'), unicode);
   }
   
-  // STEP 2: Process predefined animated emojis
+  // STEP 2: Process predefined animated emojis - special case for GTALoading
+  if (processedText.includes(':GTALoading:')) {
+    processedText = processedText.replace(/:GTALoading:/g, '<a:GTALoading:1337142161673814057>');
+  }
+  
+  // Process remaining animated emojis
   for (const [code, data] of Object.entries(animatedEmojis)) {
+    if (code === ':GTALoading:') continue; // Already handled
+    
     const formatted = `<a:${data.name}:${data.id}>`;
     processedText = processedText.replace(new RegExp(escapeRegExp(code), 'g'), formatted);
   }
