@@ -5,6 +5,7 @@ const path = require('path');
 const { Client, GatewayIntentBits, Collection, Events, REST, Routes } = require('discord.js');
 const config = require('./utils/config');
 const { inviteTracker } = require('./server/db');
+const { initializeTables } = require('./utils/database');
 
 console.log(`Starting bot in ${environment} environment`);
 
@@ -316,6 +317,14 @@ client.once(Events.ClientReady, async () => {
     
     // Initialize invite tracking system
     initializeInviteTracking(client);
+    
+    // Initialize database tables for embed templates
+    try {
+      await initializeTables();
+      console.log('✅ Embed templates database initialized successfully');
+    } catch (dbError) {
+      console.error('❌ Error initializing embed templates database:', dbError);
+    }
     
     // Initialize the backup system
     try {

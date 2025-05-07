@@ -55,6 +55,12 @@ module.exports = {
       type: 5, // BOOLEAN type
       description: 'Use Nitro emojis from all servers bot is in (default: true)',
       required: false
+    },
+    {
+      name: 'use_builder',
+      type: 5, // BOOLEAN type
+      description: 'Use the advanced embed builder interface instead',
+      required: false
     }
   ],
   requiresAdmin: true, // Only admins can use this command
@@ -64,6 +70,47 @@ module.exports = {
     const isSlashCommand = !!interaction;
     const serverId = isSlashCommand ? interaction.guild.id : message.guild.id;
     const serverConfig = config.getServerConfig(serverId);
+    
+    // Check if the user wants to use the advanced builder
+    if (isSlashCommand && interaction.options.getBoolean('use_builder')) {
+      try {
+        // Import the embedBuilder command
+        const embedBuilder = require('./embedBuilder');
+        
+        // Create a blank embed template
+        const templateData = embedBuilder.getTemplateEmbed('blank');
+        
+        // Set any provided values in the template
+        if (interaction.options.getString('title')) {
+          templateData.title = interaction.options.getString('title');
+        }
+        
+        if (interaction.options.getString('description')) {
+          templateData.description = interaction.options.getString('description');
+        }
+        
+        if (interaction.options.getString('color')) {
+          templateData.color = interaction.options.getString('color');
+        }
+        
+        if (interaction.options.getString('image')) {
+          templateData.image = interaction.options.getString('image');
+        }
+        
+        if (interaction.options.getString('thumbnail')) {
+          templateData.thumbnail = interaction.options.getString('thumbnail');
+        }
+        
+        // Show the embed builder UI with the template
+        return await embedBuilder.showEmbedBuilder(interaction, client, templateData);
+      } catch (error) {
+        console.error('Error opening embed builder:', error);
+        return interaction.reply({ 
+          content: `❌ Error opening embed builder: ${error.message}`, 
+          ephemeral: true 
+        });
+      }
+    }
     
     // Get embed parameters
     let title, description, color, imageUrl, thumbnailUrl, footerText, saveTemplateName;
