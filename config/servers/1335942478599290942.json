@@ -25,7 +25,7 @@
   },
   "strictSecurity": true,
   "strictSecurityAction": "kick",
-  "strictSecurityEnabled": 1746612972346,
+  "strictSecurityEnabled": 1746613531249,
   "welcomeMessage": true,
   "youtubeChannelId": "UCTqVAZM7HsFoz7xrpRMoADg",
   "youtubeChannelName": "PHANTOM GAMING ",
@@ -671,8 +671,8 @@
   "welcomeSettings": {
     "enabled": true,
     "channelId": "1337418792690782219",
-    "message": "┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓  \n✨ 𝐇𝐞𝐲 {user.name}, 𝐖𝐞𝐥𝐜𝐨𝐦𝐞 𝐭𝐨 𝐏𝐡𝐚𝐭𝐨𝐦 𝐂𝐡𝐞𝐚𝐭𝐬!  \n👥 You are our **#{server.memberCount}** member – we’re glad you joined!  \n🎉 Tag: `{user.tag}` | 📅 Year: {year}  \n┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛  \n\n📌 **Important Links:**  \n📜 𝑹𝒖𝒍𝒆𝒔 ➤ <#1337154892531372103>  \n🆓 𝑭𝒓𝒆𝒆 𝑷𝒂𝒏𝒆𝒍 ➤ <#1335942478599290945>  \n💬 𝑷𝒖𝒃𝒍𝒊𝒄 𝑪𝒉𝒂𝒕 ➤ <#1337156587663396965>  \n🛒 𝑺𝒕𝒐𝒓𝒆 ➤ <#1339476514617430096>  \n\n🔰 **Explore, enjoy, and unlock premium features with us.**  \n👑 **Stay active, stay sharp – we’re here to assist!**",
-    "title": "💫│𝑾𝒆𝒍𝒄𝒐𝒎𝒆 {mention} ✨ 𝒕𝒐 {server}!",
+    "message": "━━━━━━━━━━━━━━━━━━━━━━━  \n👋 Hey **{user.name}** ( `{user.tag}` )  \n📍 Welcome to **{server}**!  \n🎉 You're member **#{server.memberCount}**  \n📅 Year: **{year}**  \n━━━━━━━━━━━━━━━━━━━━━━━  \n\n📌 **Important Channels:**  \n📜 Rules ➤ <#1337154892531372103>  \n🎁 Free Panel ➤ <#1335942478599290945>  \n💬 Chat ➤ <#1337156587663396965>  \n🛍️ Store ➤ <#1339476514617430096>  \n\n✨ **Explore. Interact. Enjoy your stay!**  \n━━━━━━━━━━━━━━━━━━━━━━━",
+    "title": "💫│𝐖𝐄𝐋𝐂𝐎𝐌𝐄 {mention} 𝐓𝐎 𝐏𝐇𝐀𝐓𝐎𝐌 𝐂𝐇𝐄𝐀𝐓𝐒!",
     "color": "#FF0000",
     "roleId": null,
     "roleName": null,
@@ -728,6 +728,6 @@
       }
     },
     "updateInterval": 5,
-    "lastUpdate": 1746612790294
+    "lastUpdate": 1746613441592
   }
 }

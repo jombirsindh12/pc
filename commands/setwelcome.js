@@ -195,7 +195,7 @@ module.exports = {
     // Add variable placeholders info
     embed.fields.push({
       name: '📝 Available Variables',
-      value: '• `{user}` or `{mention}` - Mentions the user\n• `{user.tag}` - User tag (e.g., username#1234)\n• `{user.name}` - Username\n• `{server}` - Server name\n• `{server.memberCount}` - Member count\n• `{year}` - Current year'
+      value: '• `{user}` - Mentions the user with @\n• `{mention}` - Shows username (without @)\n• `{user.tag}` - User tag (e.g., username#1234)\n• `{user.name}` - Username\n• `{server}` - Server name\n• `{server.memberCount}` - Member count\n• `{year}` - Current year'
     });
     
     // Send success message
@@ -212,14 +212,12 @@ module.exports = {
       .replace('{server.memberCount}', interaction.guild.memberCount.toString())
       .replace('{year}', new Date().getFullYear().toString());
     
-    // Preserve multiple spaces by replacing them with HTML entities that Discord will render
-    const spacesPreserved = processedDescription.replace(/  +/g, match => {
-      return ' ' + '&nbsp;'.repeat(match.length - 1);
-    });
+    // No need for HTML space preservation - just use the processed description
+    const formattedText = processedDescription;
     
     // Process emoji codes to Discord emoji format
     // Instead of our previous complex logic, we'll use our new emoji processor
-    let formattedDescription = processEmojis(spacesPreserved, interaction.guild.emojis.cache);
+    let formattedDescription = processEmojis(formattedText, interaction.guild.emojis.cache);
     
     // Special direct replacements for known custom emojis and standard emoji codes
     formattedDescription = formattedDescription
@@ -271,7 +269,7 @@ module.exports = {
     let processedTitle = welcomeTitle
       .replace('{user}', `<@${interaction.user.id}>`)
       .replace('{server}', interaction.guild.name)
-      .replace('{mention}', `<@${interaction.user.id}>`)
+      .replace('{mention}', interaction.user.username) // Just show username instead of mention in title
       .replace('{user.tag}', interaction.user.tag)
       .replace('{user.name}', interaction.user.username)
       .replace('{server.memberCount}', interaction.guild.memberCount.toString())
@@ -390,19 +388,17 @@ function setupWelcomeHandler(client) {
     const processedDescription = welcomeSettings.message
       .replace('{user}', `<@${member.id}>`)
       .replace('{server}', member.guild.name)
-      .replace('{mention}', `<@${member.id}>`) // Add support for {mention} as alternative
+      .replace('{mention}', `<@${member.id}>`) // Keep mention as is in the body
       .replace('{user.tag}', member.user.tag)
       .replace('{user.name}', member.user.username)
       .replace('{server.memberCount}', member.guild.memberCount.toString())
       .replace('{year}', new Date().getFullYear().toString());
       
-    // Preserve multiple spaces by replacing them with HTML entities that Discord will render
-    const spacesPreserved = processedDescription.replace(/  +/g, match => {
-      return ' ' + '&nbsp;'.repeat(match.length - 1);
-    });
+    // No html entity space preservation
+    const formattedText = processedDescription;
     
     // Process emoji codes to Discord emoji format using new processor
-    let formattedDescription = processEmojis(spacesPreserved, member.guild.emojis.cache);
+    let formattedDescription = processEmojis(formattedText, member.guild.emojis.cache);
     
     // Special direct replacements for known custom emojis and standard emoji codes
     formattedDescription = formattedDescription
@@ -457,7 +453,7 @@ function setupWelcomeHandler(client) {
     processedTitle = processedTitle
       .replace('{user}', `<@${member.id}>`)
       .replace('{server}', member.guild.name)
-      .replace('{mention}', `<@${member.id}>`)
+      .replace('{mention}', member.user.username) // Just show username instead of mention in title
       .replace('{user.tag}', member.user.tag)
       .replace('{user.name}', member.user.username)
       .replace('{server.memberCount}', member.guild.memberCount.toString())
