@@ -274,6 +274,24 @@ function processEmojis(text, serverEmojis = null, client = null) {
     return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   }
   
+  // FINAL CLEANUP - Focus on weird <a:a prefixes at the beginning
+  // These will catch any remaining problematic formats
+  processedText = processedText.replace(/<a:a([^:]+):(\d+)>/g, '<a:$1:$2>');
+  processedText = processedText.replace(/^<a:a /g, '<a:');
+  processedText = processedText.replace(/^<a:a$/g, '');
+  processedText = processedText.replace(/^<a:a>$/g, '');
+  processedText = processedText.replace(/^<a:a/g, '<a:');
+  
+  // Remove any standalone emoji tag fragment at start or end
+  processedText = processedText.replace(/^<a:a$/, '');
+  processedText = processedText.replace(/^<a:$/, '');
+  processedText = processedText.replace(/^<a$/, '');
+  
+  // If the text contains just <a:a, remove it
+  if (processedText === '<a:a') {
+    processedText = '';
+  }
+  
   return processedText;
 }
 
