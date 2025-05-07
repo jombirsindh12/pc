@@ -1,4 +1,5 @@
 const config = require('../utils/config');
+const { processEmojis } = require('../utils/emojiProcessor');
 
 module.exports = {
   name: 'setwelcome',
@@ -87,12 +88,12 @@ module.exports = {
     
     // Set default welcome message if none provided
     if (!welcomeMessage) {
-      welcomeMessage = 'Welcome {user} to {server}! We hope you enjoy your stay.';
+      welcomeMessage = '<a:lol:1301275117434966016> Hey**{mention}**,Do Check Out The Server.<a:lol:1301275117434966016>\n\n<a:arrow_heartright:1017682681024229377>🔹 **Read the Rules** → #📜・ʀᴜʟᴇs(Follow the guidelines & stay safe!)<a:greenbolt:1215595223477125120>\n<a:arrow_heartright:1017682681024229377>🔹 **Get Free Panel** → #📜・ʀᴜʟᴇs(React Fast For Next Free Panel!)<a:greenbolt:1215595223477125120>\n<a:arrow_heartright:1017682681024229377>🔹 **Stay Updated** → #📊・ᴀɴɴᴏᴜɴᴄᴇᴍᴇɴᴛs(Get the latest news & announcements!)<a:greenbolt:1215595223477125120>\n<a:arrow_heartright:1017682681024229377>🔹 **Need Help?** → #❓・sᴜᴘᴘᴏʀᴛ(Facing issues? Get support here!)<a:greenbolt:1215595223477125120>\n<a:arrow_heartright:1017682681024229377>🔹 **Chat & Chill** → #🌐・ɢᴇɴᴇʀᴀʟ-ᴄʜᴀᴛ(Meet new people & have fun!)<a:greenbolt:1215595223477125120>\n<a:arrow_heartright:1017682681024229377>🔹 **Buy a Panel** → #💸・ᴘʀɪᴄᴇ-ʟɪsᴛ(For premium purchases & services!)<a:greenbolt:1215595223477125120>\n\n**💎 Exclusive Giveaways – Stay active for surprise rewards!**\n\n<a:1z_love:1350454898698178622> **Enjoy your stay & have fun!** <a:1z_love:1350454898698178622>';
     }
     
     // Set default welcome title if none provided
     if (!welcomeTitle) {
-      welcomeTitle = '👋 Welcome to the server!';
+      welcomeTitle = '<a:redcrown:1025355756511432776>𝐖𝐄𝐋𝐂𝐎𝐌𝐄 𝐓𝐎 𝐏𝐇𝐀𝐍𝐓𝐎𝐌 𝐂𝐇𝐄𝐀𝐓𝐒 <a:redcrown:1025355756511432776>';
     }
     
     // Set up welcome settings
@@ -151,10 +152,42 @@ module.exports = {
     // Also ensure the description doesn't exceed Discord's limits
     const processedDescription = welcomeMessage
       .replace('{user}', `<@${interaction.user.id}>`)
-      .replace('{server}', interaction.guild.name);
-    const truncatedDescription = processedDescription.length > 4000 
-      ? processedDescription.substring(0, 4000) + '...' 
-      : processedDescription;
+      .replace('{server}', interaction.guild.name)
+      .replace('{mention}', `<@${interaction.user.id}>`); // Add support for {mention} as an alternative
+    
+    // Process emoji codes to Discord emoji format
+    // Instead of our previous complex logic, we'll use our new emoji processor
+    let formattedDescription = processEmojis(processedDescription, interaction.guild.emojis.cache);
+    
+    // Special direct replacements for known custom emojis
+    formattedDescription = formattedDescription
+      .replace(/:redcrown:/g, '<a:redcrown:1025355756511432776>')
+      .replace(/:arrow_heartright:/g, '<a:arrow_heartright:1017682681024229377>')
+      .replace(/:greenbolt:/g, '<a:greenbolt:1215595223477125120>')
+      .replace(/:1z_love:/g, '<a:1z_love:1216659232003457065>')
+      .replace(/:lol:/g, '<a:lol:1301275117434966016>');
+      
+    // Make sure we handle the syntax Discord expects for animated emojis 
+    formattedDescription = formattedDescription
+      .replace(/<a<<a:/g, '<a:')  // Fix double animated prefix
+      .replace(/>>(\d+)/g, ':$1>'); // Fix closing format
+      
+    // Process any remaining standard emojis like :gem: -> 💎
+    const standardEmojis = {
+      ':gem:': '💎',
+      ':small_blue_diamond:': '🔹',
+      ':large_blue_diamond:': '🔷',
+      ':crown:': '👑',
+      ':heart:': '❤️',
+    };
+    
+    Object.keys(standardEmojis).forEach(code => {
+      formattedDescription = formattedDescription.replace(new RegExp(code, 'g'), standardEmojis[code]);
+    });
+    
+    const truncatedDescription = formattedDescription.length > 4000 
+      ? formattedDescription.substring(0, 4000) + '...' 
+      : formattedDescription;
       
     const exampleEmbed = {
       title: welcomeTitle,
@@ -206,10 +239,41 @@ function setupWelcomeHandler(client) {
     // Ensure description doesn't exceed Discord's limit
     const processedDescription = welcomeSettings.message
       .replace('{user}', `<@${member.id}>`)
-      .replace('{server}', member.guild.name);
-    const truncatedDescription = processedDescription.length > 4000 
-      ? processedDescription.substring(0, 4000) + '...' 
-      : processedDescription;
+      .replace('{server}', member.guild.name)
+      .replace('{mention}', `<@${member.id}>`); // Add support for {mention} as alternative
+      
+    // Process emoji codes to Discord emoji format using new processor
+    let formattedDescription = processEmojis(processedDescription, member.guild.emojis.cache);
+    
+    // Special direct replacements for known custom emojis
+    formattedDescription = formattedDescription
+      .replace(/:redcrown:/g, '<a:redcrown:1025355756511432776>')
+      .replace(/:arrow_heartright:/g, '<a:arrow_heartright:1017682681024229377>')
+      .replace(/:greenbolt:/g, '<a:greenbolt:1215595223477125120>')
+      .replace(/:1z_love:/g, '<a:1z_love:1216659232003457065>')
+      .replace(/:lol:/g, '<a:lol:1301275117434966016>');
+      
+    // Make sure we handle the syntax Discord expects for animated emojis 
+    formattedDescription = formattedDescription
+      .replace(/<a<<a:/g, '<a:')  // Fix double animated prefix
+      .replace(/>>(\d+)/g, ':$1>'); // Fix closing format
+      
+    // Process any remaining standard emojis like :gem: -> 💎
+    const standardEmojis = {
+      ':gem:': '💎',
+      ':small_blue_diamond:': '🔹',
+      ':large_blue_diamond:': '🔷',
+      ':crown:': '👑',
+      ':heart:': '❤️',
+    };
+    
+    Object.keys(standardEmojis).forEach(code => {
+      formattedDescription = formattedDescription.replace(new RegExp(code, 'g'), standardEmojis[code]);
+    });
+    
+    const truncatedDescription = formattedDescription.length > 4000 
+      ? formattedDescription.substring(0, 4000) + '...' 
+      : formattedDescription;
       
     const welcomeEmbed = {
       title: welcomeSettings.title || '👋 Welcome to the server!',

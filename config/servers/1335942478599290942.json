@@ -25,7 +25,7 @@
   },
   "strictSecurity": true,
   "strictSecurityAction": "kick",
-  "strictSecurityEnabled": 1746083978386,
+  "strictSecurityEnabled": 1746089504293,
   "welcomeMessage": true,
   "youtubeChannelId": "UCTqVAZM7HsFoz7xrpRMoADg",
   "youtubeChannelName": "PHANTOM GAMING ",
@@ -166,6 +166,206 @@
         "oldName": "✿│ ᴀʟʟ ᴍᴇᴍʙᴇʀꜱ: 1029",
         "newName": "✿│ ᴀʟʟ ᴍᴇᴍʙᴇʀꜱ: 1028"
       }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "491769129318088714",
+      "timestamp": 1746084561780,
+      "details": {
+        "channelId": "1352486908797648979",
+        "oldName": "ᴏꜰꜰʟɪɴᴇ : 982",
+        "newName": "ᴏꜰꜰʟɪɴᴇ : 983"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "491769129318088714",
+      "timestamp": 1746084562187,
+      "details": {
+        "channelId": "1352602799745269905",
+        "oldName": "Online: 32",
+        "newName": "Online: 31"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "491769129318088714",
+      "timestamp": 1746084563777,
+      "details": {
+        "channelId": "1352486001830006807",
+        "oldName": "✿│ ᴀʟʟ ᴍᴇᴍʙᴇʀꜱ: 1029",
+        "newName": "✿│ ᴀʟʟ ᴍᴇᴍʙᴇʀꜱ: 1028"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "491769129318088714",
+      "timestamp": 1746085142184,
+      "details": {
+        "channelId": "1352602799745269905",
+        "oldName": "Online: 32",
+        "newName": "Online: 31"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "491769129318088714",
+      "timestamp": 1746085749269,
+      "details": {
+        "channelId": "1352486908797648979",
+        "oldName": "ᴏꜰꜰʟɪɴᴇ : 983",
+        "newName": "ᴏꜰꜰʟɪɴᴇ : 985"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "491769129318088714",
+      "timestamp": 1746085757237,
+      "details": {
+        "channelId": "1352602799745269905",
+        "oldName": "Online: 32",
+        "newName": "Online: 29"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "491769129318088714",
+      "timestamp": 1746086344220,
+      "details": {
+        "channelId": "1352486908797648979",
+        "oldName": "ᴏꜰꜰʟɪɴᴇ : 983",
+        "newName": "ᴏꜰꜰʟɪɴᴇ : 982"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "491769129318088714",
+      "timestamp": 1746086347299,
+      "details": {
+        "channelId": "1352486001830006807",
+        "oldName": "✿│ ᴀʟʟ ᴍᴇᴍʙᴇʀꜱ: 1029",
+        "newName": "✿│ ᴀʟʟ ᴍᴇᴍʙᴇʀꜱ: 1028"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "491769129318088714",
+      "timestamp": 1746086943502,
+      "details": {
+        "channelId": "1352602799745269905",
+        "oldName": "Online: 32",
+        "newName": "Online: 33"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "491769129318088714",
+      "timestamp": 1746086943956,
+      "details": {
+        "channelId": "1352486908797648979",
+        "oldName": "ᴏꜰꜰʟɪɴᴇ : 983",
+        "newName": "ᴏꜰꜰʟɪɴᴇ : 981"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "491769129318088714",
+      "timestamp": 1746086946742,
+      "details": {
+        "channelId": "1352486001830006807",
+        "oldName": "✿│ ᴀʟʟ ᴍᴇᴍʙᴇʀꜱ: 1029",
+        "newName": "✿│ ᴀʟʟ ᴍᴇᴍʙᴇʀꜱ: 1028"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "491769129318088714",
+      "timestamp": 1746087543140,
+      "details": {
+        "channelId": "1352602799745269905",
+        "oldName": "Online: 32",
+        "newName": "Online: 30"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "491769129318088714",
+      "timestamp": 1746087543558,
+      "details": {
+        "channelId": "1352486908797648979",
+        "oldName": "ᴏꜰꜰʟɪɴᴇ : 983",
+        "newName": "ᴏꜰꜰʟɪɴᴇ : 984"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "491769129318088714",
+      "timestamp": 1746087553664,
+      "details": {
+        "channelId": "1352486001830006807",
+        "oldName": "✿│ ᴀʟʟ ᴍᴇᴍʙᴇʀꜱ: 1029",
+        "newName": "✿│ ᴀʟʟ ᴍᴇᴍʙᴇʀꜱ: 1028"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "491769129318088714",
+      "timestamp": 1746088146289,
+      "details": {
+        "channelId": "1352486908797648979",
+        "oldName": "ᴏꜰꜰʟɪɴᴇ : 983",
+        "newName": "ᴏꜰꜰʟɪɴᴇ : 982"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "491769129318088714",
+      "timestamp": 1746088156303,
+      "details": {
+        "channelId": "1352486001830006807",
+        "oldName": "✿│ ᴀʟʟ ᴍᴇᴍʙᴇʀꜱ: 1029",
+        "newName": "✿│ ᴀʟʟ ᴍᴇᴍʙᴇʀꜱ: 1028"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "491769129318088714",
+      "timestamp": 1746088742625,
+      "details": {
+        "channelId": "1352486908797648979",
+        "oldName": "ᴏꜰꜰʟɪɴᴇ : 983",
+        "newName": "ᴏꜰꜰʟɪɴᴇ : 982"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "491769129318088714",
+      "timestamp": 1746088747770,
+      "details": {
+        "channelId": "1352486001830006807",
+        "oldName": "✿│ ᴀʟʟ ᴍᴇᴍʙᴇʀꜱ: 1029",
+        "newName": "✿│ ᴀʟʟ ᴍᴇᴍʙᴇʀꜱ: 1028"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "491769129318088714",
+      "timestamp": 1746089342652,
+      "details": {
+        "channelId": "1352486908797648979",
+        "oldName": "ᴏꜰꜰʟɪɴᴇ : 983",
+        "newName": "ᴏꜰꜰʟɪɴᴇ : 981"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "491769129318088714",
+      "timestamp": 1746089354587,
+      "details": {
+        "channelId": "1352486001830006807",
+        "oldName": "✿│ ᴀʟʟ ᴍᴇᴍʙᴇʀꜱ: 1029",
+        "newName": "✿│ ᴀʟʟ ᴍᴇᴍʙᴇʀꜱ: 1028"
+      }
     }
   ],
   "whitelistedRoles": [
@@ -191,8 +391,8 @@
   "welcomeSettings": {
     "enabled": true,
     "channelId": "1337418792690782219",
-    "message": "<a:lol:1301275117434966016> Hey**{mention}**,Do Check Out The Server.<a:lol:1301275117434966016>  <a:arrow_heartright:1017682681024229377>🔹 **Read the Rules** → <#1351766689053806622>(Follow the guidelines & stay safe!)<a:greenbolt:1215595223477125120> <a:arrow_heartright:1017682681024229377>🔹 **Get Free Panel** → <#1351766689053806622>(React Fast For NExt Free Panel!)<a:greenbolt:1215595223477125120> <a:arrow_heartright:1017682681024229377>🔹 **Stay Updated** → <#1350455305783349300>(Get the latest news & announcements!)<a:greenbolt:1215595223477125120> <a:arrow_heartright:1017682681024229377>🔹 **Need Help?** → <#1350455347789430824>(Facing issues? Get support here!)<a:greenbolt:1215595223477125120> <a:arrow_heartright:1017682681024229377>🔹 **Chat & Chill** → <#1350455286133162087>(Meet new people & have fun!)<a:greenbolt:1215595223477125120> <a:arrow_heartright:1017682681024229377>🔹 **Buy a Panel** →<#1350455352197382266>(For premium purchases & services!)<a:greenbolt:1215595223477125120>  **💎 Exclusive Giveaways – Stay active for surprise rewards!**  <a:1z_love:1216659232003457065> **Enjoy your stay & have fun!** <a:1z_love:1216659232003457065>",
-    "title": "👋 Welcome to the server!",
+    "message": "<a:lol:1301275117434966016> Hey**{mention}**,Do Check Out The Server.<a:lol:1301275117434966016>\n\n<a:arrow_heartright:1017682681024229377>🔹 **Read the Rules** → #📜・ʀᴜʟᴇs(Follow the guidelines & stay safe!)<a:greenbolt:1215595223477125120>\n<a:arrow_heartright:1017682681024229377>🔹 **Get Free Panel** → #📜・ʀᴜʟᴇs(React Fast For Next Free Panel!)<a:greenbolt:1215595223477125120>\n<a:arrow_heartright:1017682681024229377>🔹 **Stay Updated** → #📊・ᴀɴɴᴏᴜɴᴄᴇᴍᴇɴᴛs(Get the latest news & announcements!)<a:greenbolt:1215595223477125120>\n<a:arrow_heartright:1017682681024229377>🔹 **Need Help?** → #❓・sᴜᴘᴘᴏʀᴛ(Facing issues? Get support here!)<a:greenbolt:1215595223477125120>\n<a:arrow_heartright:1017682681024229377>🔹 **Chat & Chill** → #🌐・ɢᴇɴᴇʀᴀʟ-ᴄʜᴀᴛ(Meet new people & have fun!)<a:greenbolt:1215595223477125120>\n<a:arrow_heartright:1017682681024229377>🔹 **Buy a Panel** → #💸・ᴘʀɪᴄᴇ-ʟɪsᴛ(For premium purchases & services!)<a:greenbolt:1215595223477125120>\n\n**<:gem:💎> Exclusive Giveaways – Stay active for surprise rewards!**\n\n<a:1z_love:1350454898698178622> **Enjoy your stay & have fun!** <a:1z_love:1350454898698178622>",
+    "title": "<a:redcrown:1025355756511432776>𝐖𝐄𝐋𝐂𝐎𝐌𝐄 𝐓𝐎 𝐏𝐇𝐀𝐍𝐓𝐎𝐌 𝐂𝐇𝐄𝐀𝐓𝐒 <a:redcrown:1025355756511432776>",
     "color": "5865F2",
     "roleId": null,
     "roleName": null

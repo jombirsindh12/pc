@@ -88,7 +88,7 @@
   "welcomeMessage": true,
   "strictSecurity": true,
   "strictSecurityAction": "kick",
-  "strictSecurityEnabled": 1746083978381,
+  "strictSecurityEnabled": 1746089504288,
   "securityIncidents": [
     {
       "type": "CHANNEL_DELETE",

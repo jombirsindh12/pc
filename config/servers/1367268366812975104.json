@@ -1,0 +1,62 @@
+{
+  "prefix": "!",
+  "welcomeEnabled": false,
+  "securityEnabled": true,
+  "securityDisabled": false,
+  "antiRaidEnabled": true,
+  "antiRaidDisabled": false,
+  "antiSpamEnabled": true,
+  "antiSpamDisabled": false,
+  "antiScamEnabled": true,
+  "antiScamDisabled": false,
+  "securityOwnerOnly": true,
+  "antiNukeThreshold": 3,
+  "antiNukeEnabled": true,
+  "antiNukeDisabled": false,
+  "antiRaidSettings": {
+    "joinThreshold": 3,
+    "timeWindow": 8000,
+    "action": "lockdown"
+  },
+  "antiSpamSettings": {
+    "messageThreshold": 4,
+    "timeWindow": 3000,
+    "action": "mute"
+  },
+  "strictSecurity": true,
+  "strictSecurityAction": "kick",
+  "strictSecurityEnabled": 1746089504307,
+  "welcomeMessage": true,
+  "premium": true,
+  "premiumActivatedBy": "1155442418309673000",
+  "premiumActivatedAt": "2025-05-01T08:03:25.688Z",
+  "premiumFeatures": [
+    "anti-nuke",
+    "custom-welcome",
+    "voice-announce",
+    "advanced-verification",
+    "unlimited-automod"
+  ],
+  "whitelistedUsers": [
+    "1155442418309673000"
+  ],
+  "welcomeSettings": {
+    "enabled": true,
+    "channelId": "1367409043509088286",
+    "message": "<:lol:1126611138524745839> Hey**{mention}**,Do Check Out The Server.:lol: <a:arrow_heartright:1346367981650968606>🔹 Read the Rules → #📜・ʀᴜʟᴇs(Follow the guidelines & stay safe!):greenbolt: <a:arrow_heartright:1346367981650968606>🔹 Get Free Panel → #📜・ʀᴜʟᴇs(React Fast For NExt Free Panel!):: <a:arrow_heartright:1346367981650968606>🔹 Stay Updated → <#1350455305783349300>(Get the latest news & announcements!):greenbolt: <a:arrow_heartright:1346367981650968606>🔹 Need Help? → <#1350455347789430824>(Facing issues? Get support here!):greenbolt: <a:arrow_heartright:1346367981650968606>🔹 Chat & Chill → #🌐・ɢᴇɴᴇʀᴀʟ-ᴄʜᴀᴛ(Meet new people & have fun!):greenbolt: <a:arrow_heartright:1346367981650968606>🔹 Buy a Panel →<#1350455352197382266>(For premium purchases & services!):greenbolt: 💎 Exclusive Giveaways – Stay active for surprise rewards! :1z_love: Enjoy your stay & have fun! :1z_love:",
+    "title": ":redcrown:𝐖𝐄𝐋𝐂𝐎𝐌𝐄 𝐓𝐎 𝐏𝐇𝐀𝐍𝐓𝐎𝐌 𝐂𝐇𝐄𝐀𝐓𝐒 :redcrown:",
+    "color": "#0FF0FC",
+    "roleId": null,
+    "roleName": null
+  },
+  "activeVoiceChannelId": "1367409049435639848",
+  "activeVoiceChannelName": "𝐆𝐄𝐍𝐄𝐑𝐀𝐋 𝐕𝐎𝐈𝐂𝐄",
+  "voiceAnnouncements": true,
+  "voiceSessionData": {
+    "1103323322969759935": {
+      "joinTime": 1746088080673,
+      "channelId": "1367409049435639848",
+      "username": "juniorxp7"
+    }
+  }
+}
