@@ -105,7 +105,7 @@ module.exports = {
     
     // Set default welcome message if none provided
     if (!welcomeMessage) {
-      welcomeMessage = '1215595223477125120>\n<a:arrow_heartright:1017682681024229377>🔹 **Get Free Panel** → #📜・ʀᴜʟᴇs(React Fast For Next Free Panel!)<a:gr1024229377>🔹 **Chat & Chill** → #🌐・ɢᴇɴᴇʀᴀʟ-ᴄʜᴀᴛ(Meet new people & have fun!<a:greenbolt:1215595223477125120>\n<a:arrow_heartright:1017682681024229377>🔹 **Buy a Panel** → #💸・ᴘʀɪᴄᴇ-ʟɪsᴛ(For premium purchases & services!)<a:greenbolt:1215595223477125120>\n\n**💎 Exclusive Giveaways – Stay active for surprise rewards!**\n\n<a:1z_love:1350454898698178622> **Enjoy your stay & have fun!** <a:1z_love:1350454898698178622>';
+      welcomeMessage = '<a:greenbolt:1215595223477125120>\n<a:arrow_heartright:1017682681024229377>🔹 **Get Free Panel** → #📜・ʀᴜʟᴇs (React Fast For Next Free Panel!)<a:greenbolt:1215595223477125120>\n<a:arrow_heartright:1017682681024229377>🔹 **Chat & Chill** → #🌐・ɢᴇɴᴇʀᴀʟ-ᴄʜᴀᴛ (Meet new people & have fun!)<a:greenbolt:1215595223477125120>\n<a:arrow_heartright:1017682681024229377>🔹 **Buy a Panel** → #💸・ᴘʀɪᴄᴇ-ʟɪsᴛ (For premium purchases & services!)<a:greenbolt:1215595223477125120>\n\n**💎 Exclusive Giveaways – Stay active for surprise rewards!**\n\n<a:1z_love:1350454898698178622> **Enjoy your stay & have fun!** <a:1z_love:1350454898698178622>';
     }
     
     // Set default welcome title if none provided
@@ -221,13 +221,21 @@ module.exports = {
     // Instead of our previous complex logic, we'll use our new emoji processor
     let formattedDescription = processEmojis(spacesPreserved, interaction.guild.emojis.cache);
     
-    // Special direct replacements for known custom emojis
+    // Special direct replacements for known custom emojis and standard emoji codes
     formattedDescription = formattedDescription
       .replace(/:redcrown:/g, '<a:redcrown:1025355756511432776>')
       .replace(/:arrow_heartright:/g, '<a:arrow_heartright:1017682681024229377>')
       .replace(/:greenbolt:/g, '<a:greenbolt:1215595223477125120>')
       .replace(/:1z_love:/g, '<a:1z_love:1216659232003457065>')
-      .replace(/:lol:/g, '<a:lol:1301275117434966016>');
+      .replace(/:lol:/g, '<a:lol:1301275117434966016>')
+      .replace(/:dizzy:/g, '💫')
+      .replace(/:sparkles:/g, '✨')
+      .replace(/:rocket:/g, '🚀')
+      .replace(/:shield:/g, '🛡️')
+      .replace(/:scroll:/g, '📜')
+      .replace(/:speech_balloon:/g, '💬')
+      .replace(/:shopping_cart:/g, '🛒')
+      .replace(/:clock2:/g, '🕒');
       
     // Make sure we handle the syntax Discord expects for animated emojis 
     formattedDescription = formattedDescription
@@ -241,6 +249,14 @@ module.exports = {
       ':large_blue_diamond:': '🔷',
       ':crown:': '👑',
       ':heart:': '❤️',
+      ':dizzy:': '💫',
+      ':sparkles:': '✨',
+      ':rocket:': '🚀',
+      ':shield:': '🛡️',
+      ':scroll:': '📜',
+      ':speech_balloon:': '💬',
+      ':shopping_cart:': '🛒',
+      ':clock2:': '🕒',
     };
     
     Object.keys(standardEmojis).forEach(code => {
@@ -366,13 +382,21 @@ function setupWelcomeHandler(client) {
     // Process emoji codes to Discord emoji format using new processor
     let formattedDescription = processEmojis(spacesPreserved, member.guild.emojis.cache);
     
-    // Special direct replacements for known custom emojis
+    // Special direct replacements for known custom emojis and standard emoji codes
     formattedDescription = formattedDescription
       .replace(/:redcrown:/g, '<a:redcrown:1025355756511432776>')
       .replace(/:arrow_heartright:/g, '<a:arrow_heartright:1017682681024229377>')
       .replace(/:greenbolt:/g, '<a:greenbolt:1215595223477125120>')
       .replace(/:1z_love:/g, '<a:1z_love:1216659232003457065>')
-      .replace(/:lol:/g, '<a:lol:1301275117434966016>');
+      .replace(/:lol:/g, '<a:lol:1301275117434966016>')
+      .replace(/:dizzy:/g, '💫')
+      .replace(/:sparkles:/g, '✨')
+      .replace(/:rocket:/g, '🚀')
+      .replace(/:shield:/g, '🛡️')
+      .replace(/:scroll:/g, '📜')
+      .replace(/:speech_balloon:/g, '💬')
+      .replace(/:shopping_cart:/g, '🛒')
+      .replace(/:clock2:/g, '🕒');
       
     // Make sure we handle the syntax Discord expects for animated emojis 
     formattedDescription = formattedDescription
@@ -386,6 +410,14 @@ function setupWelcomeHandler(client) {
       ':large_blue_diamond:': '🔷',
       ':crown:': '👑',
       ':heart:': '❤️',
+      ':dizzy:': '💫',
+      ':sparkles:': '✨',
+      ':rocket:': '🚀',
+      ':shield:': '🛡️',
+      ':scroll:': '📜',
+      ':speech_balloon:': '💬',
+      ':shopping_cart:': '🛒',
+      ':clock2:': '🕒',
     };
     
     Object.keys(standardEmojis).forEach(code => {
