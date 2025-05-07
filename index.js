@@ -5,7 +5,8 @@ const path = require('path');
 const { Client, GatewayIntentBits, Collection, Events, REST, Routes } = require('discord.js');
 const config = require('./utils/config');
 const { inviteTracker } = require('./server/db');
-const { initializeTables } = require('./utils/database');
+const { initializeTables, initializeEmojiPatterns } = require('./utils/database');
+const emojiProcessor = require('./utils/emojiProcessor');
 
 console.log(`Starting bot in ${environment} environment`);
 
@@ -318,12 +319,14 @@ client.once(Events.ClientReady, async () => {
     // Initialize invite tracking system
     initializeInviteTracking(client);
     
-    // Initialize database tables for embed templates
+    // Initialize database tables for embed templates and emoji processing
     try {
       await initializeTables();
+      await initializeEmojiPatterns();
+      console.log('✅ Database tables initialized successfully');
       console.log('✅ Embed templates database initialized successfully');
     } catch (dbError) {
-      console.error('❌ Error initializing embed templates database:', dbError);
+      console.error('❌ Error initializing database:', dbError);
     }
     
     // Initialize the backup system
@@ -605,6 +608,51 @@ client.on(Events.InteractionCreate, async interaction => {
 client.on(Events.MessageCreate, async message => {
   // Ignore messages from bots
   if (message.author.bot) return;
+
+  // Process message content for emoji corrections
+  if (message.content && message.guild) {
+    try {
+      // Use quick fix for simple malformed emoji patterns for better performance
+      const processedContent = emojiProcessor.quickFix(message.content);
+      
+      // Only update if the content changed
+      if (processedContent !== message.content && !message.webhookId) {
+        // If this is a malformed emoji message, delete it and resend
+        const messageReference = {
+          messageReference: {
+            messageId: message.id,
+            channelId: message.channelId,
+            guildId: message.guildId
+          },
+          failIfNotExists: false
+        };
+        
+        try {
+          // Use the emoji processor to fix malformed emojis
+          await message.delete();
+          await message.channel.send({
+            content: `${message.author}: ${processedContent}`,
+            allowedMentions: { parse: [] } // Don't ping anyone
+          });
+          
+          // Log emoji correction
+          console.log(`Fixed malformed emoji for user ${message.author.tag}`);
+          
+          // Track emoji usage statistics in the background
+          emojiProcessor.processText(processedContent, message.guild.id)
+            .catch(err => console.error('Error tracking emoji usage:', err));
+            
+          // Skip further processing as we've replaced the message
+          return;
+        } catch (deleteError) {
+          // If we can't delete, just continue
+          console.error('Error fixing malformed emoji:', deleteError);
+        }
+      }
+    } catch (emojiError) {
+      console.error('Error in emoji processing:', emojiError);
+    }
+  }
 
   // Check if user is a bot owner
   const isOwner = isBotOwner(message.author.id);

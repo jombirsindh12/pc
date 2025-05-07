@@ -1,12 +1,48 @@
-const { processEmojis, processSticker, getAvailableEmojis, unicodeEmojis, animatedEmojis } = require('../utils/emojiProcessor');
-const { 
-  ActionRowBuilder, 
-  ButtonBuilder, 
-  ButtonStyle, 
-  EmbedBuilder,
-  StringSelectMenuBuilder,
-  StringSelectMenuOptionBuilder
-} = require('discord.js');
+const emojiProcessor = require('../utils/emojiProcessor');
+const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, StringSelectMenuOptionBuilder } = require('discord.js');
+
+// Define basic emoji maps for showcase
+const unicodeEmojis = {
+  // Basic emoticons
+  ':smile:': '😄', ':laughing:': '😆', ':blush:': '😊', ':smiley:': '😃',
+  ':relaxed:': '☺️', ':grinning:': '😀', ':joy:': '😂', ':sweat_smile:': '😅',
+  ':sob:': '😭', ':rage:': '😡', ':triumph:': '😤', ':sleepy:': '😪',
+  
+  // Hearts & Love
+  ':heart:': '❤️', ':sparkling_heart:': '💖', ':heartbeat:': '💓',
+  ':heartpulse:': '💗', ':two_hearts:': '💕', ':revolving_hearts:': '💞',
+  
+  // Symbols
+  ':100:': '💯', ':fire:': '🔥', ':sparkles:': '✨', ':star:': '⭐',
+  ':star2:': '🌟', ':zap:': '⚡', ':boom:': '💥', ':pray:': '🙏',
+  ':ok_hand:': '👌', ':v:': '✌️', ':thumbsup:': '👍', ':thumbsdown:': '👎',
+  ':crown:': '👑', ':warning:': '⚠️', ':tada:': '🎉', ':sparkler:': '🎇', 
+  ':tickets:': '🎟️', ':gem:': '💎',
+  
+  // Technical
+  ':gear:': '⚙️', ':wrench:': '🔧', ':tools:': '🧰', ':shield:': '🛡️',
+  ':lock:': '🔒', ':unlock:': '🔓', ':key:': '🔑', ':bell:': '🔔',
+  ':no_bell:': '🔕', ':link:': '🔗', ':pushpin:': '📌', ':bulb:': '💡',
+  ':desktop:': '🖥️', ':computer:': '💻', ':keyboard:': '⌨️', ':email:': '📧',
+  ':clock:': '🕒',
+  
+  // Gaming
+  ':video_game:': '🎮', ':game_die:': '🎲', ':chess_pawn:': '♟️',
+  ':dart:': '🎯', ':joystick:': '🕹️',
+  
+  // Security
+  ':detective:': '🕵️', ':shield:': '🛡️', ':lock:': '🔒', ':key:': '🔑',
+  ':police_officer:': '👮'
+};
+
+// Define animated emojis for showcase
+const animatedEmojis = {
+  // These would normally come from servers, but we'll define a placeholder list
+  ':loading:': { name: 'loading', id: '1234567890', animated: true },
+  ':typing:': { name: 'typing', id: '1234567891', animated: true },
+  ':dance:': { name: 'dance', id: '1234567892', animated: true },
+  ':wave:': { name: 'wave', id: '1234567893', animated: true }
+};
 
 module.exports = {
   name: 'emoji',
@@ -72,7 +108,7 @@ module.exports = {
     }
     
     // Get available emojis
-    const availableEmojis = getAvailableEmojis(client);
+    const availableEmojis = [];
     
     // Handle different actions
     switch (action) {
@@ -372,8 +408,8 @@ async function handleTextConversion(interaction, client, text) {
     });
   }
   
-  // Process stickers and emojis
-  const processedText = processEmojis(processSticker(text), null, client);
+  // Process text with new emoji processor
+  const processedText = await emojiProcessor.processText(text, interaction.guild.id);
   
   // Create response embed
   const embed = new EmbedBuilder()
@@ -610,8 +646,8 @@ async function handleTestRendering(interaction, client, text) {
     });
   }
   
-  // Process the emoji
-  const processedEmoji = processEmojis(processSticker(text), null, client);
+  // Process the emoji with new emoji processor
+  const processedEmoji = await emojiProcessor.processText(text, interaction.guild.id);
   
   // Create embed
   const embed = new EmbedBuilder()
@@ -685,4 +721,19 @@ function getCategoryName(category) {
   };
   
   return categoryNames[category] || 'Emoji Category';
+}
+
+/**
+ * Process sticker format in text
+ * @param {string} text - Text to process
+ * @returns {string} Processed text
+ */
+function processSticker(text) {
+  if (!text) return text;
+  
+  // Match {sticker:name} format
+  return text.replace(/{sticker:([^}]+)}/gi, (match, stickerName) => {
+    // Convert to emoji format
+    return `:${stickerName}:`;
+  });
 }

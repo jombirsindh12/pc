@@ -5,7 +5,7 @@
  * using Drizzle ORM.
  */
 
-const { pgTable, text, serial, integer, timestamp, primaryKey } = require('drizzle-orm/pg-core');
+const { pgTable, text, serial, integer, timestamp, primaryKey, boolean, jsonb } = require('drizzle-orm/pg-core');
 
 // Invites table to track invite usage
 const invites = pgTable('invites', {
@@ -43,8 +43,50 @@ const inviteSettings = pgTable('invite_settings', {
   updatedAt: timestamp('updated_at').defaultNow()
 });
 
+// Embed templates table for storing custom embed designs
+const embedTemplates = pgTable('embed_templates', {
+  id: serial('id').primaryKey(),
+  serverId: text('server_id').notNull(),
+  name: text('name').notNull(),
+  creatorId: text('creator_id').notNull(),
+  isPublic: boolean('is_public').notNull().default(false),
+  description: text('description'),
+  embedData: jsonb('embed_data').notNull(), // JSON data of the embed structure
+  uses: integer('uses').notNull().default(0),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow()
+});
+
+// Emoji usage statistics table
+const emojiStats = pgTable('emoji_stats', {
+  id: serial('id').primaryKey(),
+  serverId: text('server_id').notNull(),
+  emojiId: text('emoji_id'), // Discord emoji ID (null for Unicode emojis)
+  emojiName: text('emoji_name').notNull(),
+  emojiFormat: text('emoji_format').notNull(), // 'unicode', 'custom', 'animated'
+  useCount: integer('use_count').notNull().default(0),
+  lastUsed: timestamp('last_used').defaultNow(),
+  createdAt: timestamp('created_at').defaultNow()
+});
+
+// Table for storing emoji patterns for processing
+const emojiPatterns = pgTable('emoji_patterns', {
+  id: serial('id').primaryKey(),
+  pattern: text('pattern').notNull(),
+  replacement: text('replacement').notNull(),
+  description: text('description'),
+  isRegex: boolean('is_regex').notNull().default(false),
+  priority: integer('priority').notNull().default(10),
+  isEnabled: boolean('is_enabled').notNull().default(true),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow()
+});
+
 module.exports = {
   invites,
   inviteJoins,
-  inviteSettings
+  inviteSettings,
+  embedTemplates,
+  emojiStats,
+  emojiPatterns
 };
