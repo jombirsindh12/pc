@@ -274,27 +274,20 @@ function processEmojis(text, serverEmojis = null, client = null) {
     return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   }
   
-  // FINAL CLEANUP - Strip out any malformed emoji fragments
+  // FINAL CLEANUP - Only remove broken emoji fragments at the beginning
   
-  // Step 1: Fix <a:a prefixes
-  processedText = processedText.replace(/<a:a([^:]+):(\d+)>/g, '<a:$1:$2>');
-  processedText = processedText.replace(/^<a:a /g, '<a:');
+  // Only fix issues at the start of the string with ^ anchor
+  // Fix <a:a prefix only when it appears at the beginning
+  processedText = processedText.replace(/^<a:a /g, '');
   processedText = processedText.replace(/^<a:a$/g, '');
   processedText = processedText.replace(/^<a:a>$/g, '');
-  processedText = processedText.replace(/^<a:a/g, '<a:');
   
-  // Step 2: Fix <a: prefixes with missing name
+  // Fix <a: prefix only when it appears at the beginning without a valid emoji
   processedText = processedText.replace(/^<a: /g, '');
   processedText = processedText.replace(/^<a:$/g, '');
   processedText = processedText.replace(/^<a:>$/g, '');
-  processedText = processedText.replace(/^<a:/g, '');
   
-  // Step 3: Remove standalone fragments at start
-  processedText = processedText.replace(/^<a:a$/, '');
-  processedText = processedText.replace(/^<a:$/, '');
-  processedText = processedText.replace(/^<a$/, '');
-  
-  // Step 4: Remove special cases when they are the only content
+  // Remove isolated fragments at start
   if (processedText === '<a:a') {
     processedText = '';
   }
@@ -304,10 +297,6 @@ function processEmojis(text, serverEmojis = null, client = null) {
   if (processedText === '<a') {
     processedText = '';
   }
-  
-  // Step 5: Final cleanup - these match patterns anywhere in the text, not just start
-  processedText = processedText.replace(/<a:/g, ''); // Remove all remaining <a: fragments
-  processedText = processedText.replace(/<a$/g, ''); // Remove trailing <
   
   return processedText;
 }
