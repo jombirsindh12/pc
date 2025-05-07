@@ -189,7 +189,7 @@ async function verifySubscription(userId, channelId) {
  * Get the latest videos from a YouTube channel
  * @param {string} channelId - YouTube channel ID
  * @param {number} maxResults - Maximum number of videos to return
- * @returns {Array} Array of video objects
+ * @returns {Array} Array of video objects with details including type (video, short, live)
  */
 async function getLatestVideos(channelId, maxResults = 5) {
   if (!YOUTUBE_API_KEY) {
@@ -229,14 +229,85 @@ async function getLatestVideos(channelId, maxResults = 5) {
       return [];
     }
     
-    // Format the video data
+    // Get the video IDs to fetch more details
+    const videoIds = videosResponse.data.items.map(item => item.snippet.resourceId.videoId).join(',');
+    
+    // Get additional video details to determine if it's a short, live, etc.
+    const videoDetailsResponse = await axios.get(`${API_BASE_URL}/videos`, {
+      params: {
+        part: 'snippet,contentDetails,statistics,liveStreamingDetails',
+        id: videoIds,
+        key: YOUTUBE_API_KEY
+      }
+    });
+    
+    // Create a map for quick lookup of video details
+    const videoDetailsMap = {};
+    if (videoDetailsResponse.data.items) {
+      videoDetailsResponse.data.items.forEach(item => {
+        videoDetailsMap[item.id] = item;
+      });
+    }
+    
+    // Format the video data with additional details
     const videos = videosResponse.data.items.map(item => {
+      const videoId = item.snippet.resourceId.videoId;
+      const details = videoDetailsMap[videoId] || {};
+      
+      // Determine if this is a short, live, or regular video
+      let videoType = 'video'; // Default type
+      
+      if (details.contentDetails) {
+        // YouTube Shorts are typically vertical videos with duration less than 60 seconds
+        const duration = details.contentDetails.duration || '';
+        const durationInSeconds = parseDuration(duration);
+        
+        // Check if it's a short (vertical ratio and short duration)
+        if (durationInSeconds <= 60) {
+          // YouTube shorts usually have #shorts in the title or description
+          const isShort = 
+            item.snippet.title.toLowerCase().includes('#shorts') || 
+            item.snippet.description.toLowerCase().includes('#shorts');
+            
+          if (isShort) {
+            videoType = 'short';
+          }
+        }
+      }
+      
+      // Check if it's a livestream
+      if (details.liveStreamingDetails) {
+        if (details.liveStreamingDetails.actualEndTime) {
+          videoType = 'completed_live'; // Completed livestream
+        } else if (details.liveStreamingDetails.scheduledStartTime) {
+          if (!details.liveStreamingDetails.actualStartTime) {
+            videoType = 'upcoming_live'; // Scheduled but not yet started
+          } else {
+            videoType = 'live'; // Currently live
+          }
+        }
+      }
+      
       return {
-        id: item.snippet.resourceId.videoId,
+        id: videoId,
         title: item.snippet.title,
         description: item.snippet.description,
         publishedAt: item.snippet.publishedAt,
-        thumbnailUrl: item.snippet.thumbnails.medium?.url || item.snippet.thumbnails.default?.url
+        thumbnailUrl: item.snippet.thumbnails.high?.url || 
+                     item.snippet.thumbnails.medium?.url || 
+                     item.snippet.thumbnails.default?.url,
+        videoType: videoType,
+        viewCount: details.statistics?.viewCount || '0',
+        likeCount: details.statistics?.likeCount || '0',
+        duration: details.contentDetails?.duration || '',
+        durationFormatted: formatDuration(details.contentDetails?.duration || ''),
+        liveStatus: details.liveStreamingDetails ? {
+          isLive: !!details.liveStreamingDetails.actualStartTime && !details.liveStreamingDetails.actualEndTime,
+          scheduledStartTime: details.liveStreamingDetails.scheduledStartTime,
+          actualStartTime: details.liveStreamingDetails.actualStartTime,
+          actualEndTime: details.liveStreamingDetails.actualEndTime,
+          concurrentViewers: details.liveStreamingDetails.concurrentViewers
+        } : null
       };
     });
     
@@ -244,6 +315,44 @@ async function getLatestVideos(channelId, maxResults = 5) {
   } catch (error) {
     console.error('Error fetching latest videos:', error.response ? error.response.data : error.message);
     return [];
+  }
+}
+
+/**
+ * Parse ISO 8601 duration format to seconds
+ * @param {string} duration - ISO 8601 duration string (e.g., PT1H30M15S)
+ * @returns {number} Duration in seconds
+ */
+function parseDuration(duration) {
+  const match = duration.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
+  if (!match) return 0;
+  
+  const hours = parseInt(match[1] || 0, 10);
+  const minutes = parseInt(match[2] || 0, 10);
+  const seconds = parseInt(match[3] || 0, 10);
+  
+  return hours * 3600 + minutes * 60 + seconds;
+}
+
+/**
+ * Format ISO 8601 duration to human-readable format
+ * @param {string} duration - ISO 8601 duration string (e.g., PT1H30M15S)
+ * @returns {string} Formatted duration (e.g., 1:30:15)
+ */
+function formatDuration(duration) {
+  if (!duration) return '0:00';
+  
+  const match = duration.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
+  if (!match) return '0:00';
+  
+  const hours = parseInt(match[1] || 0, 10);
+  const minutes = parseInt(match[2] || 0, 10);
+  const seconds = parseInt(match[3] || 0, 10);
+  
+  if (hours > 0) {
+    return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  } else {
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   }
 }
 

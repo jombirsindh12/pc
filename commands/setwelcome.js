@@ -445,50 +445,52 @@ function setupWelcomeHandler(client) {
       return ' ' + '\u2000'.repeat(match.length - 1);  // Use Unicode spaces (En Quad) instead of HTML entities
     });
     
-    // Process emoji codes to Discord emoji format using new processor
-    let formattedDescription = processEmojis(formattedText, member.guild.emojis.cache);
-    
-    // Special direct replacements for known custom emojis and standard emoji codes
-    formattedDescription = formattedDescription
-      .replace(/:redcrown:/g, '<a:redcrown:1025355756511432776>')
-      .replace(/:arrow_heartright:/g, '<a:arrow_heartright:1017682681024229377>')
-      .replace(/:greenbolt:/g, '<a:greenbolt:1215595223477125120>')
-      .replace(/:1z_love:/g, '<a:1z_love:1216659232003457065>')
-      .replace(/:lol:/g, '<a:lol:1301275117434966016>')
-      .replace(/:dizzy:/g, '💫')
-      .replace(/:sparkles:/g, '✨')
-      .replace(/:rocket:/g, '🚀')
-      .replace(/:shield:/g, '🛡️')
-      .replace(/:scroll:/g, '📜')
-      .replace(/:speech_balloon:/g, '💬')
-      .replace(/:shopping_cart:/g, '🛒')
-      .replace(/:clock2:/g, '🕒');
+    // Process different sticker formats in the message
+    const processSticker = (text) => {
+      // Process {sticker:name} format
+      const braceStickerRegex = /{sticker:([a-zA-Z0-9_]+)}/g;
+      let result = text.replace(braceStickerRegex, (match, name) => {
+        // Convert to :name: format for the emoji processor
+        return `:${name}:`;
+      });
       
+      // Process [sticker:name] format
+      const bracketStickerRegex = /\[sticker:([a-zA-Z0-9_]+)\]/g;
+      result = result.replace(bracketStickerRegex, (match, name) => {
+        // Convert to :name: format for the emoji processor
+        return `:${name}:`;
+      });
+      
+      return result;
+    };
+    
+    // Pre-process sticker formats
+    let preProcessedText = processSticker(formattedText);
+    
+    // Process emoji codes to Discord emoji format using our processor
+    let formattedDescription = processEmojis(preProcessedText, member.guild.emojis.cache);
+    
+    // Double-check for any nitro stickers that might have been missed
+    // Instead of individual replacements, use the animatedEmojis object from emojiProcessor
+    const { animatedEmojis } = require('../utils/emojiProcessor');
+    Object.keys(animatedEmojis).forEach(code => {
+      const emoji = animatedEmojis[code];
+      const emojiString = `<a:${emoji.name}:${emoji.id}>`;
+      formattedDescription = formattedDescription.replace(new RegExp(code, 'g'), emojiString);
+    });
+    
     // Make sure we handle the syntax Discord expects for animated emojis 
     formattedDescription = formattedDescription
       .replace(/<a<<a:/g, '<a:')  // Fix double animated prefix
       .replace(/>>(\d+)/g, ':$1>'); // Fix closing format
       
-    // Process any remaining standard emojis like :gem: -> 💎
-    const standardEmojis = {
-      ':gem:': '💎',
-      ':small_blue_diamond:': '🔹',
-      ':large_blue_diamond:': '🔷',
-      ':crown:': '👑',
-      ':heart:': '❤️',
-      ':dizzy:': '💫',
-      ':sparkles:': '✨',
-      ':rocket:': '🚀',
-      ':shield:': '🛡️',
-      ':scroll:': '📜',
-      ':speech_balloon:': '💬',
-      ':shopping_cart:': '🛒',
-      ':clock2:': '🕒',
-    };
+    // Special validation for incomplete emoji syntax in case the above processing missed any
+    const incompleteEmojiRegex = /<:([a-zA-Z0-9_]+)(\d{17,20})>/g;
+    formattedDescription = formattedDescription.replace(incompleteEmojiRegex, '<:$1:$2>');
     
-    Object.keys(standardEmojis).forEach(code => {
-      formattedDescription = formattedDescription.replace(new RegExp(code, 'g'), standardEmojis[code]);
-    });
+    // Fix format like <a:emoji1234567> to <a:emoji:1234567>
+    const incompleteAnimatedEmojiRegex = /<a:([a-zA-Z0-9_]+)(\d{17,20})>/g;
+    formattedDescription = formattedDescription.replace(incompleteAnimatedEmojiRegex, '<a:$1:$2>');
     
     const truncatedDescription = formattedDescription.length > 4000 
       ? formattedDescription.substring(0, 4000) + '...' 
@@ -604,30 +606,24 @@ function setupWelcomeHandler(client) {
         .replace('{server.memberCount}', member.guild.memberCount.toString())
         .replace('{year}', new Date().getFullYear().toString());
       
-      // Process emojis in the standalone title
-      let formattedTitleWithMention = processEmojis(processedTitleWithMention, member.guild.emojis.cache);
+      // Process sticker formats first
+      let preprocessedTitleWithMention = processSticker(processedTitleWithMention);
       
-      // Apply emoji replacements for title message
+      // Process emojis in the standalone title
+      let formattedTitleWithMention = processEmojis(preprocessedTitleWithMention, member.guild.emojis.cache);
+      
+      // Double-check for any nitro stickers that might have been missed
+      // Instead of individual replacements, use the animatedEmojis object from emojiProcessor
+      Object.keys(animatedEmojis).forEach(code => {
+        const emoji = animatedEmojis[code];
+        const emojiString = `<a:${emoji.name}:${emoji.id}>`;
+        formattedTitleWithMention = formattedTitleWithMention.replace(new RegExp(code, 'g'), emojiString);
+      });
+      
+      // Special validation for incomplete emoji syntax
       formattedTitleWithMention = formattedTitleWithMention
-        .replace(/:redcrown:/g, '<a:redcrown:1025355756511432776>')
-        .replace(/:arrow_heartright:/g, '<a:arrow_heartright:1017682681024229377>')
-        .replace(/:greenbolt:/g, '<a:greenbolt:1215595223477125120>')
-        .replace(/:1z_love:/g, '<a:1z_love:1216659232003457065>')
-        .replace(/:lol:/g, '<a:lol:1301275117434966016>')
-        .replace(/:dizzy:/g, '💫')
-        .replace(/:sparkles:/g, '✨')
-        .replace(/:rocket:/g, '🚀')
-        .replace(/:crown:/g, '👑')
-        .replace(/:star:/g, '⭐')
-        .replace(/:gem:/g, '💎')
-        .replace(/:small_blue_diamond:/g, '🔹')
-        .replace(/:large_blue_diamond:/g, '🔷')
-        .replace(/:heart:/g, '❤️')
-        .replace(/:shield:/g, '🛡️')
-        .replace(/:scroll:/g, '📜')
-        .replace(/:speech_balloon:/g, '💬')
-        .replace(/:shopping_cart:/g, '🛒')
-        .replace(/:clock2:/g, '🕒');
+        .replace(/<:([a-zA-Z0-9_]+)(\d{17,20})>/g, '<:$1:$2>')  // Fix regular emoji format
+        .replace(/<a:([a-zA-Z0-9_]+)(\d{17,20})>/g, '<a:$1:$2>');  // Fix animated emoji format
         
       // Send title first for proper mention
       await welcomeChannel.send(formattedTitleWithMention);

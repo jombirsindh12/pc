@@ -116,31 +116,117 @@ const animatedEmojis = {
   ':wave_animated:': { name: 'wave_animated', id: '1065621149775581244' },
   ':nitro_boost:': { name: 'nitro_boost', id: '1067854919261257822' },
   ':loading:': { name: 'loading', id: '1089242072111329411' },
-  ':discordloading:': { name: 'discordloading', id: '1076876224242495588' }
+  ':discordloading:': { name: 'discordloading', id: '1076876224242495588' },
+  
+  // Nitro exclusive animated sticker emojis
+  ':ablobcathyperkitty:': { name: 'ablobcathyperkitty', id: '1129181853050503198' },
+  ':stars_animated:': { name: 'stars_animated', id: '1129181901559484458' },
+  ':rainbow_shine:': { name: 'rainbow_shine', id: '1129181904952692887' },
+  ':woah_animated:': { name: 'woah_animated', id: '1076876224242495588' },
+  ':nitro_badge:': { name: 'nitro_badge', id: '1149211287807234078' },
+  ':nitro_rocket:': { name: 'nitro_rocket', id: '1149211290613276752' },
+  ':nitro_wumpus:': { name: 'nitro_wumpus', id: '1149211294836871248' },
+  ':nitro_fire:': { name: 'nitro_fire', id: '1149211297479835700' },
+  ':sparkles_nitro:': { name: 'sparkles_nitro', id: '1129181925471572138' },
+  ':blob_vibing:': { name: 'blob_vibing', id: '1129181947365064885' },
+  ':cat_dance:': { name: 'cat_dance', id: '1129181959281213531' },
+  ':bongocat:': { name: 'bongocat', id: '1129181967594852422' },
+  ':doggo_wave:': { name: 'doggo_wave', id: '1129181972489252904' },
+  ':duck_dance:': { name: 'duck_dance', id: '1129181979267067985' },
+  ':duck_duckdance:': { name: 'duck_duckdance', id: '1129181982295850186' },
+  ':welcome_glow:': { name: 'welcome_glow', id: '1129181986427879545' },
+  ':welcome_star:': { name: 'welcome_star', id: '1129181990505504808' },
+  ':hearts_rainbow:': { name: 'hearts_rainbow', id: '1129182017063501914' },
+  ':emoji_hearts:': { name: 'emoji_hearts', id: '1129182021170372638' },
+  ':pepe_crown:': { name: 'pepe_crown', id: '1129182028615614504' },
+  ':pepe_cool:': { name: 'pepe_cool', id: '1129182034072121426' },
+  ':pepe_wave:': { name: 'pepe_wave', id: '1129182037738094804' },
+  ':pepe_laugh:': { name: 'pepe_laugh', id: '1129182041832783902' },
+  ':pepe_dance:': { name: 'pepe_dance', id: '1129182045281677352' },
+  ':pepe_woah:': { name: 'pepe_woah', id: '1129182048939630643' },
+  ':amongus_party:': { name: 'amongus_party', id: '1129182052866146445' },
+  ':sus_animated:': { name: 'sus_animated', id: '1129182056524091423' },
+  ':minecraft_diamond:': { name: 'minecraft_diamond', id: '1129182060136185916' },
+  ':minecraft_pickaxe:': { name: 'minecraft_pickaxe', id: '1129182064058703932' },
+  ':gaming_controller:': { name: 'gaming_controller', id: '1129182067909115974' },
+  ':sonic_run:': { name: 'sonic_run', id: '1129182071932887040' },
+  ':mario_coin:': { name: 'mario_coin', id: '1129182076367409222' },
+  ':fire_animated:': { name: 'fire_animated', id: '1129182079593783346' },
+  ':doge_wow:': { name: 'doge_wow', id: '1129182085809676319' },
+  ':tada_celebrate:': { name: 'tada_celebrate', id: '1129182089371451433' },
+  ':stonks_up:': { name: 'stonks_up', id: '1129182093298159657' },
+  ':stonks_down:': { name: 'stonks_down', id: '1129182096725041256' },
+  ':discord_nitro:': { name: 'discord_nitro', id: '1149211297479835700' },
+  ':boost_animated:': { name: 'boost_animated', id: '1149211290613276752' },
+  ':heart_sparkle:': { name: 'heart_sparkle', id: '1129182105138880542' },
+  ':heart_rainbow:': { name: 'heart_rainbow', id: '1129182108775727114' },
+  ':heart_blast:': { name: 'heart_blast', id: '1129182112899543190' },
+  ':snowfall:': { name: 'snowfall', id: '1129182117023375432' },
+  ':snowman_dance:': { name: 'snowman_dance', id: '1129182121499525151' },
+  ':confetti_blast:': { name: 'confetti_blast', id: '1129182125426212915' }
 };
 
 /**
  * Process emoji codes in a message string to Discord format
+ * Enhanced to match Discord's textbox emoji processing
+ * 
  * @param {string} messageText - The message text to process
  * @param {Collection} serverEmojis - Collection of server emojis from guild.emojis.cache
  * @returns {string} - The processed message with emojis in Discord format
  */
 function processEmojis(messageText, serverEmojis = null) {
+  if (!messageText) return messageText;
+  
   let processedText = messageText;
   
-  // Process animated emojis first (they take precedence)
+  // STEP 1: Pre-process common sticker formats (both {sticker:name} and [sticker:name])
+  // Process sticker format {sticker:name}
+  processedText = processedText.replace(/{sticker:([a-zA-Z0-9_]+)}/g, (match, name) => {
+    // Check if we have this sticker in our animated emojis collection
+    const stickerCode = `:${name}:`;
+    const foundEmoji = Object.keys(animatedEmojis).find(key => key === stickerCode);
+    
+    if (foundEmoji) {
+      const emoji = animatedEmojis[foundEmoji];
+      return `<a:${emoji.name}:${emoji.id}>`;
+    }
+    
+    // If not found, return as is
+    return match;
+  });
+  
+  // Process sticker format [sticker:name]
+  processedText = processedText.replace(/\[sticker:([a-zA-Z0-9_]+)\]/g, (match, name) => {
+    // Check if we have this sticker in our animated emojis collection
+    const stickerCode = `:${name}:`;
+    const foundEmoji = Object.keys(animatedEmojis).find(key => key === stickerCode);
+    
+    if (foundEmoji) {
+      const emoji = animatedEmojis[foundEmoji];
+      return `<a:${emoji.name}:${emoji.id}>`;
+    }
+    
+    // If not found, return as is
+    return match;
+  });
+  
+  // STEP 2: Process already-formatted Discord emoji codes
+  // These are already in Discord's format, just make sure they're well-formed
+  // Handle <:name:id> and <a:name:id> formats that are already correct
+  
+  // STEP 3: Process animated emoji codes first (they take precedence)
   Object.keys(animatedEmojis).forEach(code => {
     const emoji = animatedEmojis[code];
     const emojiString = `<a:${emoji.name}:${emoji.id}>`;
     processedText = processedText.replace(new RegExp(code, 'g'), emojiString);
   });
   
-  // Process unicode emojis
+  // STEP 4: Process unicode emojis (standard emojis)
   Object.keys(unicodeEmojis).forEach(code => {
     processedText = processedText.replace(new RegExp(code, 'g'), unicodeEmojis[code]);
   });
   
-  // Process server-specific emojis if provided
+  // STEP 5: Process server-specific emojis if provided
   if (serverEmojis) {
     serverEmojis.forEach(emoji => {
       const emojiCode = `:${emoji.name}:`;
@@ -156,22 +242,27 @@ function processEmojis(messageText, serverEmojis = null) {
     });
   }
   
-  // Handle CarlBot style animated emoji format like a:name:id
-  const animatedEmojiRegex = /a:([a-zA-Z0-9_]+):(\d+)/g;
-  processedText = processedText.replace(animatedEmojiRegex, '<a:$1:$2>');
+  // STEP 6: Handle advanced Discord emoji formats
   
-  // Handle CarlBot style static emoji format like :name:id
-  const staticEmojiRegex = /:([a-zA-Z0-9_]+):(\d+)/g;
-  processedText = processedText.replace(staticEmojiRegex, '<:$1:$2>');
+  // Handle direct Discord emoji input format (a:name:id)
+  processedText = processedText.replace(/\ba:([a-zA-Z0-9_]+):(\d+)\b/g, '<a:$1:$2>');
   
-  // Handle incomplete emoji code formatting
+  // Handle static emoji format (:name:id)
+  processedText = processedText.replace(/\b:([a-zA-Z0-9_]+):(\d+)\b/g, '<:$1:$2>');
+  
+  // STEP 7: Fix malformed emoji code formatting
+  
   // Fix format like <:emoji1234567> to <:emoji:1234567>
-  const incompleteEmojiRegex = /<:([a-zA-Z0-9_]+)(\d{17,20})>/g;
-  processedText = processedText.replace(incompleteEmojiRegex, '<:$1:$2>');
+  processedText = processedText.replace(/<:([a-zA-Z0-9_]+)(\d{17,20})>/g, '<:$1:$2>');
   
   // Fix format like <a:emoji1234567> to <a:emoji:1234567>
-  const incompleteAnimatedEmojiRegex = /<a:([a-zA-Z0-9_]+)(\d{17,20})>/g;
-  processedText = processedText.replace(incompleteAnimatedEmojiRegex, '<a:$1:$2>');
+  processedText = processedText.replace(/<a:([a-zA-Z0-9_]+)(\d{17,20})>/g, '<a:$1:$2>');
+  
+  // STEP 8: Prevent double-formatting of already formatted emojis
+  // Convert double << or >> in emoji code to correct format
+  processedText = processedText
+    .replace(/<a<<a:/g, '<a:')
+    .replace(/>>(\d+)>/g, ':$1>');
   
   return processedText;
 }

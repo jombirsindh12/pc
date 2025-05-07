@@ -25,7 +25,7 @@
   },
   "strictSecurity": true,
   "strictSecurityAction": "kick",
-  "strictSecurityEnabled": 1746618379836,
+  "strictSecurityEnabled": 1746622646357,
   "welcomeMessage": true,
   "youtubeChannelId": "UCTqVAZM7HsFoz7xrpRMoADg",
   "youtubeChannelName": "PHANTOM GAMING ",
@@ -671,7 +671,7 @@
   "welcomeSettings": {
     "enabled": true,
     "channelId": "1337418792690782219",
-    "message": "━━━━━━━━━━━━━━━━━━━━━━━  \n\n👋 𝗪𝗲𝗹𝗰𝗼𝗺𝗲, **{user.name}!**\n\n📛 𝗧𝗮𝗴 — `{user.tag}`\n\n🏠 𝗝𝗼𝗶𝗻𝗲𝗱 𝗦𝗲𝗿𝘃𝗲𝗿 — **{server}**\n\n🔢 𝗬𝗼𝘂 𝗮𝗿𝗲 𝗠𝗲𝗺𝗯𝗲𝗿 #**{server.memberCount}**\n\n📅 𝗬𝗲𝗮𝗿 — **{year}**\n\n━━━━━━━━━━━━━━━━━━━━━━━  \n\n\n📜 **𝗥𝘂𝗹𝗲𝘀**  \n➤ <#1337154892531372103>  \n\n🎁 **𝗙𝗿𝗲𝗲 𝗣𝗮𝗻𝗲𝗹**  \n➤ <#1335942478599290945>  \n\n💬 **𝗖𝗵𝗮𝘁**  \n➤ <#1337156587663396965>  \n\n🛍️ **𝗦𝘁𝗼𝗿𝗲**  \n➤ <#1339476514617430096>  \n\n━━━━━━━━━━━━━━━━━━━━━━━  \n✨ 𝗘𝘅𝗽𝗹𝗼𝗿𝗲. 𝗘𝗻𝗷𝗼𝘆. 𝗦𝘁𝗮𝘆 𝗔𝗰𝘁𝗶𝘃𝗲, **{user.name}!**\n━━━━━━━━━━━━━━━━━━━━━━━",
+    "message": "━━━━━━━━━━━━━━━━━━━━━━━  \n\n👋 𝗪𝗲𝗹𝗰𝗼𝗺𝗲, **{user.name}!**\n\n📛 𝗧𝗮𝗴 — `{user.tag}`\n\n🏠 𝗝𝗼𝗶𝗻𝗲𝗱 𝗦𝗲𝗿𝘃𝗲𝗿 — **{server}**\n\n🔢 𝗬𝗼𝘂 𝗮𝗿𝗲 𝗠𝗲𝗺𝗯𝗲𝗿 #**{server.memberCount}**\n\n📅 𝗬𝗲𝗮𝗿 — **{year}**\n\n━━━━━━━━━━━━━━━━━━━━━━━  \n\n📜 **𝗥𝘂𝗹𝗲𝘀**  \n➤ <#1337154892531372103>  \n\n🎁 **𝗙𝗿𝗲𝗲 𝗣𝗮𝗻𝗲𝗹**  \n➤ <#1335942478599290945>  \n\n\n💬 **𝗖𝗵𝗮𝘁**  \n➤ <#1337156587663396965>  \n\n🛍️ **𝗦𝘁𝗼𝗿𝗲**  \n➤ <#1339476514617430096>  \n\n━━━━━━━━━━━━━━━━━━━━━━━  \n✨ 𝗘𝘅𝗽𝗹𝗼𝗿𝗲. 𝗘𝗻𝗷𝗼𝘆. 𝗦𝘁𝗮𝘆 𝗔𝗰𝘁𝗶𝘃𝗲, {user.name}!\n━━━━━━━━━━━━━━━━━━━━━━━",
     "title": "💫│𝗪𝗘𝗟𝗖𝗢𝗠𝗘 {mention} 𝗧𝗢 𝗣𝗛𝗔𝗧𝗢𝗠 𝗖𝗛𝗘𝗔𝗧𝗦!",
     "color": "#FF0000",
     "roleId": null,
@@ -728,7 +728,7 @@
       }
     },
     "updateInterval": 5,
-    "lastUpdate": 1746618158454
+    "lastUpdate": 1746622522545
   },
   "inviteSettings": {
     "logChannelId": "1337139875660697630",
@@ -736,7 +736,7 @@
     "enabled": true
   },
   "dmSettings": {
-    "message": "👋 Hello {mention}!  🎉 **Welcome to {server}** — your new home for powerful tools, premium features, and exclusive access!   You're now part of something **big**, and we're truly excited to have you with us.  ━━━━━━━━━━━━━━━━━━━━━━  💎 **Want early access to our premium panels, tools, and cheats?**   Just **invite more members** to the server using your personal invite link.  ➤ The more invites you generate, the more rewards you unlock!  ━━━━━━━━━━━━━━━━━━━━━━  🏆 **Top inviters receive:**   ‣ 🔓 Special roles & permissions   ‣ 🛍️ Free access to premium products   ‣ 🎁 Exclusive giveaways   ‣ 🏅 Invite tracking & leaderboard badges  📈 Your invites will be automatically tracked.   Stay active regularly and you'll unlock even more benefits!  ━━━━━━━━━━━━━━━━━━━━━━  📅 **Welcome once again to {server}** —   Let's build the strongest community together in **{year}**!  — **Phantom Cheats Team 💼**",
+    "message": "👋 Hello {mention}!\\n 🎉 **Welcome to {server}** — your new home for powerful tools, premium features, and exclusive access!\\n You're now part of something **big**, and we’re truly excited to have you with us.\\n ━━━━━━━━━━━━━━━━━━━━━━\\n 💬 **Start chatting with members here:**\\n 🔗 https://discord.com/channels/1335942478599290942/1337156587663396965\\n ━━━━━━━━━━━━━━━━━━━━━━\\n 💎 **Want early access to our premium panels, tools, and cheats?**\\n Just **invite more members** to the server using your personal invite link.\\n ➤ The more invites you generate, the more rewards you unlock!\\n ━━━━━━━━━━━━━━━━━━━━━━\\n 🏆 **Top inviters receive:**\\n ‣ 🔓 Special roles & permissions\\n ‣ 🛍️ Free access to premium products\\n ‣ 🎁 Exclusive giveaways\\n ‣ 🏅 Invite tracking & leaderboard badges\\n 📈 Your invites will be automatically tracked.\\n Stay active regularly and you’ll unlock even more benefits!\\n ━━━━━━━━━━━━━━━━━━━━━━\\n 📅 **Welcome once again to {server}** — \\n Let’s build the strongest community together in **{year}**!\\n \\n — **Phantom Cheats Team 💼**",
     "enabled": true
   }
 }

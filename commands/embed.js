@@ -1,4 +1,5 @@
 const config = require('../utils/config');
+const { processEmojis, animatedEmojis } = require('../utils/emojiProcessor');
 
 module.exports = {
   name: 'embed',
@@ -92,10 +93,42 @@ module.exports = {
       colorDecimal = 0x5865F2; // Default to Discord blurple
     }
     
-    // Create the embed
+    // Process sticker formats in title and description
+    const processSticker = (text) => {
+      // Process {sticker:name} format
+      const braceStickerRegex = /{sticker:([a-zA-Z0-9_]+)}/g;
+      let result = text.replace(braceStickerRegex, (match, name) => {
+        // Convert to :name: format for the emoji processor
+        return `:${name}:`;
+      });
+      
+      // Process [sticker:name] format
+      const bracketStickerRegex = /\[sticker:([a-zA-Z0-9_]+)\]/g;
+      result = result.replace(bracketStickerRegex, (match, name) => {
+        // Convert to :name: format for the emoji processor
+        return `:${name}:`;
+      });
+      
+      return result;
+    };
+    
+    // Pre-process stickers and emojis in the title and description
+    let processedTitle = title;
+    let processedDescription = description;
+    
+    // First, pre-process any sticker formats
+    processedTitle = processSticker(processedTitle);
+    processedDescription = processSticker(processedDescription);
+    
+    // Process emoji codes using our enhanced emoji processor
+    const serverEmojis = isSlashCommand ? interaction.guild.emojis.cache : message.guild.emojis.cache;
+    processedTitle = processEmojis(processedTitle, serverEmojis);
+    processedDescription = processEmojis(processedDescription, serverEmojis);
+    
+    // Create the embed with processed content
     const embed = {
-      title: title,
-      description: description,
+      title: processedTitle,
+      description: processedDescription,
       color: colorDecimal
     };
     
@@ -109,7 +142,9 @@ module.exports = {
     }
     
     if (footerText) {
-      embed.footer = { text: footerText };
+      // Process emojis in footer text too
+      const processedFooter = processEmojis(processSticker(footerText), serverEmojis);
+      embed.footer = { text: processedFooter };
     }
     
     // Add timestamp
@@ -162,10 +197,14 @@ module.exports = {
         await message.channel.send({ embeds: [embed] });
       }
       
-      // Send confirmation
+      // Send confirmation - make sure it also includes guidance about stickers
       const confirmationEmbed = {
         title: '✅ Embed Created',
-        description: 'Your custom embed has been created and sent to this channel.',
+        description: 'Your custom embed has been created and sent to this channel.\n\n' +
+                     '**Tip:** You can use animated stickers in your embeds with these formats:\n' +
+                     '• `{sticker:name}` - Example: `{sticker:discord_nitro}`\n' + 
+                     '• `[sticker:name]` - Example: `[sticker:heart_blast]`\n' +
+                     '• Standard emoji codes like `:fire:` are also supported',
         color: 0x00FF00, // Green
         fields: []
       };

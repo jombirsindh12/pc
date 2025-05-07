@@ -1,4 +1,5 @@
 const config = require('../utils/config');
+const { processEmojis, animatedEmojis } = require('../utils/emojiProcessor');
 
 module.exports = {
   name: 'embedtemplate',
@@ -109,10 +110,38 @@ module.exports = {
         // Get the template
         const template = embedTemplates[templateName];
         
-        // Create embed from template
+        // Helper function to process sticker formats
+        const processSticker = (text) => {
+          if (!text) return text;
+          
+          // Process {sticker:name} format
+          const braceStickerRegex = /{sticker:([a-zA-Z0-9_]+)}/g;
+          let result = text.replace(braceStickerRegex, (match, name) => {
+            // Convert to :name: format for the emoji processor
+            return `:${name}:`;
+          });
+          
+          // Process [sticker:name] format
+          const bracketStickerRegex = /\[sticker:([a-zA-Z0-9_]+)\]/g;
+          result = result.replace(bracketStickerRegex, (match, name) => {
+            // Convert to :name: format for the emoji processor
+            return `:${name}:`;
+          });
+          
+          return result;
+        };
+        
+        // Pre-process and apply emoji processing to template content
+        const serverEmojis = interaction.guild.emojis.cache;
+        
+        // Process title and description with stickers and emojis
+        const processedTitle = processEmojis(processSticker(template.title), serverEmojis);
+        const processedDescription = processEmojis(processSticker(template.description), serverEmojis);
+        
+        // Create embed from template with processed content
         const embed = {
-          title: template.title,
-          description: template.description,
+          title: processedTitle,
+          description: processedDescription,
           color: parseInt(template.color?.replace('#', '') || '5865F2', 16),
           timestamp: new Date()
         };
@@ -127,7 +156,9 @@ module.exports = {
         }
         
         if (template.footerText) {
-          embed.footer = { text: template.footerText };
+          // Process footer text with emojis and stickers
+          const processedFooter = processEmojis(processSticker(template.footerText), serverEmojis);
+          embed.footer = { text: processedFooter };
         }
         
         // Send the embed
@@ -147,9 +178,11 @@ module.exports = {
           // Send embed to proper channel
           await resolvedChannel.send({ embeds: [embed] });
           
-          // Send confirmation
+          // Send confirmation with sticker usage tip
           await interaction.followUp({ 
-            content: `✅ Template "${templateName}" has been used to create an embed in this channel.`,
+            content: `✅ Template "${templateName}" has been used to create an embed in this channel.\n\n` +
+                     `**Tip:** You can include animated stickers in your templates!\n` +
+                     `Use \`{sticker:name}\` or \`[sticker:name]\` format in your embed text.`,
             ephemeral: true
           });
         } catch (error) {
