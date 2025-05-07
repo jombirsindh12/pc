@@ -221,10 +221,24 @@ module.exports = {
             scheduledStreams: selectedValues.includes('scheduledStreams')
           };
           
-          // Update server config with new settings
+          // Update server config with new settings and ensure all notifications go to the same channel
+          const youtubeSettings = serverConfig.youtubeSettings || {};
+          const notificationChannelId = serverConfig.notificationChannelId;
+          
+          // Update server config - set all notification channel IDs to the same channel
           config.updateServerConfig(serverId, { 
-            youtubeNotificationSettings: updatedSettings
+            youtubeNotificationSettings: updatedSettings,
+            youtubeSettings: {
+              ...youtubeSettings,
+              notificationChannelId: notificationChannelId,
+              videoNotificationChannelId: notificationChannelId,
+              shortsNotificationChannelId: notificationChannelId,
+              livestreamNotificationChannelId: notificationChannelId
+            }
           });
+          
+          console.log(`[YouTube Notification] Updated settings for server ${serverId}:`);
+          console.log(`- Using channel ID ${notificationChannelId} for all YouTube content types`);
           
           // Update the embed
           const updatedEmbed = EmbedBuilder.from(settingsMessage.embeds[0])
