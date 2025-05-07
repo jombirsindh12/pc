@@ -405,31 +405,20 @@ function processEmojis(messageText, serverEmojis = null, client = null) {
   processedText = processedText.replace(/:(\d+)>:(\d+)>/g, ':$1>');
   processedText = processedText.replace(/:(\d+)>(\d+)>/g, ':$1>');
   
-  // Handle direct use of GTALoading text
-  if (processedText.includes('GTALoading')) {
-    // Temporarily replace the already-formatted versions
-    processedText = processedText.replace(/<a:GTALoading:1337142161673814057>/g, '##GTAPLACEHOLDER##');
-    
-    // Now perform the specific replacements
-    processedText = processedText.replace(/:GTALoading:/g, '<a:GTALoading:1337142161673814057>');
-    processedText = processedText.replace(/<<a:GTALoading:>>/g, '<a:GTALoading:1337142161673814057>');
-    processedText = processedText.replace(/{sticker:GTALoading}/g, '<a:GTALoading:1337142161673814057>');
-    
-    // Replace all other instances but not inside already processed ones
-    processedText = processedText.replace(/GTALoading/g, '<a:GTALoading:1337142161673814057>');
-    
-    // Restore the placeholders
-    processedText = processedText.replace(/##GTAPLACEHOLDER##/g, '<a:GTALoading:1337142161673814057>');
-    
-    // Fix nested tags - all variants
-    processedText = processedText.replace(/<a:<a:GTALoading:1337142161673814057>/g, '<a:GTALoading:1337142161673814057>');
-    processedText = processedText.replace(/<a:<a:GTALoading:1337142161673814057>>/g, '<a:GTALoading:1337142161673814057>');
-    processedText = processedText.replace(/<a:<a:GTALoading:1337142161673814057>:1337142161673814057>/g, '<a:GTALoading:1337142161673814057>');
-    processedText = processedText.replace(/<a:(<a:GTALoading:1337142161673814057>):1337142161673814057>/g, '<a:GTALoading:1337142161673814057>');
-    processedText = processedText.replace(/<a:GTALoading:1337142161673814057>:1337142161673814057>/g, '<a:GTALoading:1337142161673814057>');
-    processedText = processedText.replace(/<a:<a:<a:GTALoading:1337142161673814057>/g, '<a:GTALoading:1337142161673814057>');
-    processedText = processedText.replace(/<a:<a:<a:GTALoading:1337142161673814057>:1337142161673814057>/g, '<a:GTALoading:1337142161673814057>');
-  }
+  // STEP 10: Direct replacement for GTALoading in specific formats to ensure it works
+  processedText = processedText.replace(/:GTALoading:/g, '<a:GTALoading:1337142161673814057>');
+  processedText = processedText.replace(/<<a:GTALoading:>>/g, '<a:GTALoading:1337142161673814057>');
+  processedText = processedText.replace(/{sticker:GTALoading}/g, '<a:GTALoading:1337142161673814057>');
+  
+  // STEP 11: Fix over-replacement issue (where the emoji might get replaced multiple times)
+  processedText = processedText.replace(/<a:(<a:GTALoading:1337142161673814057>):1337142161673814057>/g, 
+                                      '<a:GTALoading:1337142161673814057>');
+  processedText = processedText.replace(/<a:<a:GTALoading:1337142161673814057>/g, 
+                                      '<a:GTALoading:1337142161673814057>');
+                                      
+  // Fix other common syntax issues
+  processedText = processedText.replace(/<a:GTALoading:1337142161673814057>:1337142161673814057>/g, 
+                                      '<a:GTALoading:1337142161673814057>');
                                       
   // STEP 12: Prevent double-formatting of already formatted emojis
   // Convert double << or >> in emoji code to correct format
