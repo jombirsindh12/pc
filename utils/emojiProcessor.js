@@ -117,7 +117,7 @@ const animatedEmojis = {
   ':nitro_boost:': { name: 'nitro_boost', id: '1067854919261257822' },
   ':loading:': { name: 'loading', id: '1089242072111329411' },
   ':discordloading:': { name: 'discordloading', id: '1076876224242495588' },
-  ':GTALoading:': { name: 'GTALoading', id: '1339535063494246430' },
+  ':GTALoading:': { name: 'GTALoading', id: '1337142161673814057' },
   
   // Nitro exclusive animated sticker emojis
   ':ablobcathyperkitty:': { name: 'ablobcathyperkitty', id: '1129181853050503198' },
@@ -320,9 +320,34 @@ function processEmojis(messageText, serverEmojis = null, client = null) {
       return `<a:${emoji.name}:${emoji.id}>`;
     }
     
+    // Special case for GTALoading
+    if (name === 'GTALoading') {
+      return `<a:GTALoading:1337142161673814057>`;
+    }
+    
     // If not found, return the original match
     console.log(`Could not find emoji for: ${match}`);
     return match;
+  });
+  
+  // Fix escaped format: &lt;a:name:id&gt;
+  processedText = processedText.replace(/&lt;a:([a-zA-Z0-9_]+):(\d+)&gt;/g, (match, name, id) => {
+    return `<a:${name}:${id}>`;
+  });
+  
+  // Fix escaped format: &lt;:name:id&gt;
+  processedText = processedText.replace(/&lt;:([a-zA-Z0-9_]+):(\d+)&gt;/g, (match, name, id) => {
+    return `<:${name}:${id}>`;
+  });
+  
+  // Handle format with double colon: <a:name::id>
+  processedText = processedText.replace(/<a:([a-zA-Z0-9_]+)::(\d+)>/g, (match, name, id) => {
+    return `<a:${name}:${id}>`;
+  });
+  
+  // Handle format with double colon: <:name::id>
+  processedText = processedText.replace(/<:([a-zA-Z0-9_]+)::(\d+)>/g, (match, name, id) => {
+    return `<:${name}:${id}>`;
   });
   
   // Special handling for specific emoji IDs that are commonly used
@@ -330,8 +355,8 @@ function processEmojis(messageText, serverEmojis = null, client = null) {
     ':emoji_1743942949268:': '<:emoji:1743942949268>',
     ':emoji:1743942949268:': '<:emoji:1743942949268>',
     ':emoji_1743942949269:': '<:emoji:1743942949269>',
-    ':GTALoading:': '<a:GTALoading:1339535063494246430>',
-    '<<a:GTALoading:>>': '<a:GTALoading:1339535063494246430>'
+    ':GTALoading:': '<a:GTALoading:1337142161673814057>',
+    '<<a:GTALoading:>>': '<a:GTALoading:1337142161673814057>'
   };
   
   Object.keys(specificEmojiIds).forEach(emojiCode => {
@@ -374,6 +399,14 @@ function processEmojis(messageText, serverEmojis = null, client = null) {
   processedText = processedText
     .replace(/<a<<a:/g, '<a:')
     .replace(/>>(\d+)>/g, ':$1>');
+    
+  // STEP 9: Fix any trailing duplicate IDs that sometimes happen with double formatting
+  processedText = processedText.replace(/:(\d+)>:(\d+)>/g, ':$1>');
+  processedText = processedText.replace(/:(\d+)>(\d+)>/g, ':$1>');
+  
+  // Fix specific issues for GTALoading emoji
+  processedText = processedText.replace(/<a:GTALoading:1337142161673814057>:1337142161673814057>/g, 
+                                      '<a:GTALoading:1337142161673814057>');
   
   return processedText;
 }
