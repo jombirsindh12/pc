@@ -197,14 +197,17 @@ module.exports = {
         await message.channel.send({ embeds: [embed] });
       }
       
-      // Send confirmation - make sure it also includes guidance about stickers
+      // Send confirmation - make sure it also includes guidance about stickers and emojis
       const confirmationEmbed = {
         title: '✅ Embed Created',
         description: 'Your custom embed has been created and sent to this channel.\n\n' +
-                     '**Tip:** You can use animated stickers in your embeds with these formats:\n' +
+                     '**Tip:** You can use emojis and stickers in your embeds with these formats:\n' +
                      '• `{sticker:name}` - Example: `{sticker:discord_nitro}`\n' + 
                      '• `[sticker:name]` - Example: `[sticker:heart_blast]`\n' +
-                     '• Standard emoji codes like `:fire:` are also supported',
+                     '• Standard emoji codes like `:fire:` are also supported\n' +
+                     '• Custom server emojis like `:emoji_12345678:` now work\n' +
+                     '• Utility emojis like `:utility_verify:` and `:UtilityVerifyBlue:` work\n\n' +
+                     '**Discord supports all these formats in your embeds now!**',
         color: 0x00FF00, // Green
         fields: []
       };

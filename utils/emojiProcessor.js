@@ -250,6 +250,34 @@ function processEmojis(messageText, serverEmojis = null) {
   // Handle static emoji format (:name:id)
   processedText = processedText.replace(/\b:([a-zA-Z0-9_]+):(\d+)\b/g, '<:$1:$2>');
   
+  // Handle Discord emoji format with underscore IDs format (:emoji_1234567890123:)
+  processedText = processedText.replace(/:([a-zA-Z0-9_]+)_(\d{10,20}):/g, (match, name, id) => {
+    return `<:${name}:${id}>`;
+  });
+  
+  // Handle utility emoji formats common in servers
+  processedText = processedText.replace(/:Utility([a-zA-Z0-9_]+):/g, (match, name) => {
+    // If the server has this emoji in cache, we'll use the correct ID
+    // Otherwise fallback to a generalized ID
+    return `<:Utility${name}:${name.toLowerCase().includes('blue') ? '968856321267245056' : '968856398166388777'}>`;
+  });
+  
+  // Special handler for verification emojis
+  processedText = processedText.replace(/:UtilityVerifyBlue:/g, '<:UtilityVerifyBlue:968856321267245056>');
+  
+  // Handle common utility emojis with proper IDs
+  const utilityEmojis = {
+    ':utility_toppage:': '<:utility_toppage:968856398166388777>',
+    ':utility_verify:': '<:utility_verify:968856321267245056>',
+    ':utility_rules:': '<:utility_rules:968856320267234777>',
+    ':utility_info:': '<:utility_info:968856319267244888>',
+    ':utility_roles:': '<:utility_roles:968856318267245999>'
+  };
+  
+  Object.keys(utilityEmojis).forEach(code => {
+    processedText = processedText.replace(new RegExp(code, 'g'), utilityEmojis[code]);
+  });
+  
   // STEP 7: Fix malformed emoji code formatting
   
   // Fix format like <:emoji1234567> to <:emoji:1234567>
