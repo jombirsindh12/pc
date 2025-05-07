@@ -274,13 +274,27 @@ function processEmojis(text, serverEmojis = null, client = null) {
     return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   }
   
-  // FINAL CLEANUP - Just handle <a:a prefix at the beginning
+  // FINAL CLEANUP - Only remove broken emoji fragments at the beginning
   
-  // Only fix <a:a prefix at the start of text - this is the main issue
-  processedText = processedText.replace(/^<a:a(\s|$)/g, '');
+  // Only fix issues at the start of the string with ^ anchor
+  // Fix <a:a prefix only when it appears at the beginning
+  processedText = processedText.replace(/^<a:a /g, '');
+  processedText = processedText.replace(/^<a:a$/g, '');
+  processedText = processedText.replace(/^<a:a>$/g, '');
   
-  // Handle just the standalone case
+  // Fix <a: prefix only when it appears at the beginning without a valid emoji
+  processedText = processedText.replace(/^<a: /g, '');
+  processedText = processedText.replace(/^<a:$/g, '');
+  processedText = processedText.replace(/^<a:>$/g, '');
+  
+  // Remove isolated fragments at start
   if (processedText === '<a:a') {
+    processedText = '';
+  }
+  if (processedText === '<a:') {
+    processedText = '';
+  }
+  if (processedText === '<a') {
     processedText = '';
   }
   
