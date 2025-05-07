@@ -48,6 +48,12 @@ async function checkForNewVideos(client, serverId) {
     const shortsChannelId = youtubeSettings.shortsNotificationChannelId || defaultChannelId;
     const livestreamChannelId = youtubeSettings.livestreamNotificationChannelId || defaultChannelId;
     
+    console.log(`[YouTube Channel Config] Server: ${serverId}`);
+    console.log(`- Default channel ID: ${defaultChannelId}`);
+    console.log(`- Video channel ID: ${videoChannelId}`);
+    console.log(`- Shorts channel ID: ${shortsChannelId}`);
+    console.log(`- Livestream channel ID: ${livestreamChannelId}`);
+    
     // Get the default notification channel (we still need this for validation)
     const defaultChannel = guild.channels.cache.get(defaultChannelId);
     if (!defaultChannel) {
@@ -62,6 +68,12 @@ async function checkForNewVideos(client, serverId) {
       livestream: guild.channels.cache.get(livestreamChannelId),
       default: defaultChannel
     };
+    
+    console.log(`[YouTube Channels Loaded]`);
+    console.log(`- Default channel: ${channels.default.name}`);
+    console.log(`- Video channel: ${channels.video ? channels.video.name : 'Same as default'}`);
+    console.log(`- Shorts channel: ${channels.shorts ? channels.shorts.name : 'Same as default'}`);
+    console.log(`- Livestream channel: ${channels.livestream ? channels.livestream.name : 'Same as default'}`);
     
     // Get the latest videos from the YouTube channel
     const latestVideos = await youtubeAPI.getLatestVideos(youtubeChannelId, 3);
@@ -89,15 +101,18 @@ async function checkForNewVideos(client, serverId) {
       const livestreamKey = `${serverId}:${youtubeChannelId}:live:${video.id}`;
       const isActiveLivestream = activeLivestreams.has(livestreamKey);
       
-      // Skip if we've already processed this video unless it's a livestream status change
-      if (!isNewVideo && !isLivestream) {
-        continue;
-      }
+      // Add a debug log to see what's happening
+      console.log(`Processing video ${video.id} | Type: ${video.videoType} | isNewVideo: ${isNewVideo} | isLivestream: ${isLivestream}`);
+      
+      // Temporarily disable the skip logic for testing
+      // if (!isNewVideo && !isLivestream) {
+      //   continue;
+      // }
       
       // For livestreams, only notify once when they first go live
-      if (isLivestream && isActiveLivestream) {
-        continue;
-      }
+      // if (isLivestream && isActiveLivestream) {
+      //   continue;
+      // }
       
       // Check if the notification type is enabled in settings
       if (

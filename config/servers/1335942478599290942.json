@@ -25,7 +25,7 @@
   },
   "strictSecurity": true,
   "strictSecurityAction": "kick",
-  "strictSecurityEnabled": 1746624340988,
+  "strictSecurityEnabled": 1746624768823,
   "welcomeMessage": true,
   "youtubeChannelId": "UCTqVAZM7HsFoz7xrpRMoADg",
   "youtubeChannelName": "PHANTOM GAMING ",
@@ -728,7 +728,7 @@
       }
     },
     "updateInterval": 5,
-    "lastUpdate": 1746624259234
+    "lastUpdate": 1746624892086
   },
   "inviteSettings": {
     "logChannelId": "1337139875660697630",
@@ -740,12 +740,12 @@
     "enabled": true
   },
   "youtubeSettings": {
-    "enabled": false,
+    "enabled": true,
     "channelIds": [],
-    "notificationChannelId": null,
-    "videoNotificationChannelId": null,
-    "shortsNotificationChannelId": null,
-    "livestreamNotificationChannelId": null,
+    "notificationChannelId": "1344245100707840052",
+    "videoNotificationChannelId": "1344245100707840052",
+    "shortsNotificationChannelId": "1344245100707840052",
+    "livestreamNotificationChannelId": "1344245100707840052",
     "notifyOnVideos": true,
     "notifyOnShorts": true,
     "notifyOnLivestreams": true,
