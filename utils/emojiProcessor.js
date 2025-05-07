@@ -274,25 +274,13 @@ function processEmojis(text, serverEmojis = null, client = null) {
     return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   }
   
-  // FINAL CLEANUP - Handle malformed emoji patterns
+  // FINAL CLEANUP - Only remove broken tags at beginning
   
-  // 1. Replace problematic <a:⚙️ pattern (gear emoji)
-  processedText = processedText.replace(/<a:⚙️/g, '⚙️');
+  // Only look at start of text with ^ anchor for <a:a and similar broken prefixes
+  processedText = processedText.replace(/^<a:a(\s|$)/, '');
   
-  // 2. Replace any <a:a style prefixes
-  processedText = processedText.replace(/<a:a/g, '');
-  
-  // 3. Handle standalone <a:
-  processedText = processedText.replace(/^<a:/g, '');
-  
-  // 4. Remove special cases when they are the entire content
+  // Remove standalone broken tags when it's the entire content
   if (processedText === '<a:a') {
-    processedText = '';
-  }
-  if (processedText === '<a:') {
-    processedText = '';
-  }
-  if (processedText === '<a') {
     processedText = '';
   }
   
