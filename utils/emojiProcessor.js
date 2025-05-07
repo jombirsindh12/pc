@@ -186,13 +186,31 @@ function processEmojis(text, serverEmojis = null, client = null) {
   }
   
   // STEP 7: Fix any malformed emoji formats
-  // Convert triple-nested formats
+  // First pass - fix most common issues
   processedText = processedText.replace(/<a:<a:<a:([a-zA-Z0-9_]+):(\d+)>/g, '<a:$1:$2>');
   processedText = processedText.replace(/<a:<a:([a-zA-Z0-9_]+):(\d+)>/g, '<a:$1:$2>');
   processedText = processedText.replace(/<a:([a-zA-Z0-9_]+):(\d+)>:(\d+)>/g, '<a:$1:$2>');
   
-  // Clean up any other special cases
+  // Second pass - clean up any other special cases
   processedText = processedText.replace(/<a:(\w+):(\d+)>:(\d+)>/g, '<a:$1:$2>');
+  
+  // Additional cleanup for trailing ID numbers  
+  processedText = processedText.replace(/:(\d+)>(\d+)>/g, ':$1>');
+  processedText = processedText.replace(/:(\d+)>:(\d+)>/g, ':$1>');
+  
+  // Fix any formatting at start of emoji code
+  processedText = processedText.replace(/<a</g, '<a:');
+  processedText = processedText.replace(/<a<a:/g, '<a:');
+  processedText = processedText.replace(/<<a:/g, '<a:');
+  
+  // Repeated fixes for stubborn cases
+  for (let i = 0; i < 3; i++) {
+    // Fix nested tags - all variants (repeat a few times to catch stubborn cases)
+    processedText = processedText.replace(/<a:<a:([a-zA-Z0-9_]+):(\d+)>/g, '<a:$1:$2>');
+    processedText = processedText.replace(/<a:<a:([a-zA-Z0-9_]+):(\d+)>>/g, '<a:$1:$2>');
+    processedText = processedText.replace(/<a:(<a:([a-zA-Z0-9_]+):(\d+)>):(\d+)>/g, '<a:$2:$3>');
+    processedText = processedText.replace(/<a:([a-zA-Z0-9_]+):(\d+)>:(\d+)>/g, '<a:$1:$2>');
+  }
   
   return processedText;
 }
