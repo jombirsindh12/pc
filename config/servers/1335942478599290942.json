@@ -25,7 +25,7 @@
   },
   "strictSecurity": true,
   "strictSecurityAction": "kick",
-  "strictSecurityEnabled": 1746609350763,
+  "strictSecurityEnabled": 1746611684264,
   "welcomeMessage": true,
   "youtubeChannelId": "UCTqVAZM7HsFoz7xrpRMoADg",
   "youtubeChannelName": "PHANTOM GAMING ",
@@ -671,8 +671,8 @@
   "welcomeSettings": {
     "enabled": true,
     "channelId": "1337418792690782219",
-    "message": "💫│𝓓𝓸𝓷'𝓽 𝓕𝓸𝓻𝓰𝓮𝓽 𝓣𝓸 𝓒𝓱𝓮𝓬𝓴 𝓡𝓾𝓵𝓮𝓼 ⁠: <#1337154892531372103>    💫│𝓕𝓻𝓮𝓮 𝓟𝓪𝓷𝓮𝓵 ⁠: <#1335942478599290945>   💫│𝓒𝓱𝓪𝓽 ⁠: <#1337156587663396965>   💫│𝓢𝓽𝓸𝓻𝓮 # ⁠: <#1339476514617430096>",
-    "title": "💫│𝓦𝓮𝓵𝓬𝓸𝓶𝓮 @user! 𝓽𝓸 𝓟𝓱𝓪𝓽𝓸𝓶 𝓒𝓱𝓮𝓪𝓽𝓼",
+    "message": "✨│**We're thrilled to have you here, @user!**   ✨ Dive into the community and explore everything we offer:  🔹 𝙍𝙪𝙡𝙚𝙨  ➤ <#1337154892531372103>   🔹 𝙁𝙧𝙚𝙚 𝙋𝙖𝙣𝙚𝙡 ➤ <#1335942478599290945>   🔹 𝘾𝙝𝙖𝙩 𝙒𝙞𝙩𝙝 𝙐𝙨 ➤ <#1337156587663396965>   🔹 𝙎𝙩𝙤𝙧𝙚 ➤ <#1339476514617430096>    🎯 **Enjoy exclusive cheats, premium tools, and a friendly support team.**   Stay active, follow the rules, and level up your experience! 🚀",
+    "title": "💫│𝕎𝔼𝕃ℂ𝕆𝕄𝔼 @user! 𝕋𝕠 ℙℍ𝔸𝕋𝕆𝕄 ℂℍ𝔼𝔸𝕋𝕊",
     "color": "#FF0000",
     "roleId": null,
     "roleName": null,
@@ -691,6 +691,8 @@
   },
   "statsConfig": {
     "enabled": true,
+    "categoryId": "1341158959532478547",
+    "prefix": "🟢",
     "channels": {
       "role_1369529962679369758": {
         "id": "1369600166457380885",
@@ -698,7 +700,7 @@
         "roleId": "1369529962679369758"
       },
       "online": {
-        "id": "1369600331859759145",
+        "id": "1369604056569483446",
         "format": "🟢 Online: {count}",
         "type": "online"
       },
@@ -706,9 +708,26 @@
         "id": "1369600439045324802",
         "format": "👤 Humans: {count}",
         "type": "humans"
+      },
+      "totalMembers": {
+        "id": "1369604538285424662",
+        "format": "🟢 Members: {count}"
+      },
+      "onlineMembers": {
+        "id": "1369604540734767104",
+        "format": "🟢 Online: {count}"
+      },
+      "bots": {
+        "id": "1369604542580260877",
+        "format": "🟢 Bots: {count}"
+      },
+      "boost_level": {
+        "id": "1369604430437154948",
+        "format": "🚀 Server Level: {count}",
+        "type": "boost_level"
       }
     },
     "updateInterval": 5,
-    "lastUpdate": 1746608868062
+    "lastUpdate": 1746610254044
   }
 }
