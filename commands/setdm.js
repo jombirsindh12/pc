@@ -62,11 +62,14 @@ module.exports = {
         });
         
         // Create embed
+        // Format message preview with code block to preserve formatting
+        const messagePreview = '```' + dmMessage.substring(0, 980) + (dmMessage.length > 980 ? '...' : '') + '```';
+        
         const embed = new EmbedBuilder()
           .setTitle('📨 DM Message Settings')
           .setDescription(`DM messages for new members have been ${enabled ? 'enabled' : 'disabled'}.`)
           .addFields(
-            { name: '💬 Message', value: dmMessage, inline: false }
+            { name: '💬 Message Preview (Formatting preserved in actual DM)', value: messagePreview, inline: false }
           )
           .setColor('#5865F2')
           .setTimestamp();

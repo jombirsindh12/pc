@@ -666,9 +666,23 @@ function sendDMToNewMember(member, message) {
       .replace(/{year}/g, new Date().getFullYear().toString());
     
     // Preserve multiple spaces by replacing them with Unicode spaces that Discord will render
-    const formattedText = processedMessage.replace(/  +/g, match => {
-      return ' ' + '\u2000'.repeat(match.length - 1);  // Use Unicode spaces (En Quad) instead of regular spaces
-    });
+    // Also fix new lines and preserve markdown formatting
+    const formattedText = processedMessage
+      // Replace markdown to preserve bold/italic formatting
+      .replace(/\*\*/g, '**')  // Bold
+      .replace(/\*/g, '*')     // Italic
+      .replace(/__/g, '__')    // Underline
+      .replace(/~~/g, '~~')    // Strikethrough
+      // Replace multiple spaces with Unicode spaces
+      .replace(/  +/g, match => {
+        return ' ' + '\u2000'.repeat(match.length - 1);  // Use Unicode spaces (En Quad) instead of regular spaces
+      })
+      // Handle new lines
+      .replace(/\\n/g, '\n')   // Convert explicit \n to actual new lines
+      // Support for Discord's line separator
+      .replace(/━+/g, match => {
+        return '━'.repeat(match.length); // Make sure line separators display properly
+      })
       
     // Convert emoji codes to actual emojis
     const standardEmojis = {

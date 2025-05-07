@@ -25,7 +25,7 @@
   },
   "strictSecurity": true,
   "strictSecurityAction": "kick",
-  "strictSecurityEnabled": 1746617786723,
+  "strictSecurityEnabled": 1746618095386,
   "welcomeMessage": true,
   "youtubeChannelId": "UCTqVAZM7HsFoz7xrpRMoADg",
   "youtubeChannelName": "PHANTOM GAMING ",
@@ -728,7 +728,7 @@
       }
     },
     "updateInterval": 5,
-    "lastUpdate": 1746617430840
+    "lastUpdate": 1746617849943
   },
   "inviteSettings": {
     "logChannelId": "1337139875660697630",
@@ -736,7 +736,7 @@
     "enabled": true
   },
   "dmSettings": {
-    "message": "👋 Hello {mention}!  🎉 **Welcome to {server} — your new home for powerful tools, premium features, and exclusive access!**   You're now part of something **big** — and we’re excited to have you here.  💎 **Want early access to our premium panels, tools, and cheats?**   All you have to do is **invite more members** to our server using your invite link!   More invites = more rewards.    🏆 **Top inviters get:**   — 🔓 Special roles & permissions   — 🛍️ Free access to premium products   — 🎁 Exclusive giveaways   — 🏅 Invite tracking & leaderboard recognition    📈 Your invite activity will be tracked, and the more active you stay in the server, the better your perks.  🔔 So stay active, contribute, and start inviting today — amazing rewards await!  📅 Welcome once again to **{server}** — let’s build the strongest community together in {year}!  — Phantom Cheats Team 💼",
+    "message": "👋 Hello {mention}!  🎉 **Welcome to {server}** — your new home for powerful tools, premium features, and exclusive access!   You're now part of something **big**, and we’re truly excited to have you with us.  ━━━━━━━━━━━━━━━━━━━━━━  💎 **Want early access to our premium panels, tools, and cheats?**   Just **invite more members** to the server using your personal invite link.  ➤ The more invites you generate, the more rewards you unlock!  ━━━━━━━━━━━━━━━━━━━━━━  🏆 **Top inviters receive:**   ‣ 🔓 Special roles & permissions   ‣ 🛍️ Free access to premium products   ‣ 🎁 Exclusive giveaways   ‣ 🏅 Invite tracking & leaderboard badges  📈 Your invites will be automatically tracked.   Stay active regularly and you’ll unlock even more benefits!  ━━━━━━━━━━━━━━━━━━━━━━  📅 **Welcome once again to {server}** —   Let’s build the strongest community together in **{year}**!  — **Phantom Cheats Team 💼**",
     "enabled": true
   }
 }
