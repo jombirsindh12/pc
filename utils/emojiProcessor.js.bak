@@ -198,142 +198,67 @@ function processEmojis(messageText, serverEmojis = null, client = null) {
     console.log(`Loaded ${allEmojis.size} unique emojis from all servers the bot is in`);
   }
   
-  // STEP 1: Fix already-formatted Discord emoji codes first
-  // Fix nested emojis - this will clean up any malformed nesting like <a:<a:<a:name:id>
-  processedText = processedText.replace(/<a:<a:<a:([a-zA-Z0-9_]+):(\d+)>/g, '<a:$1:$2>');
-  processedText = processedText.replace(/<a:<a:([a-zA-Z0-9_]+):(\d+)>/g, '<a:$1:$2>');
-  processedText = processedText.replace(/<a:([a-zA-Z0-9_]+):(\d+)>:(\d+)>/g, '<a:$1:$2>');
-  
-  // Fix escaped format: &lt;a:name:id&gt;
-  processedText = processedText.replace(/&lt;a:([a-zA-Z0-9_]+):(\d+)&gt;/g, '<a:$1:$2>');
-  
-  // Fix escaped format: &lt;:name:id&gt;
-  processedText = processedText.replace(/&lt;:([a-zA-Z0-9_]+):(\d+)&gt;/g, '<:$1:$2>');
-  
-  // Fix malformed emoji formats
-  processedText = processedText.replace(/<a:([a-zA-Z0-9_]+)::(\d+)>/g, '<a:$1:$2>');
-  processedText = processedText.replace(/<:([a-zA-Z0-9_]+)::(\d+)>/g, '<:$1:$2>');
-  processedText = processedText.replace(/<a</g, '<a:');
-  processedText = processedText.replace(/<a<a:/g, '<a:');
-  
-  // Fix format like <:emoji1234567> to <:emoji:1234567>
-  processedText = processedText.replace(/<:([a-zA-Z0-9_]+)(\d{17,20})>/g, '<:$1:$2>');
-  
-  // Fix format like <a:emoji1234567> to <a:emoji:1234567>
-  processedText = processedText.replace(/<a:([a-zA-Z0-9_]+)(\d{17,20})>/g, '<a:$1:$2>');
-  
-  // STEP 2: Special handling for GTALoading emoji 
-  // First save any properly formatted instances from being transformed again
-  const correctGtaEmoji = '<a:GTALoading:1337142161673814057>';
-  const tempGtaMarker = '##GTA_EMOJI_PLACEHOLDER##';
-  
-  // Replace all correct instances with temporary marker
-  processedText = processedText.replace(new RegExp(correctGtaEmoji, 'g'), tempGtaMarker);
-  
-  // Handle all GTA emoji formats
-  processedText = processedText.replace(/:GTALoading:/g, correctGtaEmoji);
-  processedText = processedText.replace(/\{sticker:GTALoading\}/g, correctGtaEmoji);
-  processedText = processedText.replace(/\[sticker:GTALoading\]/g, correctGtaEmoji);
-  processedText = processedText.replace(/<<a:GTALoading:>>/g, correctGtaEmoji);
-  processedText = processedText.replace(/<<GTALoading>>/g, correctGtaEmoji);
-  
-  // Only match GTALoading as a standalone word, not inside other words
-  processedText = processedText.replace(/\bGTALoading\b/g, correctGtaEmoji);
-  
-  // Fix broken nested formats
-  processedText = processedText.replace(/<a:<a:GTALoading:1337142161673814057>/g, correctGtaEmoji);
-  processedText = processedText.replace(/<a:GTALoading:1337142161673814057>:1337142161673814057>/g, correctGtaEmoji);
-  
-  // Restore placeholders
-  processedText = processedText.replace(new RegExp(tempGtaMarker, 'g'), correctGtaEmoji);
-  
-  // STEP 3: Process sticker formats
-  // Process {sticker:name} format
-  processedText = processedText.replace(/\{sticker:([a-zA-Z0-9_]+)\}/g, (match, name) => {
-    // Check server emojis
-    if (allEmojis && allEmojis.has(name)) {
+  // STEP 1: Pre-process common sticker formats (both {sticker:name} and [sticker:name])
+  // Process sticker format {sticker:name}
+  processedText = processedText.replace(/{sticker:([a-zA-Z0-9_]+)}/g, (match, name) => {
+    // First check if this is a known server emoji
+    if (allEmojis.has(name)) {
       const emoji = allEmojis.get(name);
       return emoji.animated ? `<a:${emoji.name}:${emoji.id}>` : `<:${emoji.name}:${emoji.id}>`;
     }
     
-    // Check built-in animated emojis
+    // Check if we have this sticker in our animated emojis collection
     const stickerCode = `:${name}:`;
-    if (animatedEmojis[stickerCode]) {
-      const emoji = animatedEmojis[stickerCode];
+    const foundEmoji = Object.keys(animatedEmojis).find(key => key === stickerCode);
+    
+    if (foundEmoji) {
+      const emoji = animatedEmojis[foundEmoji];
       return `<a:${emoji.name}:${emoji.id}>`;
     }
     
-    return match; // Not found, keep as is
+    // If not found, return as is
+    return match;
   });
   
-  // Process [sticker:name] format
+  // Process sticker format [sticker:name]
   processedText = processedText.replace(/\[sticker:([a-zA-Z0-9_]+)\]/g, (match, name) => {
-    // Check server emojis
-    if (allEmojis && allEmojis.has(name)) {
+    // First check if this is a known server emoji
+    if (allEmojis.has(name)) {
       const emoji = allEmojis.get(name);
       return emoji.animated ? `<a:${emoji.name}:${emoji.id}>` : `<:${emoji.name}:${emoji.id}>`;
     }
     
-    // Check built-in animated emojis
+    // Check if we have this sticker in our animated emojis collection
     const stickerCode = `:${name}:`;
-    if (animatedEmojis[stickerCode]) {
-      const emoji = animatedEmojis[stickerCode];
+    const foundEmoji = Object.keys(animatedEmojis).find(key => key === stickerCode);
+    
+    if (foundEmoji) {
+      const emoji = animatedEmojis[foundEmoji];
       return `<a:${emoji.name}:${emoji.id}>`;
     }
     
-    return match; // Not found, keep as is
+    // If not found, return as is
+    return match;
   });
   
-  // STEP 4: Process special formats like <<a:name:>> and <<:name:>>
-  processedText = processedText.replace(/<<(a?):([a-zA-Z0-9_]+):>>/g, (match, animated, name) => {
-    // Check server emojis
-    if (allEmojis && allEmojis.has(name)) {
-      const emoji = allEmojis.get(name);
-      return emoji.animated ? `<a:${emoji.name}:${emoji.id}>` : `<:${emoji.name}:${emoji.id}>`;
-    }
-    
-    // Check built-in animated emojis
-    const stickerCode = `:${name}:`;
-    if (animatedEmojis[stickerCode]) {
-      const emoji = animatedEmojis[stickerCode];
-      return `<a:${emoji.name}:${emoji.id}>`;
-    }
-    
-    return match; // Not found, keep as is
-  });
+  // STEP 2: Process already-formatted Discord emoji codes
+  // These are already in Discord's format, just make sure they're well-formed
+  // Handle <:name:id> and <a:name:id> formats that are already correct
   
-  // STEP 5: Process shorthand format <<name>> for stickers
-  processedText = processedText.replace(/<<([a-zA-Z0-9_]+)>>/g, (match, name) => {
-    // Check server emojis
-    if (allEmojis && allEmojis.has(name)) {
-      const emoji = allEmojis.get(name);
-      return emoji.animated ? `<a:${emoji.name}:${emoji.id}>` : `<:${emoji.name}:${emoji.id}>`;
-    }
-    
-    // Check built-in animated emojis
-    const stickerCode = `:${name}:`;
-    if (animatedEmojis[stickerCode]) {
-      const emoji = animatedEmojis[stickerCode];
-      return `<a:${emoji.name}:${emoji.id}>`;
-    }
-    
-    return match; // Not found, keep as is
-  });
-  
-  // STEP 6: Process known animated emoji codes from our predefined list
+  // STEP 3: Process animated emoji codes first (they take precedence)
   Object.keys(animatedEmojis).forEach(code => {
     const emoji = animatedEmojis[code];
     const emojiString = `<a:${emoji.name}:${emoji.id}>`;
-    processedText = processedText.replace(new RegExp(code.replace(/([.*+?^=!:${}()|\[\]\/\\])/g, "\\$1"), 'g'), emojiString);
+    processedText = processedText.replace(new RegExp(code, 'g'), emojiString);
   });
   
-  // STEP 7: Process unicode emojis
+  // STEP 4: Process unicode emojis (standard emojis)
   Object.keys(unicodeEmojis).forEach(code => {
-    const unicodeChar = unicodeEmojis[code];
-    processedText = processedText.replace(new RegExp(code.replace(/([.*+?^=!:${}()|\[\]\/\\])/g, "\\$1"), 'g'), unicodeChar);
+    processedText = processedText.replace(new RegExp(code, 'g'), unicodeEmojis[code]);
   });
   
-  // STEP 8: Process server-specific emojis (current server first)
+  // STEP 5: Process server-specific emojis 
+  // First current server (if provided)
   if (serverEmojis) {
     serverEmojis.forEach(emoji => {
       const emojiCode = `:${emoji.name}:`;
@@ -341,44 +266,172 @@ function processEmojis(messageText, serverEmojis = null, client = null) {
         ? `<a:${emoji.name}:${emoji.id}>` 
         : `<:${emoji.name}:${emoji.id}>`;
       
-      // Skip if it's already formatted
+      // Skip if it looks like it might already have an ID attached
       if (processedText.includes(`<:${emoji.name}:`) || processedText.includes(`<a:${emoji.name}:`)) return;
       
-      // Need to escape special characters in regex
-      const pattern = new RegExp(emojiCode.replace(/([.*+?^=!:${}()|\[\]\/\\])/g, "\\$1"), 'g');
-      processedText = processedText.replace(pattern, emojiFormat);
+      // Replace all instances
+      processedText = processedText.replace(new RegExp(emojiCode, 'g'), emojiFormat);
     });
   }
   
-  // STEP 9: Process Nitro emojis from all servers
-  if (allEmojis && allEmojis.size > 0) {
+  // Then from all other servers (Nitro emojis)
+  if (allEmojis.size > 0) {
     allEmojis.forEach((emoji, name) => {
       const emojiCode = `:${name}:`;
       const emojiFormat = emoji.animated 
         ? `<a:${name}:${emoji.id}>` 
         : `<:${name}:${emoji.id}>`;
       
-      // Skip if it's already formatted
+      // Skip if it looks like it might already have an ID attached
       if (processedText.includes(`<:${name}:`) || processedText.includes(`<a:${name}:`)) return;
       
-      // Need to escape special characters in regex
-      const pattern = new RegExp(emojiCode.replace(/([.*+?^=!:${}()|\[\]\/\\])/g, "\\$1"), 'g');
-      processedText = processedText.replace(pattern, emojiFormat);
+      // Replace all instances
+      processedText = processedText.replace(new RegExp(emojiCode, 'g'), emojiFormat);
     });
   }
   
-  // STEP 10: Handle direct formats (a:name:id and :name:id)
+  // STEP 6: Handle advanced Discord emoji formats
+  
+  // Handle direct Discord emoji input format (a:name:id)
   processedText = processedText.replace(/\ba:([a-zA-Z0-9_]+):(\d+)\b/g, '<a:$1:$2>');
+  
+  // Handle static emoji format (:name:id)
   processedText = processedText.replace(/\b:([a-zA-Z0-9_]+):(\d+)\b/g, '<:$1:$2>');
   
-  // STEP 11: Handle special ID formats (:name:id: and :name_id:)
-  processedText = processedText.replace(/:([a-zA-Z0-9_]+)[_:](\d{10,20}):/g, '<:$1:$2>');
+  // Handle specific emoji ID format for server emojis
+  // Support both formats: :emoji_1234567890123: and :emoji:1234567890123:
+  processedText = processedText.replace(/:([a-zA-Z0-9_]+)[_:](\d{10,20}):/g, (match, name, id) => {
+    return `<:${name}:${id}>`;
+  });
   
-  // STEP 12: Fix any duplicate ID issues
+  // Turn <<name>> into {sticker:name} format for easier processing later
+  processedText = processedText.replace(/<<([a-zA-Z0-9_]+)>>/g, '{sticker:$1}');
+  
+  // Handle special format: <<a:name:>> and <<:name:>> - try to find emoji by name
+  processedText = processedText.replace(/<<(a?):([a-zA-Z0-9_]+):>>/g, (match, animated, name) => {
+    // Special case for GTALoading - most reliable approach
+    if (name === 'GTALoading') {
+      return `<a:GTALoading:1337142161673814057>`;
+    }
+    
+    // Check if we can find this emoji in our collection
+    if (allEmojis && allEmojis.has(name)) {
+      const emoji = allEmojis.get(name);
+      return emoji.animated ? `<a:${name}:${emoji.id}>` : `<:${name}:${emoji.id}>`;
+    }
+    
+    // Check built-in animated emojis
+    const stickerCode = `:${name}:`;
+    const foundEmoji = Object.keys(animatedEmojis).find(key => key === stickerCode);
+    if (foundEmoji) {
+      const emoji = animatedEmojis[foundEmoji];
+      return `<a:${emoji.name}:${emoji.id}>`;
+    }
+    
+    // If not found, return the original match
+    console.log(`Could not find emoji for: ${match}`);
+    return match;
+  });
+  
+  // Fix escaped format: &lt;a:name:id&gt;
+  processedText = processedText.replace(/&lt;a:([a-zA-Z0-9_]+):(\d+)&gt;/g, (match, name, id) => {
+    return `<a:${name}:${id}>`;
+  });
+  
+  // Fix escaped format: &lt;:name:id&gt;
+  processedText = processedText.replace(/&lt;:([a-zA-Z0-9_]+):(\d+)&gt;/g, (match, name, id) => {
+    return `<:${name}:${id}>`;
+  });
+  
+  // Handle format with double colon: <a:name::id>
+  processedText = processedText.replace(/<a:([a-zA-Z0-9_]+)::(\d+)>/g, (match, name, id) => {
+    return `<a:${name}:${id}>`;
+  });
+  
+  // Handle format with double colon: <:name::id>
+  processedText = processedText.replace(/<:([a-zA-Z0-9_]+)::(\d+)>/g, (match, name, id) => {
+    return `<:${name}:${id}>`;
+  });
+  
+  // Special handling for specific emoji IDs that are commonly used
+  const specificEmojiIds = {
+    ':emoji_1743942949268:': '<:emoji:1743942949268>',
+    ':emoji:1743942949268:': '<:emoji:1743942949268>',
+    ':emoji_1743942949269:': '<:emoji:1743942949269>',
+    ':GTALoading:': '<a:GTALoading:1337142161673814057>',
+    '<<a:GTALoading:>>': '<a:GTALoading:1337142161673814057>'
+  };
+  
+  Object.keys(specificEmojiIds).forEach(emojiCode => {
+    processedText = processedText.replace(new RegExp(emojiCode, 'g'), specificEmojiIds[emojiCode]);
+  });
+  
+  // Handle utility emoji formats common in servers
+  processedText = processedText.replace(/:Utility([a-zA-Z0-9_]+):/g, (match, name) => {
+    // If the server has this emoji in cache, we'll use the correct ID
+    // Otherwise fallback to a generalized ID
+    return `<:Utility${name}:${name.toLowerCase().includes('blue') ? '968856321267245056' : '968856398166388777'}>`;
+  });
+  
+  // Special handler for verification emojis
+  processedText = processedText.replace(/:UtilityVerifyBlue:/g, '<:UtilityVerifyBlue:968856321267245056>');
+  
+  // Handle common utility emojis with proper IDs
+  const utilityEmojis = {
+    ':utility_toppage:': '<:utility_toppage:968856398166388777>',
+    ':utility_verify:': '<:utility_verify:968856321267245056>',
+    ':utility_rules:': '<:utility_rules:968856320267234777>',
+    ':utility_info:': '<:utility_info:968856319267244888>',
+    ':utility_roles:': '<:utility_roles:968856318267245999>'
+  };
+  
+  Object.keys(utilityEmojis).forEach(code => {
+    processedText = processedText.replace(new RegExp(code, 'g'), utilityEmojis[code]);
+  });
+  
+  // STEP 7: Fix malformed emoji code formatting
+  
+  // Fix format like <:emoji1234567> to <:emoji:1234567>
+  processedText = processedText.replace(/<:([a-zA-Z0-9_]+)(\d{17,20})>/g, '<:$1:$2>');
+  
+  // Fix format like <a:emoji1234567> to <a:emoji:1234567>
+  processedText = processedText.replace(/<a:([a-zA-Z0-9_]+)(\d{17,20})>/g, '<a:$1:$2>');
+  
+  // STEP 8: Fix any <a< prefix that might appear
+  processedText = processedText.replace(/<a</g, '<a:');
+  processedText = processedText.replace(/<a<a:/g, '<a:');
+  
+  // STEP 9: Fix any trailing duplicate IDs that sometimes happen with double formatting
   processedText = processedText.replace(/:(\d+)>:(\d+)>/g, ':$1>');
   processedText = processedText.replace(/:(\d+)>(\d+)>/g, ':$1>');
   
-  // STEP 13: Fix any remaining syntax issues
+  // STEP 10: Fix all GTALoading emoji formats to prevent nested replacements
+  // First temporarily replace all correct instances of GTALoading to prevent double replacement
+  const correctGtaEmoji = '<a:GTALoading:1337142161673814057>';
+  const tempGtaMarker = '##GTA_EMOJI_PLACEHOLDER##';
+  
+  // Replace all correct instances with a temporary marker
+  processedText = processedText.replace(new RegExp(correctGtaEmoji, 'g'), tempGtaMarker);
+  
+  // Now apply replacements for all input formats
+  processedText = processedText.replace(/:GTALoading:/g, correctGtaEmoji);
+  processedText = processedText.replace(/\{sticker:GTALoading\}/g, correctGtaEmoji);
+  processedText = processedText.replace(/<<a:GTALoading:>>/g, correctGtaEmoji);
+  
+  // Important: We can't just replace all instances of "GTALoading" as that's too broad
+  // Instead, find specific patterns that are likely to be emoji references
+  processedText = processedText.replace(/\bGTALoading\b/g, correctGtaEmoji); // Word boundary match
+  
+  // Fix broken formats that might have been created
+  processedText = processedText.replace(/<a:<a:GTALoading:1337142161673814057>/g, correctGtaEmoji);
+  processedText = processedText.replace(/<a:GTALoading:1337142161673814057>:1337142161673814057>/g, correctGtaEmoji);
+  processedText = processedText.replace(/<a:(<a:GTALoading:1337142161673814057>):1337142161673814057>/g, correctGtaEmoji);
+  
+  // Restore our placeholders
+  processedText = processedText.replace(new RegExp(tempGtaMarker, 'g'), correctGtaEmoji);
+                                      
+  // STEP 12: Prevent double-formatting of already formatted emojis
+  // Convert double << or >> in emoji code to correct format
   processedText = processedText
     .replace(/<a<<a:/g, '<a:')
     .replace(/>>(\d+)>/g, ':$1>');
