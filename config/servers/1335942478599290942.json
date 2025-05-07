@@ -25,7 +25,7 @@
   },
   "strictSecurity": true,
   "strictSecurityAction": "kick",
-  "strictSecurityEnabled": 1746623245561,
+  "strictSecurityEnabled": 1746624340988,
   "welcomeMessage": true,
   "youtubeChannelId": "UCTqVAZM7HsFoz7xrpRMoADg",
   "youtubeChannelName": "PHANTOM GAMING ",
@@ -728,7 +728,7 @@
       }
     },
     "updateInterval": 5,
-    "lastUpdate": 1746623177758
+    "lastUpdate": 1746624259234
   },
   "inviteSettings": {
     "logChannelId": "1337139875660697630",
@@ -738,5 +738,17 @@
   "dmSettings": {
     "message": "👋 Hello {mention}!\\n 🎉 **Welcome to {server}** — your new home for powerful tools, premium features, and exclusive access!\\n You're now part of something **big**, and we’re truly excited to have you with us.\\n ━━━━━━━━━━━━━━━━━━━━━━\\n 💬 **Start chatting with members here:**\\n 🔗 https://discord.com/channels/1335942478599290942/1337156587663396965\\n ━━━━━━━━━━━━━━━━━━━━━━\\n 💎 **Want early access to our premium panels, tools, and cheats?**\\n Just **invite more members** to the server using your personal invite link.\\n ➤ The more invites you generate, the more rewards you unlock!\\n ━━━━━━━━━━━━━━━━━━━━━━\\n 🏆 **Top inviters receive:**\\n ‣ 🔓 Special roles & permissions\\n ‣ 🛍️ Free access to premium products\\n ‣ 🎁 Exclusive giveaways\\n ‣ 🏅 Invite tracking & leaderboard badges\\n 📈 Your invites will be automatically tracked.\\n Stay active regularly and you’ll unlock even more benefits!\\n ━━━━━━━━━━━━━━━━━━━━━━\\n 📅 **Welcome once again to {server}** — \\n Let’s build the strongest community together in **{year}**!\\n \\n — **Phantom Cheats Team 💼**",
     "enabled": true
+  },
+  "youtubeSettings": {
+    "enabled": false,
+    "channelIds": [],
+    "notificationChannelId": null,
+    "videoNotificationChannelId": null,
+    "shortsNotificationChannelId": null,
+    "livestreamNotificationChannelId": null,
+    "notifyOnVideos": true,
+    "notifyOnShorts": true,
+    "notifyOnLivestreams": true,
+    "lastChecked": null
   }
 }

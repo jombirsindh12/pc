@@ -250,9 +250,21 @@ function processEmojis(messageText, serverEmojis = null) {
   // Handle static emoji format (:name:id)
   processedText = processedText.replace(/\b:([a-zA-Z0-9_]+):(\d+)\b/g, '<:$1:$2>');
   
-  // Handle Discord emoji format with underscore IDs format (:emoji_1234567890123:)
-  processedText = processedText.replace(/:([a-zA-Z0-9_]+)_(\d{10,20}):/g, (match, name, id) => {
+  // Handle specific emoji ID format for server emojis
+  // Support both formats: :emoji_1234567890123: and :emoji:1234567890123:
+  processedText = processedText.replace(/:([a-zA-Z0-9_]+)[_:](\d{10,20}):/g, (match, name, id) => {
     return `<:${name}:${id}>`;
+  });
+  
+  // Special handling for specific emoji IDs that are commonly used
+  const specificEmojiIds = {
+    ':emoji_1743942949268:': '<:emoji:1743942949268>',
+    ':emoji:1743942949268:': '<:emoji:1743942949268>',
+    ':emoji_1743942949269:': '<:emoji:1743942949269>'
+  };
+  
+  Object.keys(specificEmojiIds).forEach(emojiCode => {
+    processedText = processedText.replace(new RegExp(emojiCode, 'g'), specificEmojiIds[emojiCode]);
   });
   
   // Handle utility emoji formats common in servers

@@ -21,30 +21,47 @@ async function checkForNewVideos(client, serverId) {
     const serverConfig = config.getServerConfig(serverId);
     
     // Only proceed if we have the necessary configuration
-    if (!serverConfig || !serverConfig.youtubeChannelId || !serverConfig.notificationChannelId) {
+    if (!serverConfig || !serverConfig.youtubeChannelId || 
+        (!serverConfig.notificationChannelId && !serverConfig.youtubeSettings?.notificationChannelId)) {
       return;
     }
     
     const youtubeChannelId = serverConfig.youtubeChannelId;
-    const notificationChannelId = serverConfig.notificationChannelId;
     
-    // Get the notification settings or use defaults
+    // Get the notification settings from youtubeSettings or use defaults
+    const youtubeSettings = serverConfig.youtubeSettings || {};
     const notificationSettings = serverConfig.youtubeNotificationSettings || {
-      videos: true,
-      shorts: true,
-      livestreams: true,
+      videos: youtubeSettings.notifyOnVideos !== false,
+      shorts: youtubeSettings.notifyOnShorts !== false,
+      livestreams: youtubeSettings.notifyOnLivestreams !== false,
       scheduledStreams: true
     };
     
-    // Get the notification channel from the server
+    // Get the guild
     const guild = client.guilds.cache.get(serverId);
     if (!guild) return;
     
-    const notificationChannel = guild.channels.cache.get(notificationChannelId);
-    if (!notificationChannel) {
-      console.log(`Notification channel ${notificationChannelId} not found for server ${serverId}`);
+    // Determine which notification channel to use based on content type
+    // We'll set default channels for each type, but we'll override them when we check content types
+    const defaultChannelId = youtubeSettings.notificationChannelId || serverConfig.notificationChannelId;
+    const videoChannelId = youtubeSettings.videoNotificationChannelId || defaultChannelId;
+    const shortsChannelId = youtubeSettings.shortsNotificationChannelId || defaultChannelId;
+    const livestreamChannelId = youtubeSettings.livestreamNotificationChannelId || defaultChannelId;
+    
+    // Get the default notification channel (we still need this for validation)
+    const defaultChannel = guild.channels.cache.get(defaultChannelId);
+    if (!defaultChannel) {
+      console.log(`Default notification channel ${defaultChannelId} not found for server ${serverId}`);
       return;
     }
+    
+    // Validate and cache all the specialized channels
+    const channels = {
+      video: guild.channels.cache.get(videoChannelId),
+      shorts: guild.channels.cache.get(shortsChannelId),
+      livestream: guild.channels.cache.get(livestreamChannelId),
+      default: defaultChannel
+    };
     
     // Get the latest videos from the YouTube channel
     const latestVideos = await youtubeAPI.getLatestVideos(youtubeChannelId, 3);
@@ -228,16 +245,40 @@ async function checkForNewVideos(client, serverId) {
           : `🎬 **${serverConfig.youtubeChannelName || 'Your subscribed channel'}** just uploaded a new video!`;
       }
       
+      // Determine which channel to send the notification to based on content type
+      let targetChannel;
+      
+      if (video.videoType === 'short') {
+        targetChannel = channels.shorts || channels.default;
+      } else if (video.videoType === 'live' || video.videoType === 'upcoming_live') {
+        targetChannel = channels.livestream || channels.default;
+      } else {
+        targetChannel = channels.video || channels.default;
+      }
+      
       // Send the notification with the appropriate embed and buttons
       try {
-        await notificationChannel.send({
+        await targetChannel.send({
           content: notificationContent,
           embeds: [embed],
           components: [buttonRow]
         });
-        console.log(`Sent notification for ${video.videoType} with ID ${video.id} to channel ${notificationChannelId}`);
+        console.log(`Sent notification for ${video.videoType} with ID ${video.id} to channel ${targetChannel.id}`);
       } catch (error) {
         console.error(`Error sending notification for ${video.id}:`, error);
+        // Try sending to the default channel as a fallback
+        if (targetChannel.id !== channels.default.id) {
+          try {
+            await channels.default.send({
+              content: notificationContent + `\n*(Note: Failed to send to the configured ${video.videoType} channel, so sending here instead)*`,
+              embeds: [embed],
+              components: [buttonRow]
+            });
+            console.log(`Sent fallback notification for ${video.videoType} with ID ${video.id} to default channel ${channels.default.id}`);
+          } catch (fallbackError) {
+            console.error(`Error sending fallback notification for ${video.id}:`, fallbackError);
+          }
+        }
       }
     }
     
