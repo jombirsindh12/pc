@@ -212,8 +212,10 @@ module.exports = {
       .replace('{server.memberCount}', interaction.guild.memberCount.toString())
       .replace('{year}', new Date().getFullYear().toString());
     
-    // No need for HTML space preservation - just use the processed description
-    const formattedText = processedDescription;
+    // Preserve multiple spaces by replacing them with Unicode spaces that Discord will render
+    const formattedText = processedDescription.replace(/  +/g, match => {
+      return ' ' + '\u2000'.repeat(match.length - 1);  // Use Unicode spaces (En Quad) instead of HTML entities
+    });
     
     // Process emoji codes to Discord emoji format
     // Instead of our previous complex logic, we'll use our new emoji processor
@@ -266,10 +268,11 @@ module.exports = {
       : formattedDescription;
       
     // Process the title for emojis and variables
+    // Note: Discord doesn't support clickable mentions in embed titles, so we'll use a different approach
     let processedTitle = welcomeTitle
-      .replace('{user}', `<@${interaction.user.id}>`)
+      .replace('{user}', interaction.user.username) // Just username for title as mentions don't work in titles
       .replace('{server}', interaction.guild.name)
-      .replace('{mention}', interaction.user.username) // Just show username instead of mention in title
+      .replace('{mention}', interaction.user.username) // Just username for title
       .replace('{user.tag}', interaction.user.tag)
       .replace('{user.name}', interaction.user.username)
       .replace('{server.memberCount}', interaction.guild.memberCount.toString())
@@ -351,12 +354,45 @@ module.exports = {
     
     // Send example
     try {
-      await channel.send({ embeds: [exampleEmbed] });
+      // Send the title message first with the clickable mention
+      const titleWithMention = welcomeTitle
+        .replace('{user}', `<@${interaction.user.id}>`)
+        .replace('{mention}', `<@${interaction.user.id}>`)
+        .replace('{server}', interaction.guild.name)
+        .replace('{user.tag}', interaction.user.tag)
+        .replace('{user.name}', interaction.user.username)
+        .replace('{server.memberCount}', interaction.guild.memberCount.toString())
+        .replace('{year}', new Date().getFullYear().toString());
       
-      // Show a direct ping message example if the welcome message doesn't already have a mention
-      if (!welcomeMessage.includes('{user}') && !welcomeMessage.includes('{mention}')) {
-        await channel.send(`👋 Welcome to the server, <@${interaction.user.id}>! (Additional welcome message)`);
-      }
+      // Process emojis in the title message
+      let formattedTitleWithMention = processEmojis(titleWithMention, interaction.guild.emojis.cache);
+      
+      // Apply emoji replacements for title
+      formattedTitleWithMention = formattedTitleWithMention
+        .replace(/:redcrown:/g, '<a:redcrown:1025355756511432776>')
+        .replace(/:arrow_heartright:/g, '<a:arrow_heartright:1017682681024229377>')
+        .replace(/:greenbolt:/g, '<a:greenbolt:1215595223477125120>')
+        .replace(/:1z_love:/g, '<a:1z_love:1216659232003457065>')
+        .replace(/:lol:/g, '<a:lol:1301275117434966016>')
+        .replace(/:dizzy:/g, '💫')
+        .replace(/:sparkles:/g, '✨')
+        .replace(/:rocket:/g, '🚀')
+        .replace(/:crown:/g, '👑')
+        .replace(/:star:/g, '⭐')
+        .replace(/:gem:/g, '💎')
+        .replace(/:small_blue_diamond:/g, '🔹')
+        .replace(/:large_blue_diamond:/g, '🔷')
+        .replace(/:heart:/g, '❤️')
+        .replace(/:shield:/g, '🛡️')
+        .replace(/:scroll:/g, '📜')
+        .replace(/:speech_balloon:/g, '💬')
+        .replace(/:shopping_cart:/g, '🛒')
+        .replace(/:clock2:/g, '🕒');
+        
+      await channel.send(formattedTitleWithMention);
+      
+      // Then send the detailed embed below it
+      await channel.send({ embeds: [exampleEmbed] });
     } catch (error) {
       console.error('Error sending example welcome message:', error);
       await interaction.followUp('⚠️ I was able to set up welcome messages, but encountered an error sending a test message. Please check my permissions in that channel.');
@@ -394,8 +430,10 @@ function setupWelcomeHandler(client) {
       .replace('{server.memberCount}', member.guild.memberCount.toString())
       .replace('{year}', new Date().getFullYear().toString());
       
-    // No html entity space preservation
-    const formattedText = processedDescription;
+    // Preserve multiple spaces by replacing them with Unicode spaces that Discord will render
+    const formattedText = processedDescription.replace(/  +/g, match => {
+      return ' ' + '\u2000'.repeat(match.length - 1);  // Use Unicode spaces (En Quad) instead of HTML entities
+    });
     
     // Process emoji codes to Discord emoji format using new processor
     let formattedDescription = processEmojis(formattedText, member.guild.emojis.cache);
@@ -450,10 +488,11 @@ function setupWelcomeHandler(client) {
     let processedTitle = welcomeSettings.title || '👋 Welcome to the server!';
     
     // Replace variables in title
+    // Note: Discord doesn't support clickable mentions in embed titles, so we'll use username instead
     processedTitle = processedTitle
-      .replace('{user}', `<@${member.id}>`)
+      .replace('{user}', member.user.username) // Just username for title as mentions don't work in titles
       .replace('{server}', member.guild.name)
-      .replace('{mention}', member.user.username) // Just show username instead of mention in title
+      .replace('{mention}', member.user.username) // Just username for title
       .replace('{user.tag}', member.user.tag)
       .replace('{user.name}', member.user.username)
       .replace('{server.memberCount}', member.guild.memberCount.toString())
@@ -543,12 +582,48 @@ function setupWelcomeHandler(client) {
     
     // Send welcome message
     try {
-      await welcomeChannel.send({ embeds: [welcomeEmbed] });
+      // First send the title message with the clickable mention
+      const titleWithMention = welcomeSettings.title || '👋 Welcome to the server!';
       
-      // Also send a direct ping message for extra visibility (if welcome message doesn't already have a mention)
-      if (!welcomeSettings.message.includes('{user}') && !welcomeSettings.message.includes('{mention}')) {
-        await welcomeChannel.send(`👋 Welcome to the server, <@${member.id}>!`);
-      }
+      const processedTitleWithMention = titleWithMention
+        .replace('{user}', `<@${member.id}>`)
+        .replace('{mention}', `<@${member.id}>`)
+        .replace('{server}', member.guild.name)
+        .replace('{user.tag}', member.user.tag)
+        .replace('{user.name}', member.user.username)
+        .replace('{server.memberCount}', member.guild.memberCount.toString())
+        .replace('{year}', new Date().getFullYear().toString());
+      
+      // Process emojis in the standalone title
+      let formattedTitleWithMention = processEmojis(processedTitleWithMention, member.guild.emojis.cache);
+      
+      // Apply emoji replacements for title message
+      formattedTitleWithMention = formattedTitleWithMention
+        .replace(/:redcrown:/g, '<a:redcrown:1025355756511432776>')
+        .replace(/:arrow_heartright:/g, '<a:arrow_heartright:1017682681024229377>')
+        .replace(/:greenbolt:/g, '<a:greenbolt:1215595223477125120>')
+        .replace(/:1z_love:/g, '<a:1z_love:1216659232003457065>')
+        .replace(/:lol:/g, '<a:lol:1301275117434966016>')
+        .replace(/:dizzy:/g, '💫')
+        .replace(/:sparkles:/g, '✨')
+        .replace(/:rocket:/g, '🚀')
+        .replace(/:crown:/g, '👑')
+        .replace(/:star:/g, '⭐')
+        .replace(/:gem:/g, '💎')
+        .replace(/:small_blue_diamond:/g, '🔹')
+        .replace(/:large_blue_diamond:/g, '🔷')
+        .replace(/:heart:/g, '❤️')
+        .replace(/:shield:/g, '🛡️')
+        .replace(/:scroll:/g, '📜')
+        .replace(/:speech_balloon:/g, '💬')
+        .replace(/:shopping_cart:/g, '🛒')
+        .replace(/:clock2:/g, '🕒');
+        
+      // Send title first for proper mention
+      await welcomeChannel.send(formattedTitleWithMention);
+      
+      // Then send the detailed embed below it
+      await welcomeChannel.send({ embeds: [welcomeEmbed] });
     } catch (error) {
       console.error('Error sending welcome message:', error);
     }

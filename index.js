@@ -4,6 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const { Client, GatewayIntentBits, Collection, Events, REST, Routes } = require('discord.js');
 const config = require('./utils/config');
+const { inviteTracker } = require('./server/db');
 
 console.log(`Starting bot in ${environment} environment`);
 
@@ -141,6 +142,26 @@ async function initializeSecurityMonitoring(client) {
   }
 }
 
+// Function to initialize invite tracking for all servers
+async function initializeInviteTracking(client) {
+  console.log('Initializing invite tracking system...');
+  
+  try {
+    // Initialize database tables
+    await inviteTracker.initializeTables();
+    
+    // Load invite tracker command 
+    const { setupInviteTrackingCollector } = require('./commands/invitetracker');
+    
+    // Set up invite tracking collectors for all servers
+    setupInviteTrackingCollector(client);
+    
+    console.log('✅ Invite tracking system initialized successfully');
+  } catch (error) {
+    console.error('❌ Error initializing invite tracking:', error);
+  }
+}
+
 // Ensure required directories exist
 const LOGS_DIR = path.join(__dirname, '.logs');
 const TEMP_DIR = path.join(__dirname, 'temp');
@@ -272,6 +293,9 @@ client.once(Events.ClientReady, async () => {
     
     // Start security monitoring for all servers
     initializeSecurityMonitoring(client);
+    
+    // Initialize invite tracking system
+    initializeInviteTracking(client);
     
     // Initialize the backup system
     try {
