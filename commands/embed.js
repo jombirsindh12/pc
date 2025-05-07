@@ -137,6 +137,17 @@ module.exports = {
     const discordClient = useNitroEmoji ? client : null;
     console.log(`Embed command: Using ${useNitroEmoji ? 'ALL servers' : 'ONLY current server'} for emoji processing`);
     
+    // Special handling for GTALoading emoji to avoid processing issues 
+    const gtaLoadingEmoji = '<a:GTALoading:1337142161673814057>';
+    processedTitle = processedTitle.replace(/:GTALoading:/g, gtaLoadingEmoji);
+    processedTitle = processedTitle.replace(/<<a:GTALoading:>>/g, gtaLoadingEmoji);
+    processedTitle = processedTitle.replace(/{sticker:GTALoading}/g, gtaLoadingEmoji);
+    
+    processedDescription = processedDescription.replace(/:GTALoading:/g, gtaLoadingEmoji);
+    processedDescription = processedDescription.replace(/<<a:GTALoading:>>/g, gtaLoadingEmoji);
+    processedDescription = processedDescription.replace(/{sticker:GTALoading}/g, gtaLoadingEmoji);
+    
+    // Now run the regular emoji processor
     processedTitle = processEmojis(processedTitle, serverEmojis, discordClient);
     processedDescription = processEmojis(processedDescription, serverEmojis, discordClient);
     
@@ -157,8 +168,15 @@ module.exports = {
     }
     
     if (footerText) {
+      // Special handling for GTALoading emoji in footer
+      let processedFooter = footerText;
+      const gtaLoadingEmoji = '<a:GTALoading:1337142161673814057>';
+      processedFooter = processedFooter.replace(/:GTALoading:/g, gtaLoadingEmoji);
+      processedFooter = processedFooter.replace(/<<a:GTALoading:>>/g, gtaLoadingEmoji);
+      processedFooter = processedFooter.replace(/{sticker:GTALoading}/g, gtaLoadingEmoji);
+      
       // Process emojis in footer text too (with Nitro support)
-      const processedFooter = processEmojis(processSticker(footerText), serverEmojis, discordClient);
+      processedFooter = processEmojis(processSticker(processedFooter), serverEmojis, discordClient);
       embed.footer = { text: processedFooter };
     }
     
