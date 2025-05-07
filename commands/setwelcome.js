@@ -267,8 +267,30 @@ module.exports = {
       ? formattedDescription.substring(0, 4000) + '...' 
       : formattedDescription;
       
+    // Process the title for emojis and variables
+    let processedTitle = welcomeTitle
+      .replace('{user}', `<@${interaction.user.id}>`)
+      .replace('{server}', interaction.guild.name)
+      .replace('{mention}', `<@${interaction.user.id}>`)
+      .replace('{user.tag}', interaction.user.tag)
+      .replace('{user.name}', interaction.user.username)
+      .replace('{server.memberCount}', interaction.guild.memberCount.toString())
+      .replace('{year}', new Date().getFullYear().toString());
+    
+    // Process emojis in the title
+    processedTitle = processEmojis(processedTitle, interaction.guild.emojis.cache);
+    
+    // Special emoji replacements for title
+    processedTitle = processedTitle
+      .replace(/:dizzy:/g, '💫')
+      .replace(/:sparkles:/g, '✨')
+      .replace(/:rocket:/g, '🚀')
+      .replace(/:crown:/g, '👑')
+      .replace(/:star:/g, '⭐')
+      .replace(/:gem:/g, '💎');
+    
     const exampleEmbed = {
-      title: welcomeTitle,
+      title: processedTitle,
       description: truncatedDescription,
       color: parseInt(welcomeColor?.replace('#', '') || '5865F2', 16),
       footer: {
@@ -428,8 +450,33 @@ function setupWelcomeHandler(client) {
       ? formattedDescription.substring(0, 4000) + '...' 
       : formattedDescription;
       
+    // Process title with emojis and variables
+    let processedTitle = welcomeSettings.title || '👋 Welcome to the server!';
+    
+    // Replace variables in title
+    processedTitle = processedTitle
+      .replace('{user}', `<@${member.id}>`)
+      .replace('{server}', member.guild.name)
+      .replace('{mention}', `<@${member.id}>`)
+      .replace('{user.tag}', member.user.tag)
+      .replace('{user.name}', member.user.username)
+      .replace('{server.memberCount}', member.guild.memberCount.toString())
+      .replace('{year}', new Date().getFullYear().toString());
+    
+    // Process emojis in title
+    processedTitle = processEmojis(processedTitle, member.guild.emojis.cache);
+    
+    // Extra emoji replacements for title
+    processedTitle = processedTitle
+      .replace(/:dizzy:/g, '💫')
+      .replace(/:sparkles:/g, '✨')
+      .replace(/:rocket:/g, '🚀')
+      .replace(/:crown:/g, '👑')
+      .replace(/:star:/g, '⭐')
+      .replace(/:gem:/g, '💎');
+    
     const welcomeEmbed = {
-      title: welcomeSettings.title || '👋 Welcome to the server!',
+      title: processedTitle,
       description: truncatedDescription,
       color: parseInt(welcomeSettings.color?.replace('#', '') || '5865F2', 16),
       timestamp: new Date()
