@@ -15,7 +15,7 @@ module.exports = {
     {
       name: 'message',
       type: 3, // STRING type
-      description: 'Custom welcome message (use {user} for mention, {server} for server name)',
+      description: 'Custom welcome message (includes variables like {user}, {server}, etc.)',
       required: false
     },
     {
@@ -192,6 +192,12 @@ module.exports = {
       }
     }
     
+    // Add variable placeholders info
+    embed.fields.push({
+      name: '📝 Available Variables',
+      value: '• `{user}` or `{mention}` - Mentions the user\n• `{user.tag}` - User tag (e.g., username#1234)\n• `{user.name}` - Username\n• `{server}` - Server name\n• `{server.memberCount}` - Member count\n• `{year}` - Current year'
+    });
+    
     // Send success message
     await interaction.followUp({ embeds: [embed] });
     
@@ -200,7 +206,11 @@ module.exports = {
     const processedDescription = welcomeMessage
       .replace('{user}', `<@${interaction.user.id}>`)
       .replace('{server}', interaction.guild.name)
-      .replace('{mention}', `<@${interaction.user.id}>`); // Add support for {mention} as an alternative
+      .replace('{mention}', `<@${interaction.user.id}>`) // Add support for {mention} as an alternative
+      .replace('{user.tag}', interaction.user.tag)
+      .replace('{user.name}', interaction.user.username)
+      .replace('{server.memberCount}', interaction.guild.memberCount.toString())
+      .replace('{year}', new Date().getFullYear().toString());
     
     // Preserve multiple spaces by replacing them with HTML entities that Discord will render
     const spacesPreserved = processedDescription.replace(/  +/g, match => {
@@ -286,9 +296,31 @@ module.exports = {
       }
     }
     
+    // Add example fields to showcase the server info that will be visible
+    exampleEmbed.fields = exampleEmbed.fields || [];
+    
+    // Add server information field example
+    exampleEmbed.fields.push({
+      name: '🏠 Server Information',
+      value: `**Members:** ${interaction.guild.memberCount}\n**Created:** <t:${Math.floor(interaction.guild.createdTimestamp / 1000)}:R>`,
+      inline: true
+    });
+    
+    // Add user join field example
+    exampleEmbed.fields.push({
+      name: '📅 Joined',
+      value: `<t:${Math.floor(Date.now() / 1000)}:R>`,
+      inline: true
+    });
+    
     // Send example
     try {
       await channel.send({ embeds: [exampleEmbed] });
+      
+      // Show a direct ping message example if the welcome message doesn't already have a mention
+      if (!welcomeMessage.includes('{user}') && !welcomeMessage.includes('{mention}')) {
+        await channel.send(`👋 Welcome to the server, <@${interaction.user.id}>! (Additional welcome message)`);
+      }
     } catch (error) {
       console.error('Error sending example welcome message:', error);
       await interaction.followUp('⚠️ I was able to set up welcome messages, but encountered an error sending a test message. Please check my permissions in that channel.');
@@ -320,7 +352,11 @@ function setupWelcomeHandler(client) {
     const processedDescription = welcomeSettings.message
       .replace('{user}', `<@${member.id}>`)
       .replace('{server}', member.guild.name)
-      .replace('{mention}', `<@${member.id}>`); // Add support for {mention} as alternative
+      .replace('{mention}', `<@${member.id}>`) // Add support for {mention} as alternative
+      .replace('{user.tag}', member.user.tag)
+      .replace('{user.name}', member.user.username)
+      .replace('{server.memberCount}', member.guild.memberCount.toString())
+      .replace('{year}', new Date().getFullYear().toString());
       
     // Preserve multiple spaces by replacing them with HTML entities that Discord will render
     const spacesPreserved = processedDescription.replace(/  +/g, match => {
@@ -413,9 +449,31 @@ function setupWelcomeHandler(client) {
       }
     }
     
+    // Add additional server information fields
+    welcomeEmbed.fields = welcomeEmbed.fields || [];
+    
+    // Add server information field
+    welcomeEmbed.fields.push({
+      name: '🏠 Server Information',
+      value: `**Members:** ${member.guild.memberCount}\n**Created:** <t:${Math.floor(member.guild.createdTimestamp / 1000)}:R>`,
+      inline: true
+    });
+    
+    // Add user join field
+    welcomeEmbed.fields.push({
+      name: '📅 Joined',
+      value: `<t:${Math.floor(Date.now() / 1000)}:R>`,
+      inline: true
+    });
+    
     // Send welcome message
     try {
       await welcomeChannel.send({ embeds: [welcomeEmbed] });
+      
+      // Also send a direct ping message for extra visibility (if welcome message doesn't already have a mention)
+      if (!welcomeSettings.message.includes('{user}') && !welcomeSettings.message.includes('{mention}')) {
+        await welcomeChannel.send(`👋 Welcome to the server, <@${member.id}>!`);
+      }
     } catch (error) {
       console.error('Error sending welcome message:', error);
     }
