@@ -53,10 +53,10 @@ function setupUptimeManager(discordClient) {
   
   console.log('[UptimeManager] Setting up uptime manager for 24/7 operation');
   
-  // Start the uptime HTTP server on port 6870
+  // Start the uptime HTTP server on port 6872
   const server = createUptimeServer();
-  server.listen(6870, '0.0.0.0', () => {
-    console.log('Enhanced uptime monitoring server running on port 6870');
+  server.listen(6872, '0.0.0.0', () => {
+    console.log('Enhanced uptime monitoring server running on port 6872');
     console.log('Bot is configured for 24/7 operation with automatic reconnection');
   });
 }
@@ -135,7 +135,7 @@ function createUptimeServer() {
       console.log('[UptimeManager] Port already in use, trying again in 10 seconds...');
       setTimeout(() => {
         server.close();
-        server.listen(6870, '0.0.0.0');
+        server.listen(6872, '0.0.0.0');
       }, 10000);
     }
   });

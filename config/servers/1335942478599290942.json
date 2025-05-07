@@ -25,7 +25,7 @@
   },
   "strictSecurity": true,
   "strictSecurityAction": "kick",
-  "strictSecurityEnabled": 1746607155052,
+  "strictSecurityEnabled": 1746608369028,
   "welcomeMessage": true,
   "youtubeChannelId": "UCTqVAZM7HsFoz7xrpRMoADg",
   "youtubeChannelName": "PHANTOM GAMING ",
@@ -525,6 +525,106 @@
         "oldName": "📊 PHANTOM GAMING : 563 subs",
         "newName": "📊 PHANTOM GAMING : 563 subs"
       }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "491769129318088714",
+      "timestamp": 1746607456373,
+      "details": {
+        "channelId": "1367397856079511594",
+        "oldName": "📊 PHANTOM GAMING : 563 subs",
+        "newName": "📊 PHANTOM GAMING : 563 subs"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "491769129318088714",
+      "timestamp": 1746607543025,
+      "details": {
+        "channelId": "1367397856079511594",
+        "oldName": "📊 PHANTOM GAMING : 563 subs",
+        "newName": "📊 PHANTOM GAMING : 563 subs"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "491769129318088714",
+      "timestamp": 1746607833440,
+      "details": {
+        "channelId": "1367397856079511594",
+        "oldName": "📊 PHANTOM GAMING : 563 subs",
+        "newName": "📊 PHANTOM GAMING : 563 subs"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "491769129318088714",
+      "timestamp": 1746607842961,
+      "details": {
+        "channelId": "1367397856079511594",
+        "oldName": "📊 PHANTOM GAMING : 563 subs",
+        "newName": "📊 PHANTOM GAMING : 563 subs"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "491769129318088714",
+      "timestamp": 1746607963365,
+      "details": {
+        "channelId": "1367397856079511594",
+        "oldName": "📊 PHANTOM GAMING : 563 subs",
+        "newName": "📊 PHANTOM GAMING : 563 subs"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "491769129318088714",
+      "timestamp": 1746607974055,
+      "details": {
+        "channelId": "1367397856079511594",
+        "oldName": "📊 PHANTOM GAMING : 563 subs",
+        "newName": "📊 PHANTOM GAMING : 563 subs"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "491769129318088714",
+      "timestamp": 1746608019104,
+      "details": {
+        "channelId": "1367397856079511594",
+        "oldName": "📊 PHANTOM GAMING : 563 subs",
+        "newName": "📊 PHANTOM GAMING : 563 subs"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "491769129318088714",
+      "timestamp": 1746608319169,
+      "details": {
+        "channelId": "1367397856079511594",
+        "oldName": "📊 PHANTOM GAMING : 563 subs",
+        "newName": "📊 PHANTOM GAMING : 563 subs"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "491769129318088714",
+      "timestamp": 1746608342693,
+      "details": {
+        "channelId": "1367397856079511594",
+        "oldName": "📊 PHANTOM GAMING : 563 subs",
+        "newName": "📊 PHANTOM GAMING : 563 subs"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "491769129318088714",
+      "timestamp": 1746608370626,
+      "details": {
+        "channelId": "1367397856079511594",
+        "oldName": "📊 PHANTOM GAMING : 563 subs",
+        "newName": "📊 PHANTOM GAMING : 563 subs"
+      }
     }
   ],
   "whitelistedRoles": [
@@ -551,12 +651,22 @@
   "welcomeSettings": {
     "enabled": true,
     "channelId": "1337418792690782219",
-    "message": "💫│𝓓𝓸𝓷'𝓽 𝓕𝓸𝓻𝓰𝓮𝓽 𝓣𝓸 𝓒𝓱𝓮𝓬𝓴 𝓡𝓾𝓵𝓮𝓼 ⁠: <#1337154892531372103> 💫│𝓕𝓻𝓮𝓮 𝓟𝓪𝓷𝓮𝓵 ⁠: <#1335942478599290945> 💫│𝓒𝓱𝓪𝓽 ⁠: <#1337156587663396965> 💫│𝓢𝓽𝓸𝓻𝓮 # ⁠: <#1343977544390672405>",
+    "message": "💫│𝓓𝓸𝓷'𝓽 𝓕𝓸𝓻𝓰𝓮𝓽 𝓣𝓸 𝓒𝓱𝓮𝓬𝓴 𝓡𝓾𝓵𝓮𝓼 ⁠: <#1337154892531372103>    💫│𝓕𝓻𝓮𝓮 𝓟𝓪𝓷𝓮𝓵 ⁠: <#1335942478599290945>   💫│𝓒𝓱𝓪𝓽 ⁠: <#1337156587663396965>   💫│𝓢𝓽𝓸𝓻𝓮 # ⁠: <#1339476514617430096>",
     "title": "💫│𝓦𝓮𝓵𝓬𝓸𝓶𝓮 @user! 𝓽𝓸 𝓟𝓱𝓪𝓽𝓸𝓶 𝓒𝓱𝓮𝓪𝓽𝓼",
-    "color": "5865F2",
+    "color": "#FF0000",
     "roleId": null,
     "roleName": null,
-    "imageUrl": null,
+    "imageUrl": "https://cdn.discordapp.com/attachments/1337139067552534761/1369594181768581241/standard_2.gif?ex=681c6d7a&is=681b1bfa&hm=2dfc33e5ded97fbadfd3d240c5edaee392bdc7d287908abfb91b7ab4484858be&",
     "backgroundUrl": null
+  },
+  "verifiedImages": {
+    "1334115678898229303": {
+      "userId": "1334115678898229303",
+      "username": "sfsdfs0356_71544",
+      "timestamp": "2025-05-07T08:55:16.511Z",
+      "method": "image",
+      "imageHash": "d1c7be692f93f30e0be266b25f6ea588",
+      "guildId": "1335942478599290942"
+    }
   }
 }

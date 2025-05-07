@@ -24,12 +24,9 @@ author = "agent"
 agentRequireRestartOnSave = false
 
 [[workflows.workflow.tasks]]
-task = "packager.installForAll"
-
-[[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "node index.js"
-waitForPort = 6870
+waitForPort = 6872
 
 [deployment]
 run = ["sh", "-c", "npm install && node index.js"]
@@ -49,6 +46,10 @@ externalPort = 3001
 [[ports]]
 localPort = 6870
 externalPort = 3002
+
+[[ports]]
+localPort = 6872
+externalPort = 3003
 
 [[ports]]
 localPort = 8000

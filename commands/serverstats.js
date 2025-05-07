@@ -1,4 +1,5 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
+const { PermissionFlagsBits } = require('discord.js');
 const config = require('../utils/config');
 
 module.exports = {
@@ -149,7 +150,7 @@ async function setupStatsChannels(interaction, client) {
       permissionOverwrites: [
         {
           id: interaction.guild.id,
-          deny: ['CONNECT'] // Prevent members from joining these voice channels
+          deny: [PermissionFlagsBits.Connect] // Prevent members from joining these voice channels
         }
       ]
     });
@@ -174,7 +175,7 @@ async function setupStatsChannels(interaction, client) {
       permissionOverwrites: [
         {
           id: interaction.guild.id,
-          deny: ['CONNECT']
+          deny: [PermissionFlagsBits.Connect]
         }
       ]
     });
@@ -195,7 +196,7 @@ async function setupStatsChannels(interaction, client) {
       permissionOverwrites: [
         {
           id: interaction.guild.id,
-          deny: ['CONNECT']
+          deny: [PermissionFlagsBits.Connect]
         }
       ]
     });
@@ -285,7 +286,7 @@ async function setupRoleCounter(interaction, client) {
       permissionOverwrites: [
         {
           id: interaction.guild.id,
-          deny: ['CONNECT']
+          deny: [PermissionFlagsBits.Connect]
         }
       ]
     });
@@ -451,7 +452,7 @@ async function setupCustomCounter(interaction, client) {
       permissionOverwrites: [
         {
           id: interaction.guild.id,
-          deny: ['CONNECT']
+          deny: [PermissionFlagsBits.Connect]
         }
       ]
     });
@@ -616,10 +617,13 @@ function setupStatsUpdateInterval(client) {
   // Create interval for updating stats (every minute)
   client.statsUpdateInterval = setInterval(async () => {
     try {
-      // Get all servers with enabled stats
-      const allGuildConfigs = config.getAllServerConfigs();
+      // Get all guilds the bot is in
+      const guilds = client.guilds.cache;
       
-      for (const [serverId, serverConfig] of Object.entries(allGuildConfigs)) {
+      // Update stats for each guild
+      for (const [guildId, guild] of guilds) {
+        const serverConfig = config.getServerConfig(guildId);
+        
         // Skip servers without stats or with disabled stats
         if (!serverConfig.statsConfig?.enabled) continue;
         
@@ -629,7 +633,7 @@ function setupStatsUpdateInterval(client) {
         const updateIntervalMs = updateInterval * 60 * 1000;
         
         if (Date.now() - lastUpdate >= updateIntervalMs) {
-          await updateAllServerStats(client, serverId);
+          await updateAllServerStats(client, guildId);
         }
       }
     } catch (error) {
