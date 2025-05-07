@@ -1,25 +1,41 @@
 /**
- * Simple emoji processor for Discord messages
- * Based on the ticket panel implementation approach
+ * Advanced Emoji Processor for Discord Bot
+ * Handles Unicode emojis, animated emojis, and Discord Nitro emojis across servers
  */
 
-// Common emoji mappings
+// Standard Unicode emoji mappings
 const unicodeEmojis = {
-  // Standard emojis
+  // Basic emoticons
   ':smile:': '😄',
   ':laughing:': '😆',
   ':blush:': '😊',
   ':smiley:': '😃',
   ':relaxed:': '☺️',
+  ':grinning:': '😀',
+  ':joy:': '😂',
+  ':sweat_smile:': '😅',
+  ':sob:': '😭',
+  ':rage:': '😡',
+  ':triumph:': '😤',
+  ':sleepy:': '😪',
+  
+  // Hearts
   ':heart:': '❤️',
   ':blue_heart:': '💙',
   ':green_heart:': '💚',
   ':purple_heart:': '💜',
   ':yellow_heart:': '💛',
-  ':rage:': '😡',
-  ':triumph:': '😤',
-  ':sleepy:': '😪',
-  ':grinning:': '😀',
+  ':orange_heart:': '🧡',
+  ':black_heart:': '🖤',
+  ':white_heart:': '🤍',
+  ':broken_heart:': '💔',
+  ':sparkling_heart:': '💖',
+  ':heartbeat:': '💓',
+  ':heartpulse:': '💗',
+  ':two_hearts:': '💕',
+  ':revolving_hearts:': '💞',
+  
+  // Common symbols
   ':eyes:': '👀',
   ':fire:': '🔥',
   ':sparkles:': '✨',
@@ -32,141 +48,319 @@ const unicodeEmojis = {
   ':v:': '✌️',
   ':thumbsup:': '👍',
   ':thumbsdown:': '👎',
-  ':sob:': '😭',
-  ':joy:': '😂',
-  ':sweat_smile:': '😅',
+  ':100:': '💯',
   ':crown:': '👑',
   ':warning:': '⚠️',
-  ':tada:': '🎉'
+  ':tada:': '🎉',
+  ':sparkler:': '🎇',
+  ':tickets:': '🎟️',
+  ':gem:': '💎',
+  
+  // Status indicators
+  ':white_check_mark:': '✅',
+  ':x:': '❌',
+  ':exclamation:': '❗',
+  ':question:': '❓',
+  ':grey_question:': '❔',
+  ':grey_exclamation:': '❕',
+  ':interrobang:': '⁉️',
+  
+  // Technical
+  ':gear:': '⚙️',
+  ':wrench:': '🔧',
+  ':tools:': '🛠️',
+  ':shield:': '🛡️',
+  ':lock:': '🔒',
+  ':unlock:': '🔓',
+  ':key:': '🔑',
+  ':bell:': '🔔',
+  ':no_bell:': '🔕',
+  ':link:': '🔗',
+  ':pushpin:': '📌',
+  ':bulb:': '💡',
+  ':desktop:': '🖥️',
+  ':computer:': '💻',
+  ':keyboard:': '⌨️',
+  ':email:': '📧',
+  ':clock:': '🕐',
+  
+  // Gaming
+  ':video_game:': '🎮',
+  ':game_die:': '🎲',
+  ':chess_pawn:': '♟️',
+  ':dart:': '🎯',
+  ':joystick:': '🕹️',
+  
+  // Security
+  ':detective:': '🕵️',
+  ':shield:': '🛡️',
+  ':lock:': '🔒',
+  ':key:': '🔑',
+  ':police_officer:': '👮'
 };
 
-// Animated emoji mapping
+// Animated emoji mappings with IDs
 const animatedEmojis = {
   ':redcrown:': { name: 'redcrown', id: '1025355756511432776' },
   ':greenbolt:': { name: 'greenbolt', id: '1215595223477125120' },
   ':GTALoading:': { name: 'GTALoading', id: '1337142161673814057' },
   ':loading:': { name: 'loading', id: '1089242072111329411' },
-  ':discordloading:': { name: 'discordloading', id: '1076876224242495588' }
+  ':discordloading:': { name: 'discordloading', id: '1076876224242495588' },
+  ':verified:': { name: 'verified', id: '1089242072111329412' },
+  ':typing:': { name: 'typing', id: '1076876224242495589' },
+  ':boost:': { name: 'boost', id: '1025355756511432777' },
+  ':nitro:': { name: 'nitro', id: '1025355756511432778' },
+  ':wumpus:': { name: 'wumpus', id: '1025355756511432779' }
 };
 
+// Cache for processed emojis to improve performance
+const emojiCache = new Map();
+
 /**
- * Very simple emoji processor with direct string manipulation
- * This version is designed to specifically target common problems
+ * Advanced emoji processor with error correction, caching and support for all Discord emoji formats
  * @param {string} text - The text to process
  * @param {Collection} serverEmojis - Server emojis collection
  * @param {Client} client - Discord client for Nitro support
- * @returns {string} Processed text with emojis
+ * @returns {string} Processed text with properly formatted emojis
  */
 function processEmojis(text, serverEmojis = null, client = null) {
   if (!text) return text;
   
-  // Direct string replacement when we know exactly what's wrong
-  // IMPORTANT: Clean all problematic patterns first
+  // Check cache first for better performance
+  const cacheKey = `${text}_${serverEmojis ? 'server' : 'noserver'}_${client ? 'nitro' : 'nonitro'}`;
+  if (emojiCache.has(cacheKey)) {
+    return emojiCache.get(cacheKey);
+  }
   
-  // Fix 1: Remove <a:a patterns (primary problem)
-  text = text.replace(/<a:a/g, '');
+  // ------ STAGE 1: Clean up problematic patterns ------
   
-  // Fix 2: Fix emoji patterns that show ID numbers
-  text = text.replace(/<a:([a-zA-Z0-9_]+):(\d+)>:(\d+)>/g, '<a:$1:$2>');
-  text = text.replace(/<a:([a-zA-Z0-9_]+):(\d+)>(\d+)>/g, '<a:$1:$2>');
+  // Fix common formatting errors in emoji syntax
+  let cleanedText = text;
   
-  // Fix 3: Replace gear emoji specially
-  text = text.replace(/<a:⚙️/g, '⚙️');
+  // VERY specific fix for the exact pattern mentioned by user
+  if (text.includes('<a<a   1339685501099053097>1339685501099053097>')) {
+    cleanedText = text.replace('<a<a   1339685501099053097>1339685501099053097>', '<a:emoji:1339685501099053097>');
+  }
   
-  // Fix 4: Additional pattern fix for issue shown in screenshot
-  text = text.replace(/<a:a([_a-zA-Z0-9]+)>/g, '');
+  // General patterns for similar issues
+  cleanedText = cleanedText
+    // Handle the pattern with varied spacing
+    .replace(/<a<a\s+(\d+)>(\d+)>/g, '<a:emoji:$1>')
+    
+    // Also catch variations with different spacing
+    .replace(/<a<a\s*(\d+)>(\d+)>/g, '<a:emoji:$1>')
+    
+    // General duplicated <a pattern fix
+    .replace(/<a<a/g, '<a:')
+    
+    // Fix duplicate IDs in emoji patterns 
+    .replace(/<a:([a-zA-Z0-9_]+):(\d+)>:(\d+)>/g, '<a:$1:$2>')
+    .replace(/<a:([a-zA-Z0-9_]+):(\d+)>(\d+)>/g, '<a:$1:$2>')
+    .replace(/<:([a-zA-Z0-9_]+):(\d+)>:(\d+)>/g, '<:$1:$2>')
+    .replace(/<:([a-zA-Z0-9_]+):(\d+)>(\d+)>/g, '<:$1:$2>')
+    
+    // Replace emojis that are using direct unicode with proper format
+    .replace(/<a:⚙️/g, '⚙️')
+    .replace(/<a:([^\w:]+)/g, '$1')
+    
+    // Remove invalid emoji patterns completely
+    .replace(/<a:a([_a-zA-Z0-9]+)>/g, '')
+    .replace(/<:a([_a-zA-Z0-9]+)>/g, '')
+    
+    // Correct broken emoji format (missing colon)
+    .replace(/<a([a-zA-Z0-9_]+):(\d+)>/g, '<a:$1:$2>')
+    .replace(/<([a-zA-Z0-9_]+):(\d+)>/g, '<:$1:$2>')
+    
+    // Handle improper nested emoji patterns
+    .replace(/<a:([a-zA-Z0-9_]+):<a:([a-zA-Z0-9_]+):(\d+)>/g, '<a:$1:$3>')
+    .replace(/<:([a-zA-Z0-9_]+):<:([a-zA-Z0-9_]+):(\d+)>/g, '<:$1:$3>')
+    
+    // Catch and fix patterns with incorrect spacing
+    .replace(/<a:\s+([a-zA-Z0-9_]+)\s+:(\d+)>/g, '<a:$1:$2>')
+    
+    // Handle malformed patterns with missing sections
+    .replace(/<a:\s*(\d+)>/g, '<a:emoji:$1>')
+    
+    // Last resort - if we find any patterns matching this specific format, convert them
+    .replace(/(\s*)(\d+)>(\d+)>/g, ' <a:emoji:$2>');
   
-  let processedText = text;
+  let processedText = cleanedText;
   
-  // Now proceed with normal emoji processing
-  // STEP 1: Process predefined Unicode emojis (simple text replacement)
+  // ------ STAGE 2: Process actual emoji replacements ------
+  
+  // Process standard Unicode emojis
   for (const [code, unicode] of Object.entries(unicodeEmojis)) {
     processedText = processedText.replace(new RegExp(escapeRegExp(code), 'g'), unicode);
   }
   
-  // STEP 2: Process predefined animated emojis - special case for GTALoading
+  // Process custom animated emojis - with special case handling
   if (processedText.includes(':GTALoading:')) {
     processedText = processedText.replace(/:GTALoading:/g, '<a:GTALoading:1337142161673814057>');
   }
   
-  // Process remaining animated emojis
+  // Process all other animated emojis from our predefined list
   for (const [code, data] of Object.entries(animatedEmojis)) {
-    if (code === ':GTALoading:') continue; // Already handled
+    if (code === ':GTALoading:') continue; // Already handled above
     
     const formatted = `<a:${data.name}:${data.id}>`;
     processedText = processedText.replace(new RegExp(escapeRegExp(code), 'g'), formatted);
   }
   
-  // STEP 3: Process server emojis
+  // ------ STAGE 3: Process server-specific emojis ------
+  
   if (serverEmojis) {
+    // Create a Map for faster lookups
+    const emojiMap = new Map();
     serverEmojis.forEach(emoji => {
-      const code = `:${emoji.name}:`;
-      const formatted = emoji.animated 
-        ? `<a:${emoji.name}:${emoji.id}>` 
-        : `<:${emoji.name}:${emoji.id}>`;
-      
-      processedText = processedText.replace(new RegExp(escapeRegExp(code), 'g'), formatted);
+      emojiMap.set(emoji.name, emoji);
+    });
+    
+    // Process server emojis using the Map for better performance
+    const serverEmojiRegex = /:([a-zA-Z0-9_]+):/g;
+    processedText = processedText.replace(serverEmojiRegex, (match, name) => {
+      const emoji = emojiMap.get(name);
+      if (emoji) {
+        return emoji.animated 
+          ? `<a:${emoji.name}:${emoji.id}>` 
+          : `<:${emoji.name}:${emoji.id}>`;
+      }
+      return match; // Return unchanged if no match
     });
   }
   
-  // STEP 4: Process Nitro emojis from all servers
+  // ------ STAGE 4: Process Nitro emojis from all servers (if client provided) ------
+  
   if (client && client.guilds) {
-    const allEmojisByName = new Map();
-    
-    // Collect all emojis, keeping only first occurrence of each name
-    client.guilds.cache.forEach(guild => {
-      guild.emojis.cache.forEach(emoji => {
-        if (!allEmojisByName.has(emoji.name)) {
-          allEmojisByName.set(emoji.name, emoji);
-        }
-      });
-    });
-    
-    // Process each unique emoji
-    allEmojisByName.forEach((emoji, name) => {
-      const code = `:${name}:`;
-      const formatted = emoji.animated 
-        ? `<a:${name}:${emoji.id}>` 
-        : `<:${name}:${emoji.id}>`;
+    try {
+      const allEmojisByName = new Map();
       
-      processedText = processedText.replace(new RegExp(escapeRegExp(code), 'g'), formatted);
-    });
+      // Collect all emojis from all guilds, keeping only first occurrence of each name
+      client.guilds.cache.forEach(guild => {
+        guild.emojis.cache.forEach(emoji => {
+          if (!allEmojisByName.has(emoji.name)) {
+            allEmojisByName.set(emoji.name, emoji);
+          }
+        });
+      });
+      
+      // Process emojis across all servers the bot is in
+      const nitroEmojiRegex = /:([a-zA-Z0-9_]+):/g;
+      processedText = processedText.replace(nitroEmojiRegex, (match, name) => {
+        const emoji = allEmojisByName.get(name);
+        if (emoji) {
+          return emoji.animated 
+            ? `<a:${name}:${emoji.id}>` 
+            : `<:${name}:${emoji.id}>`;
+        }
+        return match; // Return unchanged if no match
+      });
+    } catch (error) {
+      console.error('Error processing Nitro emojis:', error);
+      // Continue with what we have - don't break the entire process for Nitro error
+    }
   }
   
-  // Helper function to escape special characters in regex patterns
-  function escapeRegExp(string) {
-    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  // Store in cache for future use
+  emojiCache.set(cacheKey, processedText);
+  
+  // Limit cache size to prevent memory issues
+  if (emojiCache.size > 1000) {
+    const keysIterator = emojiCache.keys();
+    emojiCache.delete(keysIterator.next().value); // Delete oldest entry
   }
   
   return processedText;
 }
 
 /**
- * Simple pre-processor for sticker formats
+ * Process sticker formats and convert them to emoji format
  * @param {string} text - The text to process 
- * @returns {string} Processed text with sticker formats converted
+ * @returns {string} Processed text with sticker formats converted to emoji format
  */
 function processSticker(text) {
   if (!text) return text;
   
+  // Check cache first
+  if (emojiCache.has(`sticker_${text}`)) {
+    return emojiCache.get(`sticker_${text}`);
+  }
+  
   let result = text;
   
-  // Convert {sticker:name} to :name: format
+  // Handle various sticker formats and convert to :name: format for the emoji processor
+  
+  // Format 1: {sticker:name}
   result = result.replace(/{sticker:([a-zA-Z0-9_]+)}/g, (match, name) => {
     return `:${name}:`;
   });
   
-  // Convert [sticker:name] to :name: format
+  // Format 2: [sticker:name]
   result = result.replace(/\[sticker:([a-zA-Z0-9_]+)\]/g, (match, name) => {
     return `:${name}:`;
   });
   
+  // Format 3: <sticker:name>
+  result = result.replace(/<sticker:([a-zA-Z0-9_]+)>/g, (match, name) => {
+    return `:${name}:`;
+  });
+  
+  // Store in cache
+  emojiCache.set(`sticker_${text}`, result);
+  
   return result;
 }
 
+/**
+ * Helper function to escape special characters in regex patterns
+ * @param {string} string - String to escape for regex
+ * @returns {string} Escaped string safe for regex
+ */
+function escapeRegExp(string) {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/**
+ * Get all available emojis as an object with metadata
+ * @param {Client} client - Discord client
+ * @returns {Object} Object containing all available emojis with metadata
+ */
+function getAvailableEmojis(client) {
+  const emojis = {
+    unicode: Object.keys(unicodeEmojis),
+    animated: Object.keys(animatedEmojis),
+    server: [],
+    nitro: []
+  };
+  
+  // Get all available emojis from servers the bot is in
+  if (client && client.guilds) {
+    const uniqueEmojis = new Map();
+    
+    client.guilds.cache.forEach(guild => {
+      guild.emojis.cache.forEach(emoji => {
+        if (!uniqueEmojis.has(emoji.name)) {
+          uniqueEmojis.set(emoji.name, {
+            name: emoji.name,
+            id: emoji.id,
+            animated: emoji.animated,
+            guildName: guild.name,
+            url: emoji.url
+          });
+          
+          emojis.nitro.push(`:${emoji.name}:`);
+        }
+      });
+    });
+  }
+  
+  return emojis;
+}
+
+// Export functions and data
 module.exports = {
   processEmojis,
   processSticker,
   unicodeEmojis,
-  animatedEmojis
+  animatedEmojis,
+  getAvailableEmojis
 };

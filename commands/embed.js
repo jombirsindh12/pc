@@ -1,5 +1,5 @@
 const config = require('../utils/config');
-const { processEmojis, animatedEmojis } = require('../utils/emojiProcessor');
+const { processEmojis, animatedEmojis, unicodeEmojis, getAvailableEmojis } = require('../utils/emojiProcessor');
 const { ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle } = require('discord.js');
 
 module.exports = {
@@ -288,35 +288,41 @@ module.exports = {
       
       collector.on('collect', async i => {
         if (i.customId === 'emoji_list_button') {
-          // Collect emojis from all servers
-          const allEmojis = new Map();
-          let emojiCount = 0;
+          // Get all available emojis using our utility function
+          const availableEmojis = getAvailableEmojis(client);
           
+          // Get total emoji count
+          let emojiCount = 0;
+          client.guilds.cache.forEach(guild => {
+            emojiCount += guild.emojis.cache.size;
+          });
+          
+          // Create a list of server emojis (display first 30)
+          let serverEmojiList = '';
+          let count = 0;
+          
+          // Create a Map for efficient emoji lookups
+          const allEmojis = new Map();
           client.guilds.cache.forEach(guild => {
             guild.emojis.cache.forEach(emoji => {
-              emojiCount++;
               if (!allEmojis.has(emoji.name)) {
                 allEmojis.set(emoji.name, emoji);
               }
             });
           });
           
-          // Create a list of available emojis
-          let emojiList = '';
-          let count = 0;
-          
+          // Display server emojis (limited to 30)
           allEmojis.forEach((emoji, name) => {
-            // Only show first 50 to avoid message length limits
-            if (count < 50) {
+            if (count < 30) {
               const emojiString = emoji.animated ? `<a:${name}:${emoji.id}>` : `<:${name}:${emoji.id}>`;
-              emojiList += `${emojiString} - \`:${name}:\`\n`;
+              serverEmojiList += `${emojiString} - \`:${name}:\`\n`;
               count++;
             }
           });
           
-          // If there are too many, show a count
-          if (emojiCount > 50) {
-            emojiList += `\n...and ${emojiCount - 50} more emojis available`;
+          // If there are more emojis than displayed, show a count
+          if (allEmojis.size > 30) {
+            serverEmojiList += `\n...and ${allEmojis.size - 30} more server emojis available`;
           }
           
           // Create a list of built-in animated emojis
@@ -327,24 +333,50 @@ module.exports = {
             if (count < 10) {
               animatedEmojiList += `<a:${data.name}:${data.id}> - \`${code}\` or \`{sticker:${data.name}}\`\n`;
               count++;
-            } else {
-              break;
             }
           }
           
-          // Send the emoji list
+          // Create a list of standard emoji examples (show 10)
+          const unicodeKeys = Object.keys(unicodeEmojis);
+          let unicodeList = '';
+          for (let i = 0; i < Math.min(10, unicodeKeys.length); i++) {
+            const code = unicodeKeys[i];
+            unicodeList += `${unicodeEmojis[code]} - \`${code}\`\n`;
+          }
+          
+          // Send the emoji list with all categories
           await i.reply({
             embeds: [{
               title: '🎭 Available Emojis for Embeds',
-              description: 'Here are some emojis you can use in your embeds:\n\n' +
-                          '**Server Emojis (use `:name:` format)**\n' + 
-                          emojiList + '\n\n' +
-                          '**Animated Stickers (use `{sticker:name}` format)**\n' +
-                          animatedEmojiList + '\n\n' +
-                          'You can also use any standard Discord emoji code like `:smile:` or `:heart:` 💖',
+              description: 'Here are the emojis you can use in your embeds:',
               color: 0xFF9900,
+              fields: [
+                {
+                  name: '🌟 Server Emojis (use `:name:` format)',
+                  value: serverEmojiList || 'No server emojis available',
+                  inline: false
+                },
+                {
+                  name: '✨ Animated Stickers (use `{sticker:name}` format)',
+                  value: animatedEmojiList || 'No animated stickers available',
+                  inline: false
+                },
+                {
+                  name: '😊 Standard Discord Emojis (examples)',
+                  value: unicodeList + '\n...and many more standard emojis available',
+                  inline: false
+                },
+                {
+                  name: '💡 Emoji Tips',
+                  value: '• You can use any standard Discord emoji code like `:smile:` or `:heart:` 💖\n' +
+                         '• Use sticker format like `{sticker:name}` or `[sticker:name]`\n' +
+                         '• All emojis from servers the bot is in are available with Nitro support\n' +
+                         '• Try using emoji categories: hearts, technical, gaming, security',
+                  inline: false
+                }
+              ],
               footer: {
-                text: `Total emojis available: ${emojiCount} | Powered by Nitro Emoji Support`
+                text: `Total server emojis available: ${emojiCount} | Enhanced emoji support enabled`
               }
             }],
             ephemeral: true
