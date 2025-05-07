@@ -137,20 +137,32 @@ function processEmojis(text, serverEmojis = null, client = null) {
   // Fix common formatting errors in emoji syntax
   let cleanedText = text;
   
-  // VERY specific fix for the exact pattern mentioned by user
+  // VERY specific fixes for the exact patterns mentioned by user
   if (text.includes('<a<a   1339685501099053097>1339685501099053097>')) {
-    cleanedText = text.replace('<a<a   1339685501099053097>1339685501099053097>', '<a:emoji:1339685501099053097>');
+    cleanedText = cleanedText.replace('<a<a   1339685501099053097>1339685501099053097>', '<a:emoji:1339685501099053097>');
   }
   
-  // General patterns for similar issues
+  if (text.includes('<<:minecraft_accept:1337142153205518457>1337142153205518457>')) {
+    cleanedText = cleanedText.replace('<<:minecraft_accept:1337142153205518457>1337142153205518457>', '<:minecraft_accept:1337142153205518457>');
+  }
+  
+  if (text.includes('<a<a:AI_verify_certified_owo_lol_anim:1337141718377693235>1337141718377693235>')) {
+    cleanedText = cleanedText.replace('<a<a:AI_verify_certified_owo_lol_anim:1337141718377693235>1337141718377693235>', '<a:AI_verify_certified_owo_lol_anim:1337141718377693235>');
+  }
+  
+  // Pattern matching for similar issues
   cleanedText = cleanedText
-    // Handle the pattern with varied spacing
-    .replace(/<a<a\s+(\d+)>(\d+)>/g, '<a:emoji:$1>')
+    // Fix double << at the start with emoji name
+    .replace(/<<:([a-zA-Z0-9_]+):(\d+)>(\d+)>/g, '<:$1:$2>')
     
-    // Also catch variations with different spacing
+    // Fix <a<a: pattern with emoji name
+    .replace(/<a<a:([a-zA-Z0-9_]+):(\d+)>(\d+)>/g, '<a:$1:$2>')
+    
+    // Handle numbered patterns without emoji name
+    .replace(/<a<a\s+(\d+)>(\d+)>/g, '<a:emoji:$1>')
     .replace(/<a<a\s*(\d+)>(\d+)>/g, '<a:emoji:$1>')
     
-    // General duplicated <a pattern fix
+    // General duplicated <a pattern fix (do this after specific fixes)
     .replace(/<a<a/g, '<a:')
     
     // Fix duplicate IDs in emoji patterns 
