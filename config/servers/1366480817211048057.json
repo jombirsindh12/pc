@@ -25,7 +25,7 @@
   },
   "strictSecurity": true,
   "strictSecurityAction": "kick",
-  "strictSecurityEnabled": 1746677720809,
+  "strictSecurityEnabled": 1746677778799,
   "welcomeMessage": true,
   "securityIncidents": [
     {
