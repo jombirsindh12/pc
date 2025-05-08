@@ -6,7 +6,7 @@ const {
   StringSelectMenuBuilder,
   PermissionFlagsBits
 } = require('discord.js');
-const { processEmojis, processSticker } = require('../utils/emojiProcessor');
+const emojiProcessor = require('../utils/emojiProcessor');
 const { getServerTemplates, getTemplate, saveTemplate, deleteTemplate, setTemplatePublic, getPublicTemplates } = require('../schemas/embedTemplates');
 const { getTemplateEmbed } = require('./embedBuilder');
 

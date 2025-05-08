@@ -25,7 +25,7 @@
   },
   "strictSecurity": true,
   "strictSecurityAction": "kick",
-  "strictSecurityEnabled": 1746639323821,
+  "strictSecurityEnabled": 1746670944525,
   "welcomeMessage": true,
   "youtubeChannelId": "UCTqVAZM7HsFoz7xrpRMoADg",
   "youtubeChannelName": "PHANTOM GAMING ",
@@ -671,12 +671,12 @@
   "welcomeSettings": {
     "enabled": true,
     "channelId": "1337418792690782219",
-    "message": "━━━━━━━━━━━━━━━━━━━━━━━  \n\n👋 𝗪𝗲𝗹𝗰𝗼𝗺𝗲, **{user.name}!**\n\n📛 𝗧𝗮𝗴 — `{user.tag}`\n\n🏠 𝗝𝗼𝗶𝗻𝗲𝗱 𝗦𝗲𝗿𝘃𝗲𝗿 — **{server}**\n\n🔢 𝗬𝗼𝘂 𝗮𝗿𝗲 𝗠𝗲𝗺𝗯𝗲𝗿 #**{server.memberCount}**\n\n📅 𝗬𝗲𝗮𝗿 — **{year}**\n\n━━━━━━━━━━━━━━━━━━━━━━━  \n\n📜 **𝗥𝘂𝗹𝗲𝘀**  \n➤ <#1337154892531372103>  \n\n🎁 **𝗙𝗿𝗲𝗲 𝗣𝗮𝗻𝗲𝗹**  \n➤ <#1335942478599290945>  \n\n\n💬 **𝗖𝗵𝗮𝘁**  \n➤ <#1337156587663396965>  \n\n🛍️ **𝗦𝘁𝗼𝗿𝗲**  \n➤ <#1339476514617430096>  \n\n━━━━━━━━━━━━━━━━━━━━━━━  \n✨ 𝗘𝘅𝗽𝗹𝗼𝗿𝗲. 𝗘𝗻𝗷𝗼𝘆. 𝗦𝘁𝗮𝘆 𝗔𝗰𝘁𝗶𝘃𝗲, {user.name}!\n━━━━━━━━━━━━━━━━━━━━━━━",
-    "title": "💫│𝗪𝗘𝗟𝗖𝗢𝗠𝗘 {mention} 𝗧𝗢 𝗣𝗛𝗔𝗧𝗢𝗠 𝗖𝗛𝗘𝗔𝗧𝗦!",
-    "color": "#FF0000",
+    "message": "<a:redutility4:1337142542793310228>",
+    "title": "<a:GTALoading:1337142161673814057>",
+    "color": "5865F2",
     "roleId": null,
     "roleName": null,
-    "imageUrl": "https://cdn.discordapp.com/attachments/1337139067552534761/1369594181768581241/standard_2.gif?ex=681c6d7a&is=681b1bfa&hm=2dfc33e5ded97fbadfd3d240c5edaee392bdc7d287908abfb91b7ab4484858be&",
+    "imageUrl": null,
     "backgroundUrl": null
   },
   "verifiedImages": {
@@ -728,7 +728,7 @@
       }
     },
     "updateInterval": 5,
-    "lastUpdate": 1746639001348
+    "lastUpdate": 1746670744457
   },
   "inviteSettings": {
     "logChannelId": "1337139875660697630",

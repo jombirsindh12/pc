@@ -9,7 +9,28 @@ const {
   EmbedBuilder,
   PermissionFlagsBits
 } = require('discord.js');
-const { processEmojis, processSticker, unicodeEmojis, animatedEmojis } = require('../utils/emojiProcessor');
+const emojiProcessor = require('../utils/emojiProcessor');
+
+// Basic emoji data for the builder interface
+const unicodeEmojis = {
+  ':smile:': '😄',
+  ':heart:': '❤️',
+  ':fire:': '🔥',
+  ':star:': '⭐',
+  ':thumbsup:': '👍',
+  ':tada:': '🎉',
+  ':rocket:': '🚀',
+  ':sparkles:': '✨',
+  ':trophy:': '🏆',
+  ':100:': '💯'
+};
+
+const animatedEmojis = {
+  ':loading:': { name: 'loading', id: '1234567890', animated: true },
+  ':typing:': { name: 'typing', id: '1234567891', animated: true },
+  ':dance:': { name: 'dance', id: '1234567892', animated: true },
+  ':wave:': { name: 'wave', id: '1234567893', animated: true }
+};
 const config = require('../utils/config');
 
 module.exports = {
@@ -65,7 +86,7 @@ module.exports = {
 async function showEmbedBuilder(interaction, client, embedData) {
   try {
     // Process any emojis in the embed content
-    processEmbedEmojis(embedData, interaction.guild.emojis.cache, client);
+    await processEmbedEmojis(embedData, interaction.guild.emojis.cache, client);
     
     // Create a preview of the current embed
     const previewEmbed = createEmbed(embedData);
@@ -611,7 +632,7 @@ async function previewEmbed(i, client, embedData) {
     await i.deferReply({ ephemeral: false });
     
     // Process emojis in the embed content
-    processEmbedEmojis(embedData, i.guild.emojis.cache, client);
+    await processEmbedEmojis(embedData, i.guild.emojis.cache, client);
     
     // Create the embed
     const embed = createEmbed(embedData);
@@ -651,7 +672,7 @@ async function sendEmbed(i, client, embedData) {
     await i.deferReply({ ephemeral: true });
     
     // Process emojis in the embed content
-    processEmbedEmojis(embedData, i.guild.emojis.cache, client);
+    await processEmbedEmojis(embedData, i.guild.emojis.cache, client);
     
     // Create the embed
     const embed = createEmbed(embedData);
@@ -813,8 +834,8 @@ async function saveCustomTemplate(i, embedData, templateName) {
  */
 async function updateEmbedBuilder(interaction, client, embedData) {
   try {
-    // Process emojis in the embed content
-    processEmbedEmojis(embedData, interaction.guild.emojis.cache, client);
+    // Process emojis in the embed content (using our new async emojiProcessor)
+    await processEmbedEmojis(embedData, interaction.guild.emojis.cache, client);
     
     // Create the preview
     const previewEmbed = createEmbed(embedData);
@@ -840,38 +861,69 @@ async function updateEmbedBuilder(interaction, client, embedData) {
  * @param {Collection} serverEmojis - Server emojis collection
  * @param {Object} client - Discord client
  */
-function processEmbedEmojis(embedData, serverEmojis, client) {
+async function processEmbedEmojis(embedData, serverEmojis, client) {
+  const serverId = client.guilds.cache.first()?.id || 'global';
+  
   // Process title
   if (embedData.title) {
-    embedData.title = processEmojis(processSticker(embedData.title), serverEmojis, client);
+    // First process any stickers
+    const processedTitle = processSticker(embedData.title);
+    // Then process all emoji formats with our emoji processor
+    embedData.title = await emojiProcessor.processText(processedTitle, serverId);
   }
   
   // Process description
   if (embedData.description) {
-    embedData.description = processEmojis(processSticker(embedData.description), serverEmojis, client);
+    const processedDesc = processSticker(embedData.description);
+    embedData.description = await emojiProcessor.processText(processedDesc, serverId);
   }
   
   // Process author name
   if (embedData.author?.name) {
-    embedData.author.name = processEmojis(processSticker(embedData.author.name), serverEmojis, client);
+    const processedAuthor = processSticker(embedData.author.name);
+    embedData.author.name = await emojiProcessor.processText(processedAuthor, serverId);
   }
   
   // Process footer text
   if (embedData.footer?.text) {
-    embedData.footer.text = processEmojis(processSticker(embedData.footer.text), serverEmojis, client);
+    const processedFooter = processSticker(embedData.footer.text);
+    embedData.footer.text = await emojiProcessor.processText(processedFooter, serverId);
   }
   
   // Process fields
   if (embedData.fields?.length > 0) {
-    embedData.fields.forEach(field => {
+    for (const field of embedData.fields) {
       if (field.name) {
-        field.name = processEmojis(processSticker(field.name), serverEmojis, client);
+        const processedName = processSticker(field.name);
+        field.name = await emojiProcessor.processText(processedName, serverId);
       }
       if (field.value) {
-        field.value = processEmojis(processSticker(field.value), serverEmojis, client);
+        const processedValue = processSticker(field.value);
+        field.value = await emojiProcessor.processText(processedValue, serverId);
       }
-    });
+    }
   }
+}
+
+// Helper function to process sticker format
+function processSticker(text) {
+  if (!text) return text;
+  
+  // Process {sticker:name} format
+  const braceStickerRegex = /{sticker:([a-zA-Z0-9_]+)}/g;
+  let result = text.replace(braceStickerRegex, (match, name) => {
+    // Convert to :name: format for the emoji processor
+    return `:${name}:`;
+  });
+  
+  // Process [sticker:name] format
+  const bracketStickerRegex = /\[sticker:([a-zA-Z0-9_]+)\]/g;
+  result = result.replace(bracketStickerRegex, (match, name) => {
+    // Convert to :name: format for the emoji processor
+    return `:${name}:`;
+  });
+  
+  return result;
 }
 
 /**

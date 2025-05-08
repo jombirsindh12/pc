@@ -1,5 +1,5 @@
 const config = require('../utils/config');
-const { processEmojis } = require('../utils/emojiProcessor');
+const emojiProcessor = require('../utils/emojiProcessor');
 
 module.exports = {
   name: 'setwelcome',
@@ -217,9 +217,9 @@ module.exports = {
       return ' ' + '\u2000'.repeat(match.length - 1);  // Use Unicode spaces (En Quad) instead of HTML entities
     });
     
-    // Process emoji codes to Discord emoji format
-    // Instead of our previous complex logic, we'll use our new emoji processor
-    let formattedDescription = processEmojis(formattedText, interaction.guild.emojis.cache);
+    // Process emoji codes to Discord emoji format using our new emoji processor
+    // This needs to be awaited as it's now an async function
+    let formattedDescription = await emojiProcessor.processText(formattedText, interaction.guild.id);
     
     // Special direct replacements for known custom emojis and standard emoji codes
     formattedDescription = formattedDescription
@@ -279,7 +279,7 @@ module.exports = {
       .replace('{year}', new Date().getFullYear().toString());
     
     // Process emojis in the title
-    processedTitle = processEmojis(processedTitle, interaction.guild.emojis.cache);
+    processedTitle = await emojiProcessor.processText(processedTitle, interaction.guild.id);
     
     // Special emoji replacements for title
     processedTitle = processedTitle
@@ -365,7 +365,7 @@ module.exports = {
         .replace('{year}', new Date().getFullYear().toString());
       
       // Process emojis in the title message
-      let formattedTitleWithMention = processEmojis(titleWithMention, interaction.guild.emojis.cache);
+      let formattedTitleWithMention = await emojiProcessor.processText(titleWithMention, interaction.guild.id);
       
       // Apply emoji replacements for title
       formattedTitleWithMention = formattedTitleWithMention
@@ -468,7 +468,7 @@ function setupWelcomeHandler(client) {
     let preProcessedText = processSticker(formattedText);
     
     // Process emoji codes to Discord emoji format using our processor
-    let formattedDescription = processEmojis(preProcessedText, member.guild.emojis.cache);
+    let formattedDescription = await emojiProcessor.processText(preProcessedText, member.guild.id);
     
     // Double-check for any nitro stickers that might have been missed
     // Instead of individual replacements, use the animatedEmojis object from emojiProcessor
@@ -511,7 +511,7 @@ function setupWelcomeHandler(client) {
       .replace('{year}', new Date().getFullYear().toString());
     
     // Process emojis in title
-    processedTitle = processEmojis(processedTitle, member.guild.emojis.cache);
+    processedTitle = await emojiProcessor.processText(processedTitle, member.guild.id);
     
     // Extra emoji replacements for title
     processedTitle = processedTitle
@@ -610,7 +610,7 @@ function setupWelcomeHandler(client) {
       let preprocessedTitleWithMention = processSticker(processedTitleWithMention);
       
       // Process emojis in the standalone title
-      let formattedTitleWithMention = processEmojis(preprocessedTitleWithMention, member.guild.emojis.cache);
+      let formattedTitleWithMention = await emojiProcessor.processText(preprocessedTitleWithMention, member.guild.id);
       
       // Double-check for any nitro stickers that might have been missed
       // Instead of individual replacements, use the animatedEmojis object from emojiProcessor

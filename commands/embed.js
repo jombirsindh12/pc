@@ -1,6 +1,28 @@
 const config = require('../utils/config');
-const { processEmojis, animatedEmojis, unicodeEmojis, getAvailableEmojis } = require('../utils/emojiProcessor');
+const emojiProcessor = require('../utils/emojiProcessor');
 const { ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle } = require('discord.js');
+
+// Basic emoji data for the emoji list feature
+const animatedEmojis = {
+  ':loading:': { name: 'loading', id: '1234567890', animated: true },
+  ':typing:': { name: 'typing', id: '1234567891', animated: true },
+  ':dance:': { name: 'dance', id: '1234567892', animated: true },
+  ':wave:': { name: 'wave', id: '1234567893', animated: true }
+};
+
+// Define some basic unicode emojis for the emoji list feature
+const unicodeEmojis = {
+  ':smile:': '😄',
+  ':heart:': '❤️',
+  ':fire:': '🔥',
+  ':star:': '⭐',
+  ':thumbsup:': '👍',
+  ':tada:': '🎉',
+  ':rocket:': '🚀',
+  ':sparkles:': '✨',
+  ':trophy:': '🏆',
+  ':100:': '💯'
+};
 
 module.exports = {
   name: 'embed',
@@ -184,9 +206,9 @@ module.exports = {
     const discordClient = useNitroEmoji ? client : null;
     console.log(`Embed command: Using ${useNitroEmoji ? 'ALL servers' : 'ONLY current server'} for emoji processing`);
     
-    // Now run the regular emoji processor (which handles GTALoading and other emojis)
-    processedTitle = processEmojis(processedTitle, serverEmojis, discordClient);
-    processedDescription = processEmojis(processedDescription, serverEmojis, discordClient);
+    // Now run the emoji processor (which handles all emoji patterns)
+    processedTitle = await emojiProcessor.processText(processedTitle, serverId);
+    processedDescription = await emojiProcessor.processText(processedDescription, serverId);
     
     // Create the embed with processed content
     const embed = {
@@ -205,8 +227,8 @@ module.exports = {
     }
     
     if (footerText) {
-        // Process emojis in footer text too (with Nitro support)
-      const processedFooter = processEmojis(processSticker(footerText), serverEmojis, discordClient);
+        // Process emojis in footer text too
+      const processedFooter = await emojiProcessor.processText(processSticker(footerText), serverId);
       embed.footer = { text: processedFooter };
     }
     
@@ -335,9 +357,6 @@ module.exports = {
       
       collector.on('collect', async i => {
         if (i.customId === 'emoji_list_button') {
-          // Get all available emojis using our utility function
-          const availableEmojis = getAvailableEmojis(client);
-          
           // Get total emoji count
           let emojiCount = 0;
           client.guilds.cache.forEach(guild => {

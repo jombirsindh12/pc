@@ -13,7 +13,18 @@
   "antiNukeThreshold": 3,
   "antiNukeEnabled": true,
   "antiNukeDisabled": false,
+  "antiRaidSettings": {
+    "joinThreshold": 3,
+    "timeWindow": 8000,
+    "action": "lockdown"
+  },
+  "antiSpamSettings": {
+    "messageThreshold": 4,
+    "timeWindow": 3000,
+    "action": "mute"
+  },
   "strictSecurity": true,
   "strictSecurityAction": "kick",
-  "strictSecurityEnabled": 1746670944534
+  "strictSecurityEnabled": 1746670944545,
+  "welcomeMessage": true
 }
