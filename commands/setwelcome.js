@@ -464,6 +464,9 @@ function setupWelcomeHandler(client) {
       return result;
     };
     
+    // Import emoji processor at the beginning
+    const emojiProcessor = require('../utils/emojiProcessor');
+    
     // Pre-process sticker formats
     let preProcessedText = processSticker(formattedText);
     
@@ -472,12 +475,18 @@ function setupWelcomeHandler(client) {
     
     // Double-check for any nitro stickers that might have been missed
     // Instead of individual replacements, use the animatedEmojis object from emojiProcessor
-    const { animatedEmojis } = require('../utils/emojiProcessor');
-    Object.keys(animatedEmojis).forEach(code => {
-      const emoji = animatedEmojis[code];
-      const emojiString = `<a:${emoji.name}:${emoji.id}>`;
-      formattedDescription = formattedDescription.replace(new RegExp(code, 'g'), emojiString);
-    });
+    const animatedEmojis = emojiProcessor.animatedEmojis || {};
+    
+    // Only process if animatedEmojis is defined and not empty
+    if (animatedEmojis && Object.keys(animatedEmojis).length > 0) {
+      Object.keys(animatedEmojis).forEach(code => {
+        const emoji = animatedEmojis[code];
+        if (emoji && emoji.name && emoji.id) {
+          const emojiString = `<a:${emoji.name}:${emoji.id}>`;
+          formattedDescription = formattedDescription.replace(new RegExp(code, 'g'), emojiString);
+        }
+      });
+    }
     
     // Make sure we handle the syntax Discord expects for animated emojis 
     formattedDescription = formattedDescription
@@ -613,12 +622,16 @@ function setupWelcomeHandler(client) {
       let formattedTitleWithMention = await emojiProcessor.processText(preprocessedTitleWithMention, member.guild.id);
       
       // Double-check for any nitro stickers that might have been missed
-      // Instead of individual replacements, use the animatedEmojis object from emojiProcessor
-      Object.keys(animatedEmojis).forEach(code => {
-        const emoji = animatedEmojis[code];
-        const emojiString = `<a:${emoji.name}:${emoji.id}>`;
-        formattedTitleWithMention = formattedTitleWithMention.replace(new RegExp(code, 'g'), emojiString);
-      });
+      // Safely process animated emojis if they exist
+      if (animatedEmojis && Object.keys(animatedEmojis).length > 0) {
+        Object.keys(animatedEmojis).forEach(code => {
+          const emoji = animatedEmojis[code];
+          if (emoji && emoji.name && emoji.id) {
+            const emojiString = `<a:${emoji.name}:${emoji.id}>`;
+            formattedTitleWithMention = formattedTitleWithMention.replace(new RegExp(code, 'g'), emojiString);
+          }
+        });
+      }
       
       // Special validation for incomplete emoji syntax
       formattedTitleWithMention = formattedTitleWithMention

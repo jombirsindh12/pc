@@ -25,7 +25,7 @@
   },
   "strictSecurity": true,
   "strictSecurityAction": "kick",
-  "strictSecurityEnabled": 1746670944525,
+  "strictSecurityEnabled": 1746677720791,
   "welcomeMessage": true,
   "youtubeChannelId": "UCTqVAZM7HsFoz7xrpRMoADg",
   "youtubeChannelName": "PHANTOM GAMING ",
@@ -671,12 +671,12 @@
   "welcomeSettings": {
     "enabled": true,
     "channelId": "1337418792690782219",
-    "message": "<a:redutility4:1337142542793310228>",
-    "title": "<a:GTALoading:1337142161673814057>",
-    "color": "5865F2",
+    "message": "━━━━━━━━━━━━━━━━━━━━━━━  \n\n<a:tt_clapCat_OwO:1337141563234586675>  𝗪𝗲𝗹𝗰𝗼𝗺𝗲, **{user.name}!**            <a:vip:1369872864211107840> \n\n<a:utility32:1339685501099053097>  𝗧𝗮𝗴 — `{user.tag}`   <a:fire:1369872866983546880>         \n\n<a:AI_verify_certified_owo_lol_anim:1337141718377693235>  𝗝𝗼𝗶𝗻𝗲𝗱 𝗦𝗲𝗿𝘃𝗲𝗿 — **{server}** <a:fire:1369872866983546880> \n\n<a:utility1:1337142554558206003>  𝗬𝗼𝘂 𝗮𝗿𝗲 𝗠𝗲𝗺𝗯𝗲𝗿 #**{server.memberCount}** <a:fire:1369872866983546880> \n\n<a:RaveWeebTC:1337141601897545791>  𝗬𝗲𝗮𝗿 — **{year}** <a:fire:1369872866983546880> \n━━━━━━━━━━━━━━━━━━━━━━━  \n\n<a:TD_arrow_king44:1369870224299393034>    **𝗥𝘂𝗹𝗲𝘀**  <a:fire:1369872866983546880>\n<a:Arrow:1369870190640234506>  <#1337154892531372103>  \n\n<a:UtilityPoint:1339685400427499541>  **𝗙𝗿𝗲𝗲 𝗣𝗮𝗻𝗲𝗹**  <a:fire:1369872866983546880>\n<a:Arrow:1369870190640234506> <#1335942478599290945>  \n\n<a:CP_Chat_revive:1369874614393770024>   **𝗖𝗵𝗮𝘁**  <a:fire:1369872866983546880>\n<a:Arrow:1369870190640234506> <#1337156587663396965>  \n\n<a:utility4:1337142514553196595>  **𝗦𝘁𝗼𝗿𝗲**  <a:fire:1369872866983546880>\n<a:Arrow:1369870190640234506> <#1339476514617430096>  \n\n━━━━━━━━━━━━━━━━━━━━━━━  \n<a:GTALoading:1337142161673814057>  𝗘𝘅𝗽𝗹𝗼𝗿𝗲. 𝗘𝗻𝗷𝗼𝘆. 𝗦𝘁𝗮𝘆 𝗔𝗰𝘁𝗶𝘃𝗲 <a:fire:1369872866983546880>\n━━━━━━━━━━━━━━━━━━━━━━━",
+    "title": "<a:redutility4:1337142542793310228> │𝗪𝗘𝗟𝗖𝗢𝗠𝗘 {mention} 𝗧𝗢 𝗣𝗛𝗔𝗧𝗢𝗠 𝗖𝗛𝗘𝗔𝗧𝗦!  <a:redutility4:1337142542793310228> <a:utility4:1337142514553196595>",
+    "color": "#FF0000",
     "roleId": null,
     "roleName": null,
-    "imageUrl": null,
+    "imageUrl": "https://cdn.discordapp.com/attachments/1337139067552534761/1369594181768581241/standard_2.gif?ex=681c6d7a&is=681b1bfa&hm=2dfc33e5ded97fbadfd3d240c5edaee392bdc7d287908abfb91b7ab4484858be&",
     "backgroundUrl": null
   },
   "verifiedImages": {
@@ -728,7 +728,7 @@
       }
     },
     "updateInterval": 5,
-    "lastUpdate": 1746670744457
+    "lastUpdate": 1746677515529
   },
   "inviteSettings": {
     "logChannelId": "1337139875660697630",
@@ -736,7 +736,7 @@
     "enabled": true
   },
   "dmSettings": {
-    "message": "👋 Hello {mention}!\\n 🎉 **Welcome to {server}** — your new home for powerful tools, premium features, and exclusive access!\\n You're now part of something **big**, and we’re truly excited to have you with us.\\n ━━━━━━━━━━━━━━━━━━━━━━\\n 💬 **Start chatting with members here:**\\n 🔗 https://discord.com/channels/1335942478599290942/1337156587663396965\\n ━━━━━━━━━━━━━━━━━━━━━━\\n 💎 **Want early access to our premium panels, tools, and cheats?**\\n Just **invite more members** to the server using your personal invite link.\\n ➤ The more invites you generate, the more rewards you unlock!\\n ━━━━━━━━━━━━━━━━━━━━━━\\n 🏆 **Top inviters receive:**\\n ‣ 🔓 Special roles & permissions\\n ‣ 🛍️ Free access to premium products\\n ‣ 🎁 Exclusive giveaways\\n ‣ 🏅 Invite tracking & leaderboard badges\\n 📈 Your invites will be automatically tracked.\\n Stay active regularly and you’ll unlock even more benefits!\\n ━━━━━━━━━━━━━━━━━━━━━━\\n 📅 **Welcome once again to {server}** — \\n Let’s build the strongest community together in **{year}**!\\n \\n — **Phantom Cheats Team 💼**",
+    "message": "<a:utility32:1339685501099053097>  Hello {mention}!\\n <a:redutility4:1337142542793310228>  **Welcome to {server}** — your new home for powerful tools, premium features, and exclusive access!\\n You're now part of something **big**, and we’re truly excited to have you with us.\\n ━━━━━━━━━━━━━━━━━━━━━━\\n <a:utility4:1337142514553196595>  **Start chatting with members here:**\\n <a:UtilityPoint:1339685400427499541>  https://discord.com/channels/1335942478599290942/1337156587663396965\\n ━━━━━━━━━━━━━━━━━━━━━━\\n <a:nekolove:1337141541906546719>  **Want early access to our premium panels, tools, and cheats?**\\n Just **invite more members** to the server using your personal invite link.\\n ➤ The more invites you generate, the more rewards you unlock!\\n ━━━━━━━━━━━━━━━━━━━━━━\\n <a:animeshooting:1337141595828523121>  **Top inviters receive:**\\n ‣ <a:nyanbang1:1337141608369487872>  Special roles & permissions\\n ‣ <a:SPP_yDanceowo:1337141647045165066>  Free access to premium products\\n ‣ 🎁 Exclusive giveaways\\n ‣ 🏅 Invite tracking  [...]  he strongest community together in **{year}**!\\n \\n — **Phantom Cheats Team <a:tt_clapCat_OwO:1337141563234586675> **",
     "enabled": true
   },
   "youtubeSettings": {
@@ -750,5 +750,15 @@
     "notifyOnShorts": true,
     "notifyOnLivestreams": true,
     "lastChecked": null
-  }
+  },
+  "premium": true,
+  "premiumActivatedBy": "1155442418309673000",
+  "premiumActivatedAt": "2025-05-08T02:29:32.246Z",
+  "premiumFeatures": [
+    "anti-nuke",
+    "custom-welcome",
+    "voice-announce",
+    "advanced-verification",
+    "unlimited-automod"
+  ]
 }

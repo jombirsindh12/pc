@@ -25,6 +25,208 @@
   },
   "strictSecurity": true,
   "strictSecurityAction": "kick",
-  "strictSecurityEnabled": 1746670944545,
-  "welcomeMessage": true
+  "strictSecurityEnabled": 1746677720809,
+  "welcomeMessage": true,
+  "securityIncidents": [
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "458276816071950337",
+      "timestamp": 1746671846876,
+      "details": {
+        "channelId": "1368883442632101939",
+        "oldName": "All Members: 36",
+        "newName": "All Members: 37"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "1361975326418141215",
+      "timestamp": 1746671847696,
+      "details": {
+        "channelId": "1368883442632101939",
+        "oldName": "All Members: 37",
+        "newName": "All Members: 36"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "1361975326418141215",
+      "timestamp": 1746671848225,
+      "details": {
+        "channelId": "1368883450253152259",
+        "oldName": "Bots: 19",
+        "newName": "Bots: 20"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "1361975326418141215",
+      "timestamp": 1746671848609,
+      "details": {
+        "channelId": "1368883442632101939",
+        "oldName": "All Members: 36",
+        "newName": "All Members: 37"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "1361975326418141215",
+      "timestamp": 1746671849075,
+      "details": {
+        "channelId": "1368883450253152259",
+        "oldName": "Bots: 20",
+        "newName": "Bots: 19"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "1361975326418141215",
+      "timestamp": 1746671849717,
+      "details": {
+        "channelId": "1368883458491027458",
+        "oldName": "Roles: 97",
+        "newName": "Roles: 98"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "1361975326418141215",
+      "timestamp": 1746671850098,
+      "details": {
+        "channelId": "1368883450253152259",
+        "oldName": "Bots: 19",
+        "newName": "Bots: 20"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "1361975326418141215",
+      "timestamp": 1746671850454,
+      "details": {
+        "channelId": "1368883458491027458",
+        "oldName": "Roles: 97",
+        "newName": "Roles: 97"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "458276816071950337",
+      "timestamp": 1746673810688,
+      "details": {
+        "channelId": "1368883442632101939",
+        "oldName": "All Members: 37",
+        "newName": "All Members: 38"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "1361975326418141215",
+      "timestamp": 1746673811446,
+      "details": {
+        "channelId": "1368883446436466699",
+        "oldName": "Members: 17",
+        "newName": "Members: 18"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "1361975326418141215",
+      "timestamp": 1746673811911,
+      "details": {
+        "channelId": "1368883442632101939",
+        "oldName": "All Members: 38",
+        "newName": "All Members: 37"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "1361975326418141215",
+      "timestamp": 1746673812346,
+      "details": {
+        "channelId": "1368883446436466699",
+        "oldName": "Members: 18",
+        "newName": "Members: 17"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "1361975326418141215",
+      "timestamp": 1746673812805,
+      "details": {
+        "channelId": "1368883442632101939",
+        "oldName": "All Members: 37",
+        "newName": "All Members: 38"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "458276816071950337",
+      "timestamp": 1746673813237,
+      "details": {
+        "channelId": "1368883446436466699",
+        "oldName": "Members: 17",
+        "newName": "Members: 18"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "458276816071950337",
+      "timestamp": 1746673813703,
+      "details": {
+        "channelId": "1368883458491027458",
+        "oldName": "Roles: 97",
+        "newName": "Roles: 98"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "1361975326418141215",
+      "timestamp": 1746673814573,
+      "details": {
+        "channelId": "1368883458491027458",
+        "oldName": "Roles: 97",
+        "newName": "Roles: 97"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "1361975326418141215",
+      "timestamp": 1746674412140,
+      "details": {
+        "channelId": "1368883442632101939",
+        "oldName": "All Members: 38",
+        "newName": "All Members: 37"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "1361975326418141215",
+      "timestamp": 1746674413257,
+      "details": {
+        "channelId": "1368883442632101939",
+        "oldName": "All Members: 37",
+        "newName": "All Members: 38"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "1361975326418141215",
+      "timestamp": 1746674413682,
+      "details": {
+        "channelId": "1368883446436466699",
+        "oldName": "Members: 18",
+        "newName": "Members: 17"
+      }
+    },
+    {
+      "type": "CHANNEL_UPDATE",
+      "userId": "1361975326418141215",
+      "timestamp": 1746674414463,
+      "details": {
+        "channelId": "1368883446436466699",
+        "oldName": "Members: 17",
+        "newName": "Members: 18"
+      }
+    }
+  ]
 }
